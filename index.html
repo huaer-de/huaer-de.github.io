@@ -77,6 +77,75 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-实训笔记" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/" class="article-date">
+  <time class="dt-published" datetime="2026-04-14T02:00:00.000Z" itemprop="datePublished">2026-04-14</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="p-name article-title" href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/">实训笔记</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h2 id="一、环境准备与远程连接"><a href="#一、环境准备与远程连接" class="headerlink" title="一、环境准备与远程连接"></a>一、环境准备与远程连接</h2><p>课程前期主要进行虚拟机安装（VMware 中安装 CentOS 7），并使用远程工具连接。</p>
+<ul>
+<li><p><strong>虚拟机信息</strong>：  </p>
+<ul>
+<li>账号：<code>root</code>  </li>
+<li>密码：<code>@822081794Lkh</code>  </li>
+<li>IP 地址：<code>10.0.0.134</code></li>
+</ul>
+</li>
+<li><p><strong>远程工具</strong>：<br>电脑上安装了 MobaXterm 和 Xshell，上课使用 <strong>MobaXterm</strong>。</p>
+</li>
+</ul>
+<hr>
+<h2 id="二、查看-IP-地址与网卡信息"><a href="#二、查看-IP-地址与网卡信息" class="headerlink" title="二、查看 IP 地址与网卡信息"></a>二、查看 IP 地址与网卡信息</h2><p>在终端输入 <code>ip a</code> 后，可以看到三个 IP 地址，它们分别代表：</p>
+<ol>
+<li><p><strong><code>inet 127.0.0.1/8</code> (lo 网卡)</strong><br>Linux 系统自带的虚拟网卡 IP，仅用于本机通信（<code>localhost</code> 对应此 IP）。</p>
+</li>
+<li><p><strong><code>inet 10.0.0.134/24</code> (ens33 网卡)</strong><br>虚拟机对外的真实 IPv4 地址，用于远程连接和网络通信。</p>
+</li>
+<li><p><strong><code>inet6 fe80::20c:29ff:fe6c:a43c/64</code> (ens33 网卡)</strong><br>IPv6 的链路本地地址，仅在同一个局域网链路内通信。</p>
+</li>
+</ol>
+<hr>
+<h2 id="三、Vim-编辑器的基本使用"><a href="#三、Vim-编辑器的基本使用" class="headerlink" title="三、Vim 编辑器的基本使用"></a>三、Vim 编辑器的基本使用</h2><h3 id="进入与修改文件"><a href="#进入与修改文件" class="headerlink" title="进入与修改文件"></a>进入与修改文件</h3><pre><code class="language-bash">vi /etc/selinux/config
+</code></pre>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/" data-id="cuidXLhcQOq2U437j8eIVrXj6" data-title="实训笔记" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CentOS/" rel="tag">CentOS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AE%9E%E8%AE%AD/" rel="tag">实训</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+
+  
     <article id="post-我的第一篇博客" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" class="article-date">
@@ -108,7 +177,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" data-id="cuidr0MYX5xHi-hYxhU-9M-wx" data-title="我的第一篇博客" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="http://example.com/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" data-id="cuidHbSobe6qEhJHCNTB0_LKY" data-title="我的第一篇博客" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -161,7 +230,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://example.com/2026/04/13/hello-world/" data-id="cuidtmuw3IehUBSw_fkgMfeYZ" data-title="Hello World" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      <a data-url="http://example.com/2026/04/13/hello-world/" data-id="cuidHQ8BIJMeZMX4HIrICLTiK" data-title="Hello World" class="article-share-link"><span class="fa fa-share">分享</span></a>
       
       
       
@@ -183,7 +252,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">分类</h3>
     <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a></li></ul>
     </div>
   </div>
 
@@ -193,7 +262,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E8%AE%B0/" rel="tag">日记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%9A%8F%E7%AC%94/" rel="tag">随笔</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AE%9E%E8%AE%AD/" rel="tag">实训</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E8%AE%B0/" rel="tag">日记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%9A%8F%E7%AC%94/" rel="tag">随笔</a></li></ul>
     </div>
   </div>
 
@@ -203,7 +272,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">标签云</h3>
     <div class="widget tagcloud">
-      <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
+      <a href="/tags/CentOS/" style="font-size: 10px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 10px;">实训</a> <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
     </div>
   </div>
 
@@ -223,6 +292,10 @@
     <h3 class="widget-title">最新文章</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/">实训笔记</a>
+          </li>
         
           <li>
             <a href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a>
