@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>运维学习笔记 Day 2 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="运维学习笔记 Day 2"/>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a><a class="category-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>运维学习笔记 Day 2</h2>
+            <div class="post-meta">
+                <time class="date">2026.04.14</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h2 id="前置环境"><a href="#前置环境" class="headerlink" title="前置环境"></a>前置环境</h2><p>已通过远程连接工具（MobaXterm）进入虚拟机。</p>
+<hr>
+<h2 id="问题：虚拟机-ip-a-无法显示-IP-地址"><a href="#问题：虚拟机-ip-a-无法显示-IP-地址" class="headerlink" title="问题：虚拟机 ip a 无法显示 IP 地址"></a>问题：虚拟机 <code>ip a</code> 无法显示 IP 地址</h2><h3 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h3><p>执行 <code>ip a</code> 后，<code>ens33</code> 网卡信息如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2: ens33: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000</span><br></pre></td></tr></table></figure>
+<p>没有显示 <code>inet</code> 地址。</p>
+<h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><ol>
+<li><strong>网卡默认未启动</strong>：CentOS 7 部分镜像将 <code>ifcfg-ens33</code> 中的 <code>ONBOOT</code> 设为 <code>no</code>，开机不自动启动网卡。</li>
+<li><strong>DHCP 未触发</strong>：网卡未启动，无法向 DHCP 服务器（VMware NAT 服务）申请 IP。</li>
+</ol>
+<hr>
+<h2 id="解决方法：临时启动网卡并获取-IP"><a href="#解决方法：临时启动网卡并获取-IP" class="headerlink" title="解决方法：临时启动网卡并获取 IP"></a>解决方法：临时启动网卡并获取 IP</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 启动 ens33 网卡（物理链路激活）</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> ens33 up</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 手动向 DHCP 服务器申请 IP</span></span><br><span class="line">dhclient ens33</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 验证 IP 是否获取成功</span></span><br><span class="line">ip a</span><br></pre></td></tr></table></figure>
+
+<p>此时应能看到 <code>ens33</code> 的 <code>inet</code> 地址（如 <code>10.0.0.134</code>）。</p>
+<hr>
+<h2 id="配置主机名解析：-etc-hosts-文件"><a href="#配置主机名解析：-etc-hosts-文件" class="headerlink" title="配置主机名解析：/etc/hosts 文件"></a>配置主机名解析：<code>/etc/hosts</code> 文件</h2><h3 id="查看当前主机名"><a href="#查看当前主机名" class="headerlink" title="查看当前主机名"></a>查看当前主机名</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hostname</span><br></pre></td></tr></table></figure>
+
+<h3 id="编辑-hosts-文件"><a href="#编辑-hosts-文件" class="headerlink" title="编辑 hosts 文件"></a>编辑 hosts 文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/hosts</span><br></pre></td></tr></table></figure>
+<p>在文件末尾添加一行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.0.0.134  你的主机名</span><br></pre></td></tr></table></figure>
+<p>格式为：<code>IP地址 主机名</code>。</p>
+<h3 id="让解析生效"><a href="#让解析生效" class="headerlink" title="让解析生效"></a>让解析生效</h3><p>重新登录终端，或执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">exec</span> bash</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看文件内容"><a href="#查看文件内容" class="headerlink" title="查看文件内容"></a>查看文件内容</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /etc/hosts</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="补充说明：hosts-文件的作用"><a href="#补充说明：hosts-文件的作用" class="headerlink" title="补充说明：hosts 文件的作用"></a>补充说明：<code>hosts</code> 文件的作用</h2><ul>
+<li><strong>本地地址簿</strong>：输入主机名时，系统优先从 <code>hosts</code> 文件中查找对应的 IP。</li>
+<li><strong>优先级</strong>：高于 DNS 解析。</li>
+<li><strong>常见用途</strong>：本地测试域名、屏蔽广告网站、内网自定义解析。</li>
+</ul>
+<hr>
+<blockquote>
+<p>今日笔记完。好无聊呢 qwq</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">### 🚀 部署到博客</span><br><span class="line"></span><br><span class="line">回到 Git Bash，确保在博客目录下，执行：</span><br><span class="line"></span><br><span class="line">```bash</span><br><span class="line">cd /e/2026Study/ShenTouCeShi/ShiXi/myblog</span><br><span class="line">hexo clean &amp;&amp; hexo g -d</span><br></pre></td></tr></table></figure>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/">实训笔记：CentOS 7 基础环境配置</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的网安小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/">运维学习笔记 Day 2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/">实训笔记：CentOS 7 基础环境配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/hello-world/">Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day1/">实训笔记：CentOS 7 基础环境配置</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 20px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">运维</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
