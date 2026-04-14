@@ -1,271 +1,239 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  
-  
-  <title>实训笔记 | hualalala 的博客</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="一、环境准备与远程连接课程前期主要进行虚拟机安装（VMware 中安装 CentOS 7），并使用远程工具连接。  虚拟机信息：    账号：root   密码：@822081794Lkh   IP 地址：10.0.0.134   远程工具：电脑上安装了 MobaXterm 和 Xshell，上课使用 MobaXterm。    二、查看 IP 地址与网卡信息在终端输入 ip a 后，可以看到三个">
-<meta property="og:type" content="article">
-<meta property="og:title" content="实训笔记">
-<meta property="og:url" content="http://example.com/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/index.html">
-<meta property="og:site_name" content="hualalala 的博客">
-<meta property="og:description" content="一、环境准备与远程连接课程前期主要进行虚拟机安装（VMware 中安装 CentOS 7），并使用远程工具连接。  虚拟机信息：    账号：root   密码：@822081794Lkh   IP 地址：10.0.0.134   远程工具：电脑上安装了 MobaXterm 和 Xshell，上课使用 MobaXterm。    二、查看 IP 地址与网卡信息在终端输入 ip a 后，可以看到三个">
-<meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-04-14T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-04-14T07:32:26.517Z">
-<meta property="article:author" content="huaer">
-<meta property="article:tag" content="CentOS">
-<meta property="article:tag" content="Linux">
-<meta property="article:tag" content="实训">
-<meta name="twitter:card" content="summary">
-  
-    <link rel="alternate" href="/atom.xml" title="hualalala 的博客" type="application/atom+xml">
-  
-  
-    <link rel="shortcut icon" href="/favicon.png">
-  
-  
-  
-<link rel="stylesheet" href="/css/style.css">
-
-  
+<html lang="zh">
+  <head>
     
-<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+    <meta charset="UTF-8">
+    <title>实训笔记：CentOS 7 基础环境配置 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
 
-  
-  
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="实训笔记：CentOS 7 基础环境配置"/>
+    
 <meta name="generator" content="Hexo 8.1.1"></head>
 
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="banner"></div>
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">hualalala 的博客</a>
-      </h1>
-      
-        <h2 id="subtitle-wrap">
-          <a href="/" id="subtitle">生活真的好辛苦 QwQ</a>
-        </h2>
-      
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
     </div>
-    <div id="header-inner" class="inner">
-      <nav id="main-nav">
-        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
-        
-          <a class="main-nav-link" href="/">Home</a>
-        
-          <a class="main-nav-link" href="/archives">Archives</a>
-        
-      </nav>
-      <nav id="sub-nav">
-        
-        
-          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
-        
-        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
-      </nav>
-      <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
-      </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
     </div>
-  </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a><a class="category-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
 </header>
 
-      <div class="outer">
-        <section id="main"><article id="post-实训笔记" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/" class="article-date">
-  <time class="dt-published" datetime="2026-04-14T02:00:00.000Z" itemprop="datePublished">2026-04-14</time>
-</a>
-    
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>实训笔记：CentOS 7 基础环境配置</h2>
+            <div class="post-meta">
+                <time class="date">2026.04.14</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
         
-  
-    <h1 class="p-name article-title" itemprop="headline name">
-      实训笔记
-    </h1>
-  
-
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h2 id="一、环境准备与远程连接"><a href="#一、环境准备与远程连接" class="headerlink" title="一、环境准备与远程连接"></a>一、环境准备与远程连接</h2><p>课程前期主要进行虚拟机安装（VMware 中安装 CentOS 7），并使用远程工具连接。</p>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>课程的前一段时间一直在安装虚拟机（在 VMware 安装别的主机系统），用远程工具连接 CentOS 7。</p>
 <ul>
-<li><p><strong>虚拟机信息</strong>：  </p>
-<ul>
-<li>账号：<code>root</code>  </li>
-<li>密码：<code>@822081794Lkh</code>  </li>
-<li>IP 地址：<code>10.0.0.134</code></li>
+<li><strong>账号</strong>：root</li>
+<li><strong>密码</strong>：@822081794Lkh</li>
+<li><strong>IP 地址</strong>：10.0.0.134</li>
 </ul>
-</li>
-<li><p><strong>远程工具</strong>：<br>电脑上安装了 MobaXterm 和 Xshell，上课使用 <strong>MobaXterm</strong>。</p>
-</li>
-</ul>
+<p>目前电脑上有两个远程连接的工具，一个是 <strong>MobaXterm</strong>，一个是 <strong>Xshell</strong>，上课主要使用 MobaXterm。</p>
 <hr>
-<h2 id="二、查看-IP-地址与网卡信息"><a href="#二、查看-IP-地址与网卡信息" class="headerlink" title="二、查看 IP 地址与网卡信息"></a>二、查看 IP 地址与网卡信息</h2><p>在终端输入 <code>ip a</code> 后，可以看到三个 IP 地址，它们分别代表：</p>
+<h2 id="一、查看-IP-地址与网卡信息"><a href="#一、查看-IP-地址与网卡信息" class="headerlink" title="一、查看 IP 地址与网卡信息"></a>一、查看 IP 地址与网卡信息</h2><p>进入 MobaXterm 后，输入以下命令查看 IP 地址：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ip a</span><br></pre></td></tr></table></figure>
+<!-- ![alt text](image.png) -->
+<p>可以看到三个 IP 地址，它们的含义分别是：</p>
 <ol>
-<li><p><strong><code>inet 127.0.0.1/8</code> (lo 网卡)</strong><br>Linux 系统自带的虚拟网卡 IP，仅用于本机通信（<code>localhost</code> 对应此 IP）。</p>
+<li><p><strong>inet 127.0.0.1&#x2F;8 (lo 网卡)</strong><br>这是 Linux 系统自带的虚拟网卡 IP，仅作用于本机通信，比如 <code>localhost</code> 就对应此 IP。</p>
 </li>
-<li><p><strong><code>inet 10.0.0.134/24</code> (ens33 网卡)</strong><br>虚拟机对外的真实 IPv4 地址，用于远程连接和网络通信。</p>
+<li><p><strong>inet 10.0.0.134&#x2F;24 (ens33 网卡)</strong><br>虚拟机对外的真实 IPv4 地址，是用于远程连接和网络通信的 IP。</p>
 </li>
-<li><p><strong><code>inet6 fe80::20c:29ff:fe6c:a43c/64</code> (ens33 网卡)</strong><br>IPv6 的链路本地地址，仅在同一个局域网链路内通信。</p>
+<li><p><strong>inet6 fe80::20c:29ff:fe6c:a43c&#x2F;64 (ens33 网卡)</strong><br>IPv6 的链路本地地址（Link-Local Address），用于同一个局域网链路内的通信。</p>
 </li>
 </ol>
 <hr>
-<h2 id="三、Vim-编辑器的基本使用"><a href="#三、Vim-编辑器的基本使用" class="headerlink" title="三、Vim 编辑器的基本使用"></a>三、Vim 编辑器的基本使用</h2><h3 id="进入与修改文件"><a href="#进入与修改文件" class="headerlink" title="进入与修改文件"></a>进入与修改文件</h3><pre><code class="language-bash">vi /etc/selinux/config
-</code></pre>
+<h2 id="二、Vim-编辑器的基本操作"><a href="#二、Vim-编辑器的基本操作" class="headerlink" title="二、Vim 编辑器的基本操作"></a>二、Vim 编辑器的基本操作</h2><h3 id="如何进入并修改文件？"><a href="#如何进入并修改文件？" class="headerlink" title="如何进入并修改文件？"></a>如何进入并修改文件？</h3><ol>
+<li>确保已安装 Vim（如果没有安装，后面会讲到如何安装）。</li>
+<li>使用以下命令编辑 SELinux 配置文件：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/selinux/config</span><br></pre></td></tr></table></figure></li>
+<li>进入编辑界面后，按 <code>i</code> 键进入插入模式，修改内容。</li>
+<li>修改完成后，按 <code>Esc</code> 键退出插入模式。</li>
+<li>输入 <code>:q</code> 退出（未修改时使用），或输入 <code>:q!</code> 强制退出（放弃修改）。</li>
+</ol>
+<h3 id="SELinux-相关命令与三种状态"><a href="#SELinux-相关命令与三种状态" class="headerlink" title="SELinux 相关命令与三种状态"></a>SELinux 相关命令与三种状态</h3><ul>
+<li><code>getenforce</code> —— 查看当前 SELinux 状态</li>
+<li><code>setenforce 0</code> —— 临时关闭 SELinux（重启后失效）</li>
+<li><code>vi /etc/selinux/config</code> —— 永久修改配置文件</li>
+</ul>
+<p>三种状态分别是：</p>
+<ul>
+<li><strong>Enforcing</strong> —— 开启（严格限制）</li>
+<li><strong>Permissive</strong> —— 警告模式（不拦截，但会记录日志）</li>
+<li><strong>Disabled</strong> —— 关闭（完全不管）</li>
+</ul>
+<hr>
+<h2 id="三、关闭防火墙"><a href="#三、关闭防火墙" class="headerlink" title="三、关闭防火墙"></a>三、关闭防火墙</h2><p>为了方便后续做实验，我们需要关闭防火墙。</p>
+<ul>
+<li><p>查看防火墙规则：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -nL</span><br></pre></td></tr></table></figure>
+<p>该命令可以列出当前防火墙的所有规则，包括开放的端口和允许&#x2F;拒绝的访问。</p>
+</li>
+<li><p>彻底关闭防火墙：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl <span class="built_in">disable</span> --now firewalld</span><br></pre></td></tr></table></figure></li>
+</ul>
+<hr>
+<h2 id="四、更换-YUM-源为阿里云镜像"><a href="#四、更换-YUM-源为阿里云镜像" class="headerlink" title="四、更换 YUM 源为阿里云镜像"></a>四、更换 YUM 源为阿里云镜像</h2><p>由于我们使用的是最小化安装的 ISO 镜像，很多工具都没有预装。首先需要更换 YUM 源。</p>
+<ol>
+<li><p>进入 YUM 源配置目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /etc/yum.repos.d/</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>删除当前目录下的所有文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">rm</span> -fr *</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>从阿里云镜像站下载 CentOS 7 的 YUM 源配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>使用 <code>ls</code> 命令查看，此时目录下应该只剩下一个文件了。</p>
+</li>
+<li><p>编辑该配置文件（可选操作，用于清理多余条目）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/yum.repos.d/CentOS-Base.repo</span><br></pre></td></tr></table></figure>
+<p>在 Vim 中，可以按 <code>dd</code> 删除当前行，仅保留第一个阿里云的源条目。最后输入 <code>:wq</code> 保存并退出。</p>
+</li>
+</ol>
+<hr>
+<h2 id="五、安装常用工具软件"><a href="#五、安装常用工具软件" class="headerlink" title="五、安装常用工具软件"></a>五、安装常用工具软件</h2><p>YUM 源配置完成后，安装三个必备工具：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y vim net-tools wget</span><br></pre></td></tr></table></figure>
 
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/" data-id="cuidXLhcQOq2U437j8eIVrXj6" data-title="实训笔记" class="article-share-link"><span class="fa fa-share">分享</span></a>
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CentOS/" rel="tag">CentOS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E5%AE%9E%E8%AE%AD/" rel="tag">实训</a></li></ul>
-
-    </footer>
-  </div>
-  
-    
-<nav id="article-nav">
-  
-  
-    <a href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" id="article-nav-older" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">后一篇</strong>
-      <div class="article-nav-title">我的第一篇博客</div>
-    </a>
-  
-</nav>
-
-  
-</article>
-
-
-</section>
+<ul>
+<li><strong>vim</strong>：强大的文本编辑器</li>
+<li><strong>net-tools</strong>：包含 <code>ifconfig</code> 等查看 IP、端口的工具</li>
+<li><strong>wget</strong>：命令行下载工具</li>
+</ul>
+<hr>
+<h2 id="六、常用命令总结"><a href="#六、常用命令总结" class="headerlink" title="六、常用命令总结"></a>六、常用命令总结</h2><table>
+<thead>
+<tr>
+<th align="left">功能</th>
+<th align="left">命令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">查看 IP 地址</td>
+<td align="left"><code>ifconfig</code> 或 <code>ip a</code></td>
+</tr>
+<tr>
+<td align="left">编辑文件</td>
+<td align="left"><code>vim 文件名</code></td>
+</tr>
+<tr>
+<td align="left">下载网络文件</td>
+<td align="left"><code>wget 网址</code>（如 <code>wget https://www.baidu.com</code>）</td>
+</tr>
+<tr>
+<td align="left">安装软件</td>
+<td align="left"><code>yum install -y 软件名</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="七、VMware-克隆与快照"><a href="#七、VMware-克隆与快照" class="headerlink" title="七、VMware 克隆与快照"></a>七、VMware 克隆与快照</h2><p>最后，可以多利用 VMware 的克隆体和快照功能，方便在不同实验环境之间快速切换和恢复。</p>
+<blockquote>
+<p>本文档为实训过程中的基础环境配置笔记，后续实验将在此基础上展开。</p>
+</blockquote>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">保存并关闭文件。</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line"></span><br><span class="line">### 🚀 第二步：部署到线上</span><br><span class="line"></span><br><span class="line">回到 Git Bash，确保当前目录是你的博客根目录（`/e/2026Study/ShenTouCeShi/ShiXi/myblog`），然后执行：</span><br><span class="line"></span><br><span class="line">```bash</span><br><span class="line">hexo clean &amp;&amp; hexo g -d</span><br></pre></td></tr></table></figure>
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a></li>
+                
+            </ul>
+        </section>
         
-          <aside id="sidebar">
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">分类</h3>
-    <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a></li></ul>
-    </div>
-  </div>
-
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">标签</h3>
-    <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E5%AE%9E%E8%AE%AD/" rel="tag">实训</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E6%97%A5%E8%AE%B0/" rel="tag">日记</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/%E9%9A%8F%E7%AC%94/" rel="tag">随笔</a></li></ul>
-    </div>
-  </div>
-
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">标签云</h3>
-    <div class="widget tagcloud">
-      <a href="/tags/CentOS/" style="font-size: 10px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 10px;">实训</a> <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
-    </div>
-  </div>
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">归档</h3>
-    <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
-    </div>
-  </div>
-
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">最新文章</h3>
-    <div class="widget">
-      <ul>
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E5%AE%9E%E8%AE%AD/" rel="tag">实训</a>
+            </section>
         
-          <li>
-            <a href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/">实训笔记</a>
-          </li>
+    
+        <section class="post-author">
         
-          <li>
-            <a href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a>
-          </li>
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="Hingle" />
+            </figure>
         
-          <li>
-            <a href="/2026/04/13/hello-world/">Hello World</a>
-          </li>
-        
-      </ul>
+            <div class="author-info">
+                <h4>Hingle</h4>
+                <p>请在这里设置你的作者信息</p>
+            </div>
+        </section>
+    
     </div>
-  </div>
+</main>
 
-  
-</aside>
-        
-      </div>
-      <footer id="footer">
-  
-  <div class="outer">
-    <div id="footer-info" class="inner">
-      
-      &copy; 2026 huaer<br>
-      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
     </div>
-  </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/04/14/%E5%AE%9E%E8%AE%AD%E7%AC%94%E8%AE%B0/">实训笔记：CentOS 7 基础环境配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/hello-world/">Hello World</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 10px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 10px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 10px;">实训</a> <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
 </footer>
 
-    </div>
-    <nav id="mobile-nav">
-  
-    <a href="/" class="mobile-nav-link">Home</a>
-  
-    <a href="/archives" class="mobile-nav-link">Archives</a>
-  
-</nav>
-    
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
 
 
-<script src="/js/jquery-3.6.4.min.js"></script>
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-
-
-  
-<script src="/fancybox/jquery.fancybox.min.js"></script>
-
-
-
-
-<script src="/js/script.js"></script>
-
-
-
-
-
-  </div>
-</body>
+  </body>
 </html>
