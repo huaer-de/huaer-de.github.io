@@ -59,9 +59,7 @@
         </section>
         <article class="post-content">
         
-            <h2 id="前置环境"><a href="#前置环境" class="headerlink" title="前置环境"></a>前置环境</h2><p>已通过远程连接工具（MobaXterm）进入虚拟机。</p>
-<hr>
-<h2 id="问题：虚拟机-ip-a-无法显示-IP-地址"><a href="#问题：虚拟机-ip-a-无法显示-IP-地址" class="headerlink" title="问题：虚拟机 ip a 无法显示 IP 地址"></a>问题：虚拟机 <code>ip a</code> 无法显示 IP 地址</h2><h3 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h3><p>执行 <code>ip a</code> 后，<code>ens33</code> 网卡信息如下：</p>
+            <h2 id="前置环境"><a href="#前置环境" class="headerlink" title="前置环境"></a>前置环境</h2><h2 id="已通过远程连接工具（MobaXterm）进入虚拟机。"><a href="#已通过远程连接工具（MobaXterm）进入虚拟机。" class="headerlink" title="已通过远程连接工具（MobaXterm）进入虚拟机。"></a>已通过远程连接工具（MobaXterm）进入虚拟机。<br><img src="/image1.png" alt="进入效果"></h2><h2 id="问题：虚拟机-ip-a-无法显示-IP-地址"><a href="#问题：虚拟机-ip-a-无法显示-IP-地址" class="headerlink" title="问题：虚拟机 ip a 无法显示 IP 地址"></a>问题：虚拟机 <code>ip a</code> 无法显示 IP 地址</h2><h3 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h3><p>执行 <code>ip a</code> 后，<code>ens33</code> 网卡信息如下：<br><img src="/image2.png" alt="遇到问题"></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2: ens33: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000</span><br></pre></td></tr></table></figure>
 <p>没有显示 <code>inet</code> 地址。</p>
 <h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><ol>
@@ -74,11 +72,11 @@
 <p>此时应能看到 <code>ens33</code> 的 <code>inet</code> 地址（如 <code>10.0.0.134</code>）。</p>
 <hr>
 <h2 id="配置主机名解析：-etc-hosts-文件"><a href="#配置主机名解析：-etc-hosts-文件" class="headerlink" title="配置主机名解析：/etc/hosts 文件"></a>配置主机名解析：<code>/etc/hosts</code> 文件</h2><h3 id="查看当前主机名"><a href="#查看当前主机名" class="headerlink" title="查看当前主机名"></a>查看当前主机名</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hostname</span><br></pre></td></tr></table></figure>
-
+<p><img src="/image3.png" alt="如图"></p>
 <h3 id="编辑-hosts-文件"><a href="#编辑-hosts-文件" class="headerlink" title="编辑 hosts 文件"></a>编辑 hosts 文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/hosts</span><br></pre></td></tr></table></figure>
 <p>在文件末尾添加一行：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.0.0.134  你的主机名</span><br></pre></td></tr></table></figure>
-<p>格式为：<code>IP地址 主机名</code>。</p>
+<p>格式为：<code>IP地址 主机名</code>。<br><img src="/image4.png" alt="编辑界面"></p>
 <h3 id="让解析生效"><a href="#让解析生效" class="headerlink" title="让解析生效"></a>让解析生效</h3><p>重新登录终端，或执行：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">exec</span> bash</span><br></pre></td></tr></table></figure>
 
