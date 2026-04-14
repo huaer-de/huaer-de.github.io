@@ -84,8 +84,8 @@
 <li><strong>位置</strong>：<code>/etc/hosts</code></li>
 <li><strong>注意</strong>：不要修改开头的 <code>127.0.0.1</code> 和 <code>::1</code> 两行。</li>
 </ul>
-<p>也就是说，我们通过 <code>ip a</code> 得到本机 IP 后，使用 <code>vim /etc/hosts</code> 编辑配置文件：<br>在文件末尾添加一行（示例）：</p>
-<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image4.png" alt="编辑界面（其实还没有编辑完，没有写主机名qwq）"></p>
+<p>也就是说，我们通过 <code>ip a</code> 得到本机 IP 后，使用 <code>vim /etc/hosts</code> 编辑配置文件：<br>在文件末尾添加一行（其实还没有编辑完，没有写主机名qwq）：</p>
+<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image4.png" alt="编辑界面"></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.0.0.134  server1</span><br></pre></td></tr></table></figure>
 
 <p>修改完成后，重新登录终端使解析生效。最后可用 <code>cat /etc/hosts</code> 查看内容，并通过 <code>ping 主机名</code> 验证网络是否连通。</p>
