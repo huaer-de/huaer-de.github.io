@@ -70,21 +70,24 @@
 <li><strong>网卡默认未启动</strong>：CentOS 7 部分镜像将 <code>ifcfg-ens33</code> 中的 <code>ONBOOT</code> 设为 <code>no</code>，开机不自动启动网卡。</li>
 <li><strong>DHCP 未触发</strong>：网卡未启动，无法向 DHCP 服务器（VMware NAT 服务）申请 IP。</li>
 </ul>
-<h3 id="3-解决方法：临时启动网卡并获取-IP"><a href="#3-解决方法：临时启动网卡并获取-IP" class="headerlink" title="3. 解决方法：临时启动网卡并获取 IP"></a>3. 解决方法：临时启动网卡并获取 IP</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 启动 ens33 网卡（物理链路激活）</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> ens33 up</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 手动向 DHCP 服务器申请 IP（关键步骤）</span></span><br><span class="line">dhclient ens33</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 验证 IP 是否获取成功</span></span><br><span class="line">ip a</span><br></pre></td></tr></table></figure>
+<h3 id="3-解决方法：临时启动网卡并获取-IP"><a href="#3-解决方法：临时启动网卡并获取-IP" class="headerlink" title="3. 解决方法：临时启动网卡并获取 IP"></a>3. 解决方法：临时启动网卡并获取 IP</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 启动 ens33 网卡（物理链路激活）</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> ens33 up</span><br><span class="line"><span class="comment"># 2. 手动向 DHCP 服务器申请 IP（关键步骤）</span></span><br><span class="line">dhclient ens33</span><br><span class="line"><span class="comment"># 3. 验证 IP 是否获取成功</span></span><br><span class="line">ip a</span><br></pre></td></tr></table></figure>
 
 <p>此时应能看到 <code>ens33</code> 的 <code>inet</code> 地址（我的是在 <code>10.0.0.134</code>）。</p>
 <hr>
 <h2 id="二、系统配置与管理"><a href="#二、系统配置与管理" class="headerlink" title="二、系统配置与管理"></a>二、系统配置与管理</h2><h3 id="1-基础配置"><a href="#1-基础配置" class="headerlink" title="1. 基础配置"></a>1. 基础配置</h3><h4 id="①-主机名"><a href="#①-主机名" class="headerlink" title="① 主机名"></a>① 主机名</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hostname   <span class="comment"># 显示当前主机名，默认为 localhost</span></span><br></pre></td></tr></table></figure>
+
 <p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image3.png" alt="hostname查看"></p>
+<p>我们通过 <code>hostnamectl set-hostname server1</code>将主机名修改为server 1。观察发现，本来前边是[root@localhost ~]，变成[root@server1 ~]了</p>
 <h4 id="②-hosts-文件"><a href="#②-hosts-文件" class="headerlink" title="② hosts 文件"></a>② hosts 文件</h4><ul>
 <li><strong>作用</strong>：本地域名解析，优先级高于 DNS。</li>
-<li><strong>格式</strong>：<code>IP地址 主机名</code>（每行一条）</li>
+<li><strong>格式</strong>：<code>IP地址 主机名</code>（如10.0.0.134 server1）</li>
 <li><strong>位置</strong>：<code>/etc/hosts</code></li>
 <li><strong>注意</strong>：不要修改开头的 <code>127.0.0.1</code> 和 <code>::1</code> 两行。</li>
 </ul>
-<p>通过 <code>ip a</code> 得到本机 IP 后，使用 <code>vim /etc/hosts</code> 编辑配置文件：<br><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image4.png" alt="编辑hosts"></p>
-<p>在文件末尾添加一行（示例）：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.0.0.134  mycentos</span><br></pre></td></tr></table></figure>
+<p>也就是说，我们通过 <code>ip a</code> 得到本机 IP 后，使用 <code>vim /etc/hosts</code> 编辑配置文件：<br>在文件末尾添加一行（示例）：</p>
+<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image4.png" alt="编辑hosts"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.0.0.134  server1</span><br></pre></td></tr></table></figure>
+
 <p>修改完成后，重新登录终端使解析生效。最后可用 <code>cat /etc/hosts</code> 查看内容，并通过 <code>ping 主机名</code> 验证网络是否连通。</p>
 <h3 id="2-密码重置（紧急情况）"><a href="#2-密码重置（紧急情况）" class="headerlink" title="2. 密码重置（紧急情况）"></a>2. 密码重置（紧急情况）</h3><p><strong>前提</strong>：需物理接触服务器（能够实际接触到运行该Linux系统的服务器硬件），不能远程操作。因为重置过程需要重启系统，在系统启动完成之前，网络服务没有启动，所有远程连接将中断。</p>
 <ol>
