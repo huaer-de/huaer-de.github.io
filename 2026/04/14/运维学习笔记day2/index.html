@@ -59,40 +59,272 @@
         </section>
         <article class="post-content">
         
-            <h2 id="前置环境"><a href="#前置环境" class="headerlink" title="前置环境"></a>前置环境</h2><h2 id="已通过远程连接工具（MobaXterm）进入虚拟机。"><a href="#已通过远程连接工具（MobaXterm）进入虚拟机。" class="headerlink" title="已通过远程连接工具（MobaXterm）进入虚拟机。"></a>已通过远程连接工具（MobaXterm）进入虚拟机。<br><img src="/image1.png" alt="进入效果"></h2><h2 id="问题：虚拟机-ip-a-无法显示-IP-地址"><a href="#问题：虚拟机-ip-a-无法显示-IP-地址" class="headerlink" title="问题：虚拟机 ip a 无法显示 IP 地址"></a>问题：虚拟机 <code>ip a</code> 无法显示 IP 地址</h2><h3 id="现象"><a href="#现象" class="headerlink" title="现象"></a>现象</h3><p>执行 <code>ip a</code> 后，<code>ens33</code> 网卡信息如下：<br><img src="/image2.png" alt="遇到问题"></p>
+            <h2 id="前置环境"><a href="#前置环境" class="headerlink" title="前置环境"></a>前置环境</h2><p>已通过远程连接工具（MobaXterm）进入虚拟机。</p>
+<p><img src="/image1.png" alt="进入效果"></p>
+<hr>
+<h2 id="一、个人遇到的问题：虚拟机-ip-a-无法显示-IP-地址"><a href="#一、个人遇到的问题：虚拟机-ip-a-无法显示-IP-地址" class="headerlink" title="一、个人遇到的问题：虚拟机 ip a 无法显示 IP 地址"></a>一、个人遇到的问题：虚拟机 <code>ip a</code> 无法显示 IP 地址</h2><h3 id="1-现象"><a href="#1-现象" class="headerlink" title="1. 现象"></a>1. 现象</h3><p>执行 <code>ip a</code> 后，<code>ens33</code> 网卡信息如下：</p>
+<p><img src="/image2.png" alt="遇到问题"></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2: ens33: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000</span><br></pre></td></tr></table></figure>
 <p>没有显示 <code>inet</code> 地址。</p>
-<h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><ol>
+<h3 id="2-原因"><a href="#2-原因" class="headerlink" title="2. 原因"></a>2. 原因</h3><ul>
 <li><strong>网卡默认未启动</strong>：CentOS 7 部分镜像将 <code>ifcfg-ens33</code> 中的 <code>ONBOOT</code> 设为 <code>no</code>，开机不自动启动网卡。</li>
 <li><strong>DHCP 未触发</strong>：网卡未启动，无法向 DHCP 服务器（VMware NAT 服务）申请 IP。</li>
+</ul>
+<h3 id="3-解决方法：临时启动网卡并获取-IP"><a href="#3-解决方法：临时启动网卡并获取-IP" class="headerlink" title="3. 解决方法：临时启动网卡并获取 IP"></a>3. 解决方法：临时启动网卡并获取 IP</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 启动 ens33 网卡（物理链路激活）</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> ens33 up</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 手动向 DHCP 服务器申请 IP（关键步骤）</span></span><br><span class="line">dhclient ens33</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 验证 IP 是否获取成功</span></span><br><span class="line">ip a</span><br></pre></td></tr></table></figure>
+
+<p>此时应能看到 <code>ens33</code> 的 <code>inet</code> 地址（我的是在 <code>10.0.0.134</code>）。</p>
+<hr>
+<h2 id="二、系统配置与管理"><a href="#二、系统配置与管理" class="headerlink" title="二、系统配置与管理"></a>二、系统配置与管理</h2><h3 id="1-基础配置"><a href="#1-基础配置" class="headerlink" title="1. 基础配置"></a>1. 基础配置</h3><h4 id="①-主机名"><a href="#①-主机名" class="headerlink" title="① 主机名"></a>① 主机名</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hostname   <span class="comment"># 显示当前主机名，默认为 localhost</span></span><br></pre></td></tr></table></figure>
+<p><img src="/image3.png" alt="hostname查看"></p>
+<h4 id="②-hosts-文件"><a href="#②-hosts-文件" class="headerlink" title="② hosts 文件"></a>② hosts 文件</h4><ul>
+<li><strong>作用</strong>：本地域名解析，优先级高于 DNS。</li>
+<li><strong>格式</strong>：<code>IP地址 主机名</code>（每行一条）</li>
+<li><strong>位置</strong>：<code>/etc/hosts</code></li>
+<li><strong>注意</strong>：不要修改开头的 <code>127.0.0.1</code> 和 <code>::1</code> 两行。</li>
+</ul>
+<p>通过 <code>ip a</code> 得到本机 IP 后，使用 <code>vim /etc/hosts</code> 编辑配置文件：<br><img src="/image4.png" alt="编辑hosts"></p>
+<p>在文件末尾添加一行（示例）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.0.0.134  mycentos</span><br></pre></td></tr></table></figure>
+<p>修改完成后，重新登录终端使解析生效。最后可用 <code>cat /etc/hosts</code> 查看内容，并通过 <code>ping 主机名</code> 验证网络是否连通。</p>
+<h3 id="2-密码重置（紧急情况）"><a href="#2-密码重置（紧急情况）" class="headerlink" title="2. 密码重置（紧急情况）"></a>2. 密码重置（紧急情况）</h3><p><strong>前提</strong>：需物理接触服务器（能够实际接触到运行该Linux系统的服务器硬件），不能远程操作。因为重置过程需要重启系统，在系统启动完成之前，网络服务没有启动，所有远程连接将中断。</p>
+<ol>
+<li>重启系统（<code>reboot</code> 或虚拟机强制重启），在 GRUB 引导界面按上下键中断启动。</li>
+<li>选中启动项，按 <strong><code>e</code></strong> 进入编辑模式。</li>
+<li>找到 <code>linux16</code> 开头的行，在行末添加 <strong><code>rd.break</code></strong>（注意前面有空格）。<br><img src="/image5.png" alt="修改"></li>
+<li>按 <strong><code>Ctrl+X</code></strong> 启动。</li>
+<li>进入紧急 shell 后，重新挂载根文件系统为可写：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mount -o remount,rw /sysroot</span><br></pre></td></tr></table></figure></li>
+<li>切换根环境：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chroot</span> /sysroot</span><br></pre></td></tr></table></figure></li>
+<li>修改 root 密码：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">passwd</span><br></pre></td></tr></table></figure>
+或非交互式修改：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&quot;新密码&quot;</span> | passwd --stdin root</span><br></pre></td></tr></table></figure></li>
+<li>连续输入两次 <code>exit</code> 或按两次 <code>Ctrl+D</code> 退出并重启。</li>
 </ol>
+<p>至此，我们通过硬件方式成功重置了虚拟机 root 密码😊。</p>
+<h3 id="3-Windows-与-Linux-文件交互"><a href="#3-Windows-与-Linux-文件交互" class="headerlink" title="3. Windows 与 Linux 文件交互"></a>3. Windows 与 Linux 文件交互</h3><p>在一些远程工具（如 MobaXterm ）中，可直接将文件从 Windows 拖拽到终端窗口（或从终端拖拽到 Windows ），实现主机与虚拟机之间的文件传输。</p>
 <hr>
-<h2 id="解决方法：临时启动网卡并获取-IP"><a href="#解决方法：临时启动网卡并获取-IP" class="headerlink" title="解决方法：临时启动网卡并获取 IP"></a>解决方法：临时启动网卡并获取 IP</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 启动 ens33 网卡（物理链路激活）</span></span><br><span class="line">ip <span class="built_in">link</span> <span class="built_in">set</span> ens33 up</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 手动向 DHCP 服务器申请 IP</span></span><br><span class="line">dhclient ens33</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 验证 IP 是否获取成功</span></span><br><span class="line">ip a</span><br></pre></td></tr></table></figure>
-
-<p>此时应能看到 <code>ens33</code> 的 <code>inet</code> 地址（如 <code>10.0.0.134</code>）。</p>
+<h2 id="三、Linux-中执行命令"><a href="#三、Linux-中执行命令" class="headerlink" title="三、Linux 中执行命令"></a>三、Linux 中执行命令</h2><h3 id="1-命令帮助"><a href="#1-命令帮助" class="headerlink" title="1. 命令帮助"></a>1. 命令帮助</h3><ul>
+<li><p><code>命令 --help</code>：查看命令简要帮助（如 <code>cat --help</code>）。</p>
+</li>
+<li><p><code>man 命令</code>：查看详细在线手册（如 <code>man ls</code>），按 <strong><code>q</code></strong> 退出。<br><img src="/image6.png" alt="man手册"></p>
+<p>常用区段：</p>
+<ul>
+<li>区段 1：用户指令（查看命令帮助）</li>
+<li>区段 5：文件格式（查看配置文件帮助）</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-日期时间命令"><a href="#2-日期时间命令" class="headerlink" title="2. 日期时间命令"></a>2. 日期时间命令</h3><h4 id="①-date-命令"><a href="#①-date-命令" class="headerlink" title="① date 命令"></a>① <code>date</code> 命令</h4><p>查看或设置系统时间。常用格式化输出：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">date</span> +%Y%m%d        <span class="comment"># 生成形如 20260414 的时间戳，可用于脚本文件命名</span></span><br></pre></td></tr></table></figure>
+<p><img src="/image7.png" alt="data"></p>
+<h4 id="②-timedatectl-命令"><a href="#②-timedatectl-命令" class="headerlink" title="② timedatectl 命令"></a>② <code>timedatectl</code> 命令</h4><p>管理系统时区和时间。</p>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>status</code></td>
+<td align="left">显示当前状态信息</td>
+</tr>
+<tr>
+<td align="left"><code>list-timezones</code></td>
+<td align="left">列出所有已知时区</td>
+</tr>
+<tr>
+<td align="left"><code>set-timezone</code></td>
+<td align="left">设置生效时区</td>
+</tr>
+<tr>
+<td align="left"><code>set-time</code></td>
+<td align="left">设置系统时间</td>
+</tr>
+</tbody></table>
+<h3 id="3-查看目录内容：ls"><a href="#3-查看目录内容：ls" class="headerlink" title="3. 查看目录内容：ls"></a>3. 查看目录内容：<code>ls</code></h3><table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-l</code></td>
+<td align="left">长格式显示详细信息（命令 <code>ll</code> 等价于 <code>ls -l</code>）</td>
+</tr>
+<tr>
+<td align="left"><code>-a</code></td>
+<td align="left">显示所有文件，包括隐藏文件（以 <code>.</code> 开头）</td>
+</tr>
+<tr>
+<td align="left"><code>-d</code></td>
+<td align="left">显示目录本身信息，而非目录下的内容</td>
+</tr>
+<tr>
+<td align="left"><code>-h</code></td>
+<td align="left">人性化显示文件大小（需与 <code>-l</code> 配合）</td>
+</tr>
+<tr>
+<td align="left"><code>-S</code></td>
+<td align="left">按文件大小排序</td>
+</tr>
+<tr>
+<td align="left"><code>-R</code></td>
+<td align="left">递归显示子目录内容</td>
+</tr>
+<tr>
+<td align="left"><code>-i</code></td>
+<td align="left">显示文件 inode 号</td>
+</tr>
+</tbody></table>
 <hr>
-<h2 id="配置主机名解析：-etc-hosts-文件"><a href="#配置主机名解析：-etc-hosts-文件" class="headerlink" title="配置主机名解析：/etc/hosts 文件"></a>配置主机名解析：<code>/etc/hosts</code> 文件</h2><h3 id="查看当前主机名"><a href="#查看当前主机名" class="headerlink" title="查看当前主机名"></a>查看当前主机名</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hostname</span><br></pre></td></tr></table></figure>
-<p><img src="/image3.png" alt="如图"></p>
-<h3 id="编辑-hosts-文件"><a href="#编辑-hosts-文件" class="headerlink" title="编辑 hosts 文件"></a>编辑 hosts 文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/hosts</span><br></pre></td></tr></table></figure>
-<p>在文件末尾添加一行：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">10.0.0.134  你的主机名</span><br></pre></td></tr></table></figure>
-<p>格式为：<code>IP地址 主机名</code>。<br><img src="/image4.png" alt="编辑界面"></p>
-<h3 id="让解析生效"><a href="#让解析生效" class="headerlink" title="让解析生效"></a>让解析生效</h3><p>重新登录终端，或执行：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">exec</span> bash</span><br></pre></td></tr></table></figure>
-
-<h3 id="查看文件内容"><a href="#查看文件内容" class="headerlink" title="查看文件内容"></a>查看文件内容</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /etc/hosts</span><br></pre></td></tr></table></figure>
-
+<h2 id="四、Linux-系统的目录结构"><a href="#四、Linux-系统的目录结构" class="headerlink" title="四、Linux 系统的目录结构"></a>四、Linux 系统的目录结构</h2><h3 id="1-倒树状结构与路径"><a href="#1-倒树状结构与路径" class="headerlink" title="1. 倒树状结构与路径"></a>1. 倒树状结构与路径</h3><p>Linux 采用以根目录 <code>/</code> 为起点的倒树状结构。</p>
+<ul>
+<li><strong>绝对路径</strong>：从 <code>/</code> 开始，如 <code>/home/user/file</code>。<strong>（建议我们用这个）</strong></li>
+<li><strong>相对路径</strong>：从当前目录开始，如 <code>../doc</code>。</li>
+</ul>
+<h3 id="2-目录切换命令-cd"><a href="#2-目录切换命令-cd" class="headerlink" title="2. 目录切换命令 cd"></a>2. 目录切换命令 <code>cd</code></h3><table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>cd ~</code> 或 <code>cd</code></td>
+<td align="left">返回当前用户家目录</td>
+</tr>
+<tr>
+<td align="left"><code>cd -</code></td>
+<td align="left">返回上一次访问的目录</td>
+</tr>
+<tr>
+<td align="left"><code>cd ..</code></td>
+<td align="left">返回上一级目录</td>
+</tr>
+<tr>
+<td align="left"><code>cd .</code></td>
+<td align="left">停留在当前目录</td>
+</tr>
+<tr>
+<td align="left"><img src="/image8.png" alt="cd"></td>
+<td align="left"></td>
+</tr>
+</tbody></table>
+<h3 id="3-查看当前工作目录：pwd"><a href="#3-查看当前工作目录：pwd" class="headerlink" title="3. 查看当前工作目录：pwd"></a>3. 查看当前工作目录：<code>pwd</code></h3><h3 id="4-关键一级目录速查表"><a href="#4-关键一级目录速查表" class="headerlink" title="4. 关键一级目录速查表"></a>4. 关键一级目录速查表</h3><table>
+<thead>
+<tr>
+<th align="left">目录</th>
+<th align="left">主要用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>/</code></td>
+<td align="left">根目录，所有目录的起点</td>
+</tr>
+<tr>
+<td align="left"><code>/bin</code></td>
+<td align="left">普通用户可用的二进制命令（如 <code>ls</code>, <code>cat</code>）</td>
+</tr>
+<tr>
+<td align="left"><code>/sbin</code></td>
+<td align="left">系统管理员使用的管理命令</td>
+</tr>
+<tr>
+<td align="left"><code>/dev</code></td>
+<td align="left">设备文件（如 <code>/dev/sda</code> 代表硬盘）</td>
+</tr>
+<tr>
+<td align="left"><code>/etc</code></td>
+<td align="left">系统配置文件</td>
+</tr>
+<tr>
+<td align="left"><code>/home</code></td>
+<td align="left">普通用户的家目录</td>
+</tr>
+<tr>
+<td align="left"><code>/root</code></td>
+<td align="left">root 管理员的家目录</td>
+</tr>
+<tr>
+<td align="left"><code>/lib</code>, <code>/lib64</code></td>
+<td align="left">系统库文件（32位&#x2F;64位）</td>
+</tr>
+<tr>
+<td align="left"><code>/media</code></td>
+<td align="left">可移动介质挂载点（U盘、光盘）</td>
+</tr>
+<tr>
+<td align="left"><code>/mnt</code></td>
+<td align="left">临时文件系统挂载点</td>
+</tr>
+<tr>
+<td align="left"><code>/opt</code></td>
+<td align="left">第三方大型软件安装目录（如 Oracle）</td>
+</tr>
+<tr>
+<td align="left"><code>/proc</code></td>
+<td align="left">虚拟文件系统，存放内核和进程信息（重启消失）</td>
+</tr>
+<tr>
+<td align="left"><code>/run</code></td>
+<td align="left">系统运行时数据（PID 文件、套接字）</td>
+</tr>
+<tr>
+<td align="left"><code>/sys</code></td>
+<td align="left">内核信息虚拟文件系统</td>
+</tr>
+<tr>
+<td align="left"><code>/tmp</code></td>
+<td align="left">所有用户可写的临时目录（用户只能删除自己的文件）</td>
+</tr>
+<tr>
+<td align="left"><code>/usr</code></td>
+<td align="left">用户程序和数据（通常只读）</td>
+</tr>
+<tr>
+<td align="left"><code>/var</code></td>
+<td align="left">可变数据（日志 <code>/var/log/</code>、邮件、缓存）</td>
+</tr>
+</tbody></table>
 <hr>
-<h2 id="补充说明：hosts-文件的作用"><a href="#补充说明：hosts-文件的作用" class="headerlink" title="补充说明：hosts 文件的作用"></a>补充说明：<code>hosts</code> 文件的作用</h2><ul>
-<li><strong>本地地址簿</strong>：输入主机名时，系统优先从 <code>hosts</code> 文件中查找对应的 IP。</li>
-<li><strong>优先级</strong>：高于 DNS 解析。</li>
-<li><strong>常见用途</strong>：本地测试域名、屏蔽广告网站、内网自定义解析。</li>
+<h2 id="五、从命令行管理文件"><a href="#五、从命令行管理文件" class="headerlink" title="五、从命令行管理文件"></a>五、从命令行管理文件</h2><h3 id="1-文件命名规则"><a href="#1-文件命名规则" class="headerlink" title="1. 文件命名规则"></a>1. 文件命名规则</h3><ul>
+<li>不能使用 <code>/</code> 作为文件名（<code>/</code> 是路径分隔符）。</li>
+<li>文件名长度不超过 255 个字符。</li>
+<li>严格区分大小写（<code>File</code>、<code>file</code>、<code>FILE</code> 是不同文件）。</li>
+<li>同一目录下，不同类型文件也不能同名。</li>
+</ul>
+<h3 id="2-链接文件"><a href="#2-链接文件" class="headerlink" title="2. 链接文件"></a>2. 链接文件</h3><h4 id="①-硬链接（Hard-Link）"><a href="#①-硬链接（Hard-Link）" class="headerlink" title="① 硬链接（Hard Link）"></a>① 硬链接（Hard Link）</h4><ul>
+<li>创建：<code>ln 源文件 目标链接</code></li>
+<li>特点：<ul>
+<li>多个文件名指向同一个 inode 和数据块。</li>
+<li>删除一个链接，数据不受影响（链接计数减 1）。</li>
+<li>不能跨分区&#x2F;文件系统，不能用于目录。</li>
+</ul>
+</li>
+</ul>
+<h4 id="②-软链接（符号链接，Symbolic-Link）"><a href="#②-软链接（符号链接，Symbolic-Link）" class="headerlink" title="② 软链接（符号链接，Symbolic Link）"></a>② 软链接（符号链接，Symbolic Link）</h4><ul>
+<li>创建：<code>ln -s 源文件/目录 目标链接</code></li>
+<li>特点：<ul>
+<li>类似 Windows 快捷方式，拥有独立的 inode。</li>
+<li>可以跨分区，也可以用于目录。</li>
+<li>源文件被删除后，链接失效（终端中显示为闪烁红色）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="六、注意事项"><a href="#六、注意事项" class="headerlink" title="六、注意事项"></a>六、注意事项</h2><ul>
+<li><strong>操作安全</strong>：在克隆的虚拟机中练习，避免损坏母镜像。</li>
+<li><strong>路径大小写</strong>：Linux 严格区分大小写。</li>
+<li><strong>命令空格</strong>：命令、参数、操作对象之间必须有空格。</li>
+<li><strong>管道符</strong>：竖杠 <code>|</code>，位于回车键上方，用于连接多个命令。</li>
+<li><strong>文件删除与恢复</strong>：<code>rm</code> 删除文件时仅释放 inode，数据仍存于磁盘，直到被覆盖。误删后应立即停止写入，有可能恢复。</li>
 </ul>
 <hr>
 <blockquote>
-<p>今日笔记完。好无聊呢 qwq</p>
+<p>今日笔记完毕qwq</p>
 </blockquote>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">### 🚀 部署到博客</span><br><span class="line"></span><br><span class="line">回到 Git Bash，确保在博客目录下，执行：</span><br><span class="line"></span><br><span class="line">```bash</span><br><span class="line">cd /e/2026Study/ShenTouCeShi/ShiXi/myblog</span><br><span class="line">hexo clean &amp;&amp; hexo g -d</span><br></pre></td></tr></table></figure>
+<pre><code>
+</code></pre>
 
         </article>
         <section class="post-near">
