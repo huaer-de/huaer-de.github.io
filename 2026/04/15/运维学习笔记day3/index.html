@@ -160,8 +160,8 @@
 </tbody></table>
 <p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image2.png"></p>
 <p><strong>非交互式创建文件示例：</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 单行写入</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;hello world&quot;</span> &gt; test.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 多行写入（EOF 可以是任意成对词）</span></span><br><span class="line"><span class="built_in">cat</span> &gt; test.txt &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">第一行</span></span><br><span class="line"><span class="string">第二行</span></span><br><span class="line"><span class="string">第三行</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image3.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 单行写入</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;hello world&quot;</span> &gt; test.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 多行写入（以 EOF,end,dd 等任意词做结尾标志）</span></span><br><span class="line"><span class="built_in">cat</span> &gt; test.txt &lt;&lt; <span class="string">EOF</span></span><br><span class="line"><span class="string">第一行</span></span><br><span class="line"><span class="string">第二行</span></span><br><span class="line"><span class="string">第三行</span></span><br><span class="line"><span class="string">EOF</span></span><br></pre></td></tr></table></figure>
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image1.png"></p>
 <p>汇总一下，是下面的表格</p>
 <table>
 <thead>
@@ -192,6 +192,7 @@
 <td align="left">自定义变量（等号左右不能有空格）</td>
 </tr>
 </tbody></table>
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image3.png"></p>
 <hr>
 <h3 id="1-4-管道（-）"><a href="#1-4-管道（-）" class="headerlink" title="1.4 管道（|）"></a>1.4 管道（<code>|</code>）</h3><ul>
 <li>将前一个命令的<strong>标准输出</strong>作为后一个命令的<strong>标准输入</strong>。</li>
