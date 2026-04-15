@@ -61,7 +61,7 @@
         </section>
         <article class="post-content">
         
-            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本篇笔记用于记录 Linux 运维学习第三天的内容，课程上我们主要是在熟悉常用的命令，核心知识点包括：</p>
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本篇笔记用于记录 Linux 运维学习第三天的内容，课上我们主要是在熟悉常用的命令，核心知识点包括：</p>
 <ul>
 <li>数据流重定向与管道</li>
 <li>Vim 编辑器常用操作</li>
@@ -209,7 +209,7 @@
 <li><code>Ctrl + C</code>：终止前台进程。</li>
 </ul>
 <hr>
-<h2 id="二、Vim-编辑器常用操作"><a href="#二、Vim-编辑器常用操作" class="headerlink" title="二、Vim 编辑器常用操作"></a>二、Vim 编辑器常用操作</h2><p>我们先把知识点汇总整理一下ovo</p>
+<h2 id="二、Vim-编辑器常用操作"><a href="#二、Vim-编辑器常用操作" class="headerlink" title="二、Vim 编辑器常用操作"></a>二、Vim 编辑器常用操作</h2><p>我们先把知识点汇总整理一下<code>ovo</code></p>
 <h3 id="2-1-模式切换"><a href="#2-1-模式切换" class="headerlink" title="2.1 模式切换"></a>2.1 模式切换</h3><ul>
 <li><strong>命令模式</strong>：默认模式，按 <code>Esc</code> 返回。</li>
 <li><strong>输入模式</strong>：按 <code>i</code>, <code>a</code>, <code>o</code> 等进入。</li>
@@ -436,7 +436,7 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/hostname</span><br><span class="line"><span class="comment"># 只保留第一行，写入主机名如 server1</span></span><br><span class="line">reboot</span><br></pre></td></tr></table></figure>
 
 <p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image8.png"></p>
-<p>然后我们通过命令 ‘reboot’ 重启一下虚拟机。<br>嗯……主机名没有改好，变成 ‘localhost’ 了，是因为系统读取这个文件时，只读第一行，我们再改一下，改回去，改成 ‘server1’ ，成功又把主机名变回 ‘server1’ 了 ovo</p>
+<p>然后我们通过命令 <code>reboot</code> 重启一下虚拟机。<br>嗯……主机名没有改好，变成 <code>localhost</code> 了，是因为系统读取这个文件时，只读第一行，我们再改一下，改回去，改成 <code>server1</code> ，成功又把主机名变回 <code>server1</code> 了 <code>ovo</code></p>
 <p><strong>设置登录提示语</strong></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/motd</span><br><span class="line"><span class="comment"># 写入想要显示的欢迎语</span></span><br></pre></td></tr></table></figure>
 
@@ -450,7 +450,7 @@
 <li>编译运行：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 最小化安装，我们需先安装编译器</span></span><br><span class="line">yum install -y gcc gcc-c++</span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译（默认输出 a.out）</span></span><br><span class="line">g++ test.cpp</span><br><span class="line"></span><br><span class="line"><span class="comment"># 自定义输出文件名</span></span><br><span class="line">g++ test.cpp -o test.out</span><br><span class="line"></span><br><span class="line"><span class="comment"># 运行</span></span><br><span class="line">./test.out</span><br></pre></td></tr></table></figure></li>
 </ol>
 <p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image6.png"></p>
-<p>如果我们想生成自定义输出文件名，就需要用 ‘-o’ 参数指定输出文件名，具体命令为 ‘g++ text.cpp -o text.out’，效果如下：</p>
+<p>如果我们想生成自定义输出文件名，就需要用 <code>-o</code> 参数指定输出文件名，具体命令为 <code>g++ text.cpp -o text.out</code>，效果如下：</p>
 <p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image7.png"></p>
 <hr>
 <h2 id="三、文件内容查看与过滤"><a href="#三、文件内容查看与过滤" class="headerlink" title="三、文件内容查看与过滤"></a>三、文件内容查看与过滤</h2><h3 id="3-1-查看命令"><a href="#3-1-查看命令" class="headerlink" title="3.1 查看命令"></a>3.1 查看命令</h3><table>
@@ -492,9 +492,7 @@
 <td align="left"><code>-n 数字</code> 指定行数，<code>-f</code> 实时追踪（监控日志）</td>
 </tr>
 </tbody></table>
-<h3 id="3-2-grep-过滤"><a href="#3-2-grep-过滤" class="headerlink" title="3.2 grep 过滤"></a>3.2 grep 过滤</h3><p><code>grep</code> 是强大的文本搜索工具，1.能在文件中 查找包含指定字符串的行，可结合管道，具体命令为  <code>grep [选项] &quot;查找内容&quot; 文件名</code>。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep [选项] <span class="string">&quot;查找内容&quot;</span> 文件名</span><br></pre></td></tr></table></figure>
-
+<h3 id="3-2-grep-过滤"><a href="#3-2-grep-过滤" class="headerlink" title="3.2 grep 过滤"></a>3.2 grep 过滤</h3><p><code>grep</code> 是强大的文本搜索工具，能在文件中查找包含指定字符串的行，可结合管道命令，具体命令为  <code>grep [选项] &quot;查找内容&quot; 文件名</code>。</p>
 <table>
 <thead>
 <tr>
@@ -575,7 +573,7 @@
 <p>示例：提取所有用户名</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /etc/passwd | <span class="built_in">cut</span> -d: -f1</span><br></pre></td></tr></table></figure>
 
-<p>原本文件是<img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image10.png"><br>提取出用户名，得到内容清晰很多<img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image11.png"></p>
+<p>原本完整的文件内容如下：<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image10.png"><br>通过 <code>cut</code> 提取出用户名，得到内容只剩下用户名了，方便很多：<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image11.png"></p>
 <p><strong>sort：排序</strong></p>
 <table>
 <thead>
@@ -608,7 +606,7 @@
 <p>示例：按 UID 排序</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sort</span> -t: -k3 -n /etc/passwd</span><br></pre></td></tr></table></figure>
 
-<p>对字母排序<img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image12.png"><br>对数字排序<img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image13.png"></p>
+<p>对字母排序<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image12.png"><br>对数字排序<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image13.png"></p>
 <p><strong>uniq：去重（仅去除连续重复行）</strong></p>
 <p>不可以使用 <code>-n</code> ,与 sort 结合的组合命令是 <code>cat /etc/passwd | cut -d: -f1 | sort</code></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sort</span> file | <span class="built_in">uniq</span></span><br></pre></td></tr></table></figure>
