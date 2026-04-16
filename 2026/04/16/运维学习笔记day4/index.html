@@ -3,7 +3,7 @@
   <head>
     
     <meta charset="UTF-8">
-    <title>运维学习笔记 Day 4 - hualalala 的博客</title>
+    <title>运维学习笔记 Day4 - hualalala 的博客</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
     
@@ -15,7 +15,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta property="og:site_name" content="hualalala 的博客">
-    <meta property="og:title" content="运维学习笔记 Day 4"/>
+    <meta property="og:title" content="运维学习笔记 Day4"/>
     
     <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
     
@@ -51,7 +51,7 @@
     <main>
     <div class="wrap min">
         <section class="post-title">
-            <h2>运维学习笔记 Day 4</h2>
+            <h2>运维学习笔记 Day4</h2>
             <div class="post-meta">
                 <time class="date">2026.04.16</time>
             
@@ -61,7 +61,7 @@
         </section>
         <article class="post-content">
         
-            <h1 id="运维学习笔记-Day4：Shell基础、用户权限与文件系统"><a href="#运维学习笔记-Day4：Shell基础、用户权限与文件系统" class="headerlink" title="运维学习笔记 Day4：Shell基础、用户权限与文件系统"></a>运维学习笔记 Day4：Shell基础、用户权限与文件系统</h1><p>本笔记记录了 Linux 系统管理的核心进阶知识，涵盖文件压缩、Shell 环境、用户与组管理，以及文件系统的权限控制机制。</p>
+            <h1 id="运维学习笔记-Day4：Shell基础、用户权限与文件系统"><a href="#运维学习笔记-Day4：Shell基础、用户权限与文件系统" class="headerlink" title="运维学习笔记 Day4：Shell基础、用户权限与文件系统"></a>运维学习笔记 Day4：Shell基础、用户权限与文件系统</h1><p>今天我们学的主要内容是 Linux 系统管理的核心进阶知识，涵盖文件压缩、Shell 环境、用户与组管理，以及文件系统的权限控制机制。我今天的笔记也将围绕相关内容展开。</p>
 <h2 id="一、文件压缩与解压-tar"><a href="#一、文件压缩与解压-tar" class="headerlink" title="一、文件压缩与解压 (tar)"></a>一、文件压缩与解压 (tar)</h2><p>在 Linux 中，打包和压缩通常使用 <code>tar</code> 命令配合不同参数完成。</p>
 <table>
 <thead>
@@ -100,8 +100,10 @@
 <li><code>-C</code>：指定解压到的目标目录</li>
 </ul>
 <p><strong>操作示例：</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 将 test 目录打包为 test.tar.gz</span></span><br><span class="line">tar -zcf test.tar.gz <span class="built_in">test</span>/</span><br><span class="line"></span><br><span class="line">![](image1.png)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 将 test.tar.bz2 解压到 /opt 目录</span></span><br><span class="line">tar -jxf test.tar.bz2 -C /opt/</span><br></pre></td></tr></table></figure>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image2.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 将 test 目录打包为 test.tar.gz</span></span><br><span class="line">tar -zcf test.tar.gz <span class="built_in">test</span>/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 将 test.tar.bz2 解压到 /opt 目录</span></span><br><span class="line">tar -jxf test.tar.bz2 -C /opt/</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image1.png" alt="压缩示例截图1"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image2.png" alt="压缩示例截图2"></p>
 <hr>
 <h2 id="二、命令解释器-Shell-与环境变量"><a href="#二、命令解释器-Shell-与环境变量" class="headerlink" title="二、命令解释器 (Shell) 与环境变量"></a>二、命令解释器 (Shell) 与环境变量</h2><p>Shell 是用户与 Linux 内核之间的“翻译官”，负责解释和执行输入的命令。</p>
 <h3 id="1-内置命令-vs-外置命令"><a href="#1-内置命令-vs-外置命令" class="headerlink" title="1. 内置命令 vs 外置命令"></a>1. 内置命令 vs 外置命令</h3><ul>
@@ -114,37 +116,33 @@
 <li><code>cd is a shell builtin</code> → 内置命令</li>
 <li><code>ls is /usr/bin/ls</code> → 外置命令</li>
 </ul>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image3.png"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image3.png" alt="type命令演示"></p>
 <h3 id="2-查看当前-Shell"><a href="#2-查看当前-Shell" class="headerlink" title="2. 查看当前 Shell"></a>2. 查看当前 Shell</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$SHELL</span></span><br><span class="line"><span class="comment"># 输出示例：/bin/bash</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image4.png"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image4.png" alt="echo $SHELL演示"></p>
 <h3 id="3-脚本无法直接运行的原因"><a href="#3-脚本无法直接运行的原因" class="headerlink" title="3. 脚本无法直接运行的原因"></a>3. 脚本无法直接运行的原因</h3><p>如果自己写的脚本（如 <code>hello.sh</code>）无法直接通过文件名运行，通常是因为以下三个原因：</p>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image5.png"></p>
 <ol>
 <li><strong>没有执行权限</strong>：需使用 <code>chmod +x hello.sh</code> 添加。</li>
 <li><strong>不在 PATH 路径中</strong>：系统只在 PATH 环境变量包含的目录里查找命令。</li>
 <li><strong>未指定路径</strong>：即使有执行权限，在当前目录下也必须使用 <code>./hello.sh</code> 运行，除非该目录已加入 PATH。</li>
 </ol>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image5.png" alt="脚本运行演示"></p>
 <h3 id="4-实现“输入文件名即运行”"><a href="#4-实现“输入文件名即运行”" class="headerlink" title="4. 实现“输入文件名即运行”"></a>4. 实现“输入文件名即运行”</h3><p>若想实现像 <code>ls</code> 一样输入 <code>hello</code> 就能运行脚本，需将脚本移动到 PATH 包含的目录中：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查看 PATH 路径</span></span><br><span class="line"><span class="built_in">echo</span> <span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 移动到 /usr/local/bin（通常已在 PATH 中）</span></span><br><span class="line"><span class="built_in">mv</span> hello.sh /usr/local/bin/hello</span><br></pre></td></tr></table></figure>
 <blockquote>
 <p><code>which</code> 命令只能查找 PATH 路径下的程序，若放在 <code>/root</code> 下则无法被找到。</p>
 </blockquote>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image6.png"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image6.png" alt="which命令演示"></p>
 <hr>
 <h2 id="三、用户、组与账号管理"><a href="#三、用户、组与账号管理" class="headerlink" title="三、用户、组与账号管理"></a>三、用户、组与账号管理</h2><p>用户管理涉及 3 个核心配置文件：</p>
 <ul>
 <li><strong><code>/etc/passwd</code></strong>：存放用户基本信息（用户名、UID、GID、家目录、Shell）。</li>
-</ul>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image8.png"></p>
-<ul>
 <li><strong><code>/etc/shadow</code></strong>：存放加密后的密码及密码过期策略（安全敏感文件）。</li>
-</ul>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image9.png"></p>
-<ul>
 <li><strong><code>/etc/group</code></strong>：存放组信息。</li>
 </ul>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image10.png"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image8.png" alt="passwd文件内容"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image9.png" alt="shadow文件内容"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image10.png" alt="group文件内容"></p>
 <h3 id="1-UID-与用户类型"><a href="#1-UID-与用户类型" class="headerlink" title="1. UID 与用户类型"></a>1. UID 与用户类型</h3><table>
 <thead>
 <tr>
@@ -203,32 +201,41 @@
 <td align="left"><strong>加 <code>-r</code> 才会同时删除家目录和邮件池，否则数据残留</strong></td>
 </tr>
 </tbody></table>
-<p>目前密码，UID等信息暂不存在<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image13.png"><br>Linux的账户必须设置密码后，才能登录系统。没有密码时，信息如下<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image14.png"><br>加密之后，密码位从 !! 变成一长串加密字符<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image15.png"><br>在 usermod 相关命令中，我们常用的是锁定与解锁用户，用 “usermod -L 用户名” 可以锁定账号，检查时发现有个 ‘!’，用 “usermod -U 用户名” 去掉 ! → 账号解锁.如果是仅删除账号，命令是 ‘userdel user1’，如果同时需要删除账户对应的家目录，需加上参数 ‘-r’<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image16.png"></p>
+<h4 id="操作示例截图"><a href="#操作示例截图" class="headerlink" title="操作示例截图"></a>操作示例截图</h4><ul>
+<li><p><strong>创建用户后，密码、UID等信息暂不存在</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image13.png" alt="useradd未设密码"></p>
+</li>
+<li><p><strong>未设置密码时，shadow 文件中密码位为 <code>!!</code></strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image14.png" alt="shadow密码位为!!"></p>
+</li>
+<li><p><strong>设置密码后，密码位变为加密字符串</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image15.png" alt="密码加密后"></p>
+</li>
+<li><p><strong>锁定与解锁用户、删除用户</strong>  </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">usermod -L 用户名    <span class="comment"># 锁定（shadow中密码前出现 !）</span></span><br><span class="line">usermod -U 用户名    <span class="comment"># 解锁</span></span><br><span class="line">userdel 用户名       <span class="comment"># 仅删除账号</span></span><br><span class="line">userdel -r 用户名    <span class="comment"># 删除账号及家目录</span></span><br></pre></td></tr></table></figure>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image16.png" alt="锁定解锁删除演示"></p>
+</li>
+</ul>
 <h3 id="3-每次操作后的验证习惯"><a href="#3-每次操作后的验证习惯" class="headerlink" title="3. 每次操作后的验证习惯"></a>3. 每次操作后的验证习惯</h3><p>执行用户管理命令后，建议立即执行以下命令验证结果：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> $?                      <span class="comment"># 返回 0 表示上一条命令成功</span></span><br><span class="line">grep 用户名 /etc/passwd /etc/shadow /etc/group   <span class="comment"># 查看相关文件条目</span></span><br><span class="line"><span class="built_in">id</span> 用户名                     <span class="comment"># 查看 UID, GID, 组信息</span></span><br></pre></td></tr></table></figure>
+
 <h3 id="4-切换用户与权限下放"><a href="#4-切换用户与权限下放" class="headerlink" title="4. 切换用户与权限下放"></a>4. 切换用户与权限下放</h3><ul>
-<li><strong>切换用户 (<code>su</code>)</strong>：<ul>
+<li><p><strong>切换用户 (<code>su</code>)</strong>：</p>
+<ul>
 <li><code>su 用户名</code>：身份切换，但环境变量不变。</li>
 <li><strong><code>su - 用户名</code></strong>：<strong>完全切换</strong>，包含家目录和环境变量（生产环境必须带 <code>-</code>）。</li>
 <li>使用 <code>exit</code> 切回原用户。</li>
 </ul>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image17.png" alt="su切换用户演示"></p>
 </li>
-</ul>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image17.png"></p>
-<ul>
 <li><p><strong>权限下放 (<code>sudo</code>)</strong>：</p>
 <ul>
 <li>用于给普通用户临时提权，避免泄露 root 密码。</li>
-<li>配置文件：<code>/etc/sudoers</code>（<strong>必须使用 <code>visudo</code> 命令编辑，自带语法检查</strong>）。<br> <img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image18.png"></li>
+<li>配置文件：<code>/etc/sudoers</code>（<strong>必须使用 <code>visudo</code> 命令编辑，自带语法检查</strong>）。</li>
 </ul>
-<p> 我们切换到 user1 ，测试一下 sudo</p>
-<p> <img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image19.png"></p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image18.png" alt="visudo编辑sudoers"></p>
+<p><strong>测试 sudo 权限</strong>（切换到 user1 执行）：</p>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image19.png" alt="sudo测试1"></p>
 <ul>
-<li><p><strong>配置免密执行</strong>：<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image20.png"><br>在配置行末尾添加 <code>NOPASSWD: ALL</code>。<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image21.png"><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image22.png"></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fox ALL=(ALL) NOPASSWD: ALL</span><br></pre></td></tr></table></figure>
-<p> 现在就不需要密码啦</p>
-<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image23.png"></p>
-</li>
+<li><strong>配置免密执行</strong>：在配置行末尾添加 <code>NOPASSWD: ALL</code>。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fox ALL=(ALL) NOPASSWD: ALL</span><br></pre></td></tr></table></figure></li>
+<li>配置过程截图：<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image20.png" alt="编辑免密配置"><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image21.png" alt="免密配置内容"><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image22.png" alt="保存并生效"><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image23.png" alt="免密执行成功"></li>
 </ul>
 </li>
 </ul>
@@ -267,7 +274,11 @@
 <td align="left">运行程序 &#x2F; 进入目录 (cd)</td>
 </tr>
 </tbody></table>
-<p>查看当前登录用户<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image24.png"><br>登录日志文件<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image25.png"><br>清空日志（只有 root 能做）<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image25.png"></p>
+<h4 id="其他相关命令截图"><a href="#其他相关命令截图" class="headerlink" title="其他相关命令截图"></a>其他相关命令截图</h4><ul>
+<li><strong>查看当前登录用户</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image24.png" alt="w命令"></li>
+<li><strong>登录日志文件</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image25.png" alt="last命令"></li>
+<li><strong>清空日志（只有 root 能做）</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image25.png" alt="清空日志"><br><em>（注：此处图片名重复，实际操作中应为不同截图，请核对）</em></li>
+</ul>
 <p><strong>常见默认权限：</strong></p>
 <ul>
 <li><strong>文件</strong>：<code>644</code> (<code>rw-r--r--</code>)</li>
@@ -312,22 +323,27 @@
 <td align="left">一条命令搞定</td>
 </tr>
 </tbody></table>
-<h1 id="比较基础的-查看文件-目录权限"><a href="#比较基础的-查看文件-目录权限" class="headerlink" title="比较基础的 查看文件 &#x2F; 目录权限"></a>比较基础的 查看文件 &#x2F; 目录权限</h1><p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image26.png"></p>
-<h1 id="权限数字表示"><a href="#权限数字表示" class="headerlink" title="权限数字表示"></a>权限数字表示</h1><p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image27.png"></p>
-<h1 id="chmod-字符方式修改权限"><a href="#chmod-字符方式修改权限" class="headerlink" title="chmod 字符方式修改权限"></a>chmod 字符方式修改权限</h1><ul>
-<li>u &#x3D; 所有者  g &#x3D; 组  o &#x3D; 其他人</li>
-<li><ul>
-<li>添加权限  - 移除权限  &#x3D; 直接赋值<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image28.png"></li>
+<h4 id="操作演示截图"><a href="#操作演示截图" class="headerlink" title="操作演示截图"></a>操作演示截图</h4><ul>
+<li><p><strong>基础查看权限 (<code>ls -l</code> &#x2F; <code>ls -ld</code>)</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image26.png" alt="ls -l演示"></p>
+</li>
+<li><p><strong>权限数字表示示例</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image27.png" alt="权限数字"></p>
+</li>
+<li><p><strong>字符方式修改权限</strong>  </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">u = 所有者   g = 组   o = 其他人</span><br><span class="line">+ 添加权限   - 移除权限   = 直接赋值</span><br></pre></td></tr></table></figure>
+<p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image28.png" alt="字符方式修改"><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image29.png" alt="去掉其他人读权限"></p>
+</li>
+<li><p><strong>递归修改权限</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image30.png" alt="递归修改"></p>
+</li>
+<li><p><strong>修改文件所有者 (chown)</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image31.png" alt="chown演示"></p>
+</li>
+<li><p><strong>修改所属组 (chgrp)</strong><br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image32.png" alt="chgrp演示"></p>
+</li>
+<li><p><strong>目录 <code>x</code> 权限的重要性</strong>  </p>
+<ul>
+<li>目录 <code>x</code> 权限 &#x3D; 能否 <code>cd</code> 进入  </li>
+<li>目录 <code>r</code> 权限 &#x3D; 能否 <code>ls</code> 查看内容<br>去掉 <code>x</code> 后，即使所有者也无法进入目录；加回 <code>x</code> 才恢复正常访问。<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image33.png" alt="目录x权限演示"></li>
 </ul>
 </li>
-<li>去掉其他人读权限（o-r）<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image29.png"></li>
-</ul>
-<h1 id="递归修改权限"><a href="#递归修改权限" class="headerlink" title="递归修改权限"></a>递归修改权限</h1><p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image30.png"></p>
-<h1 id="修改文件所有者-chown-（所有者从-root-→-user1）"><a href="#修改文件所有者-chown-（所有者从-root-→-user1）" class="headerlink" title="修改文件所有者 chown （所有者从 root → user1）"></a>修改文件所有者 chown （所有者从 root → user1）</h1><p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image31.png"></p>
-<h1 id="修改所属组-chgrp（我们的组别从-root-改成-user1-了）"><a href="#修改所属组-chgrp（我们的组别从-root-改成-user1-了）" class="headerlink" title="修改所属组 chgrp（我们的组别从 root 改成 user1 了）"></a>修改所属组 chgrp（我们的组别从 root 改成 user1 了）</h1><p><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image32.png"></p>
-<h1 id="目录-x-权限（进入权限）重要特性"><a href="#目录-x-权限（进入权限）重要特性" class="headerlink" title="目录 x 权限（进入权限）重要特性"></a>目录 x 权限（进入权限）重要特性</h1><ul>
-<li>目录 x 权限 &#x3D; 能否 cd 进入</li>
-<li>目录 r 权限 &#x3D; 能否 ls 查看内容<br>目录的 x 权限是进入权限，去掉 x 即使是所有者也无法 cd 进入，加回 x 才能正常访问，体现目录权限「有 x 才能进、有 r 才能看」的核心规则。<br><img src="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/image33.png"></li>
 </ul>
 <h3 id="4-目录权限的特殊性"><a href="#4-目录权限的特殊性" class="headerlink" title="4. 目录权限的特殊性"></a>4. 目录权限的特殊性</h3><ul>
 <li><strong><code>r</code> 权限</strong>：能否执行 <code>ls</code> 查看目录内容。</li>
@@ -446,9 +462,11 @@
 <blockquote>
 <p><strong>运维铁律</strong>：每次执行关键命令后，习惯性运行 <code>echo $?</code> 确认返回值为 <code>0</code>。</p>
 </blockquote>
+<hr>
+<blockquote>
+<p>本次笔记整理完毕。后续若有更新，会继续完善 ovo</p>
+</blockquote>
 <pre><code>
-
-&gt; 嗯......本次笔记就到这里吧，如果我勤快的话，后续可能会改一下 ovo
 </code></pre>
 
         </article>
@@ -492,7 +510,7 @@
             <div class="row">
                 <div class="col-m-4">
                     <h3 class="title-recent">最新文章：</h3>
-                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day 4</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记 Day 3</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/">运维学习笔记 Day 2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/hello-world/">Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day1/">运维学习笔记 Day 1</a></li></ul>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day4</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记 Day 3</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/">运维学习笔记 Day 2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/hello-world/">Hello World</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day1/">运维学习笔记 Day 1</a></li></ul>
                 </div>
                 <div class="col-m-4">
                     <h3 class="title-date">时光机：</h3>
