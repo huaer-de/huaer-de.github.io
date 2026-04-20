@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>运维学习笔记day5 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="运维学习笔记day5"/>
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a><a class="category-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>运维学习笔记day5</h2>
+            <div class="post-meta">
+                <time class="date">2026.04.20</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="Linux-系统管理综合学习笔记"><a href="#Linux-系统管理综合学习笔记" class="headerlink" title="Linux 系统管理综合学习笔记"></a>Linux 系统管理综合学习笔记</h1><p>本笔记涵盖 <strong>网络管理 (nmcli 与传统方法)</strong> 以及后续补充的 <strong>文件压缩、命令解释器、用户与权限管理、ACL 等核心内容</strong>。</p>
+<hr>
+<h2 id="第一部分：管理-Linux-的联网"><a href="#第一部分：管理-Linux-的联网" class="headerlink" title="第一部分：管理 Linux 的联网"></a>第一部分：管理 Linux 的联网</h2><h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><ul>
+<li><strong>虚拟机操作</strong>：关机 → 编辑虚拟机设置 → 添加网络适配器 → 选择 <strong>仅主机模式 (Host-Only)</strong>。</li>
+<li><strong>网卡说明</strong>：<ul>
+<li><code>ens33</code>：平时上网用的 <strong>NAT 模式</strong>网卡（请勿随意动）。</li>
+<li><code>ens36</code> &#x2F; <code>ens37</code>：<strong>仅主机模式</strong>测试网卡（本节课新增网卡，由于历史原因我这里显示为 <code>ens37</code>）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="方法一：现代化方法-nmcli-命令"><a href="#方法一：现代化方法-nmcli-命令" class="headerlink" title="方法一：现代化方法 (nmcli 命令)"></a>方法一：现代化方法 (nmcli 命令)</h3><blockquote>
+<p><strong>适用系统</strong>：RHEL 7&#x2F;8&#x2F;9、CentOS 7&#x2F;8&#x2F;9 推荐。<br><strong>核心</strong>：NetworkManager 服务必须保持 <strong>running</strong>。</p>
+</blockquote>
+<h4 id="1-前提检查-NetworkManager"><a href="#1-前提检查-NetworkManager" class="headerlink" title="1. 前提检查 (NetworkManager)"></a>1. 前提检查 (NetworkManager)</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">systemctl status NetworkManager   <span class="comment"># 确保状态是 active (running)</span></span><br><span class="line">systemctl start NetworkManager    <span class="comment"># 若未启动则手动启动</span></span><br><span class="line">systemctl <span class="built_in">enable</span> NetworkManager   <span class="comment"># 设置开机自启</span></span><br></pre></td></tr></table></figure>
+<p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/0.png" alt="0.png"></p>
+<h4 id="2-常用-nmcli-实操-针对-ens37"><a href="#2-常用-nmcli-实操-针对-ens37" class="headerlink" title="2. 常用 nmcli 实操 (针对 ens37)"></a>2. 常用 nmcli 实操 (针对 ens37)</h4><p><strong>① 查看状态，确认网卡识别</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/1.png" alt="1.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ip a                               <span class="comment"># 查看所有网卡及 IP，确认 ens37 存在</span></span><br><span class="line">nmcli device status                <span class="comment"># 查看设备状态，确认 ens37 为 UP 状态</span></span><br></pre></td></tr></table></figure>
+<p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/2.png" alt="2.png"></p>
+<blockquote>
+<p>嗯嗯，好啦。</p>
+</blockquote>
+<p><strong>② 设置静态 IP：12.130.1.37&#x2F;24（修改并生效，查看变化）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/3.png" alt="3.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmcli c modify ens37 ipv4.method manual ipv4.addresses 12.130.1.37/24 ipv4.gateway 12.130.1.1 ipv4.dns 114.114.114.114 &amp;&amp; nmcli c up ens37 &amp;&amp; ip a</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>发现 <code>12.130.1.100</code> 消失 → 变成 <code>12.130.1.37/24</code>。</p>
+</blockquote>
+<p><strong>③ 额外多绑定一个 IP（12.130.1.38）（追加 IP，查看双 IP 效果）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/4.png" alt="4.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmcli c modify ens37 +ipv4.addresses 12.130.1.38/24 &amp;&amp; nmcli c up ens37 &amp;&amp; ip a</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>多出 <code>12.130.1.38</code>，IP 同时有 <code>37</code> + <code>38</code>。</p>
+</blockquote>
+<p><strong>④ 切换为 DHCP（需要先清空原有静态 IP，避免报错）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/5.png" alt="5.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmcli c modify ens37 ipv4.method auto ipv4.addresses <span class="string">&quot;&quot;</span> ipv4.gateway <span class="string">&quot;&quot;</span> &amp;&amp; nmcli c up ens37 &amp;&amp; ip a</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>震惊！静态 IP 全部消失，但获取到新的 DHCP 地址。</p>
+</blockquote>
+<p><strong>⑤ 关闭网卡</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/6.png" alt="6.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nmcli c down ens37</span><br><span class="line">ip a</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>哦哦，<code>ens37</code> 的所有 IPv4 消失了。</p>
+<p><em>注：DHCP 自动获取 IP 不固定，虚拟机重启后 <code>ens33</code> IP 变为 <code>10.0.0.136</code>，远程连接工具需重新连接。</em></p>
+</blockquote>
+<p><strong>nmcli 方法总结</strong>：</p>
+<ul>
+<li>使用 <code>NetworkManager</code> + <code>nmcli</code> 命令</li>
+<li>网卡：<code>ens37</code>（仅主机）专门测试</li>
+<li>操作：<code>nmcli c modify</code>、<code>up</code>、<code>down</code></li>
+<li><strong>优点</strong>：不用关服务，不用改文件</li>
+</ul>
+<hr>
+<h3 id="方法二：传统方法-修改配置文件"><a href="#方法二：传统方法-修改配置文件" class="headerlink" title="方法二：传统方法 (修改配置文件)"></a>方法二：传统方法 (修改配置文件)</h3><blockquote>
+<p><strong>适用系统</strong>：CentOS 7 &#x2F; RHEL 7~9（生产环境最常用）。<br><strong>核心思路</strong>：<strong>先禁用 NetworkManager</strong> → 直接修改 <code>/etc/sysconfig/network-scripts/</code> 下的文件。</p>
+</blockquote>
+<h4 id="1-前提（必做）"><a href="#1-前提（必做）" class="headerlink" title="1. 前提（必做）"></a>1. 前提（必做）</h4><ul>
+<li>虚拟机添加网卡（仅主机模式）</li>
+<li>系统语言改为英文（避免中文路径&#x2F;显示异常）</li>
+<li><code>ens33</code> 是正在使用的网卡，绝对不能乱删乱改</li>
+</ul>
+<h4 id="2-核心操作：禁用-NetworkManager（重点）"><a href="#2-核心操作：禁用-NetworkManager（重点）" class="headerlink" title="2. 核心操作：禁用 NetworkManager（重点）"></a>2. 核心操作：禁用 NetworkManager（重点）</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/7.png" alt="7.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop NetworkManager</span><br><span class="line">systemctl <span class="built_in">disable</span> NetworkManager</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>✅ 作用：关闭自动网络管理，才能手动改配置文件。</p>
+</blockquote>
+<h4 id="3-直接修改网卡配置文件（企业最常用）"><a href="#3-直接修改网卡配置文件（企业最常用）" class="headerlink" title="3. 直接修改网卡配置文件（企业最常用）"></a>3. 直接修改网卡配置文件（企业最常用）</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/8.png" alt="8.png"></p>
+<ul>
+<li>进入目录：<code>/etc/sysconfig/network-scripts/</code></li>
+<li>编辑配置文件（以 <code>ifcfg-ens33</code> 为例），只保留核心内容：</li>
+</ul>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">TYPE</span>=Ethernet</span><br><span class="line"><span class="attr">BOOTPROTO</span>=static</span><br><span class="line"><span class="attr">NAME</span>=ens33</span><br><span class="line"><span class="attr">DEVICE</span>=ens33</span><br><span class="line"><span class="attr">ONBOOT</span>=<span class="literal">yes</span></span><br><span class="line"><span class="attr">IPADDR</span>=<span class="number">10.0</span>.<span class="number">0.136</span></span><br><span class="line"><span class="attr">NETMASK</span>=<span class="number">255.255</span>.<span class="number">255.0</span></span><br><span class="line"><span class="attr">GATEWAY</span>=<span class="number">10.0</span>.<span class="number">0.2</span></span><br><span class="line"><span class="attr">DNS1</span>=<span class="number">114.114</span>.<span class="number">114.114</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="4-重启网络服务，让配置生效"><a href="#4-重启网络服务，让配置生效" class="headerlink" title="4. 重启网络服务，让配置生效"></a>4. 重启网络服务，让配置生效</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/9.png" alt="9.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart network   <span class="comment"># 注意是 network，不是 NetworkManager</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="5-测试网络是否配置成功"><a href="#5-测试网络是否配置成功" class="headerlink" title="5. 测试网络是否配置成功"></a>5. 测试网络是否配置成功</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/10.png" alt="10.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ip a</span><br><span class="line">ping -c 4 baidu.com</span><br></pre></td></tr></table></figure>
+
+<h4 id="6-网络工具命令"><a href="#6-网络工具命令" class="headerlink" title="6. 网络工具命令"></a>6. 网络工具命令</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wget 网址             <span class="comment"># 下载文件（Linux版迅雷）</span></span><br><span class="line">wget -C 网址          <span class="comment"># 断点续传（断网后继续下载）</span></span><br><span class="line">curl 网址             <span class="comment"># 测试网站连通性</span></span><br><span class="line">curl -I 网址          <span class="comment"># 查看服务器响应头（看Nginx、状态码）</span></span><br><span class="line">vim /etc/hosts        <span class="comment"># 修改主机名解析（IP 主机名）</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="7-传统方法总结"><a href="#7-传统方法总结" class="headerlink" title="7. 传统方法总结"></a>7. 传统方法总结</h4><ul>
+<li>生产环境服务器<strong>一律用静态 IP</strong>，不能用动态 DHCP</li>
+<li>网关固定规则：网段最后一位 <strong><code>.2</code></strong>（例：<code>192.168.36.2</code>）</li>
+<li>修改配置前<strong>必须禁用 NetworkManager</strong></li>
+<li>配置文件只保留核心配置，多余内容全部删除</li>
+<li>IP 必须和当前正在使用的一致，<strong>填错直接断网</strong></li>
+<li>改完配置必须重启网络服务才会生效</li>
+<li>测试用仅主机网卡，不影响上网网卡 <code>ens33</code></li>
+</ul>
+<hr>
+<h3 id="实战演练：静态-IP-Apache-搭建"><a href="#实战演练：静态-IP-Apache-搭建" class="headerlink" title="实战演练：静态 IP + Apache 搭建"></a>实战演练：静态 IP + Apache 搭建</h3><blockquote>
+<p><strong>背景</strong>：前面网卡配置冲突，跟着 AI 删除所有旧连接后重建 <code>ens33</code>，最终成功。<br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/11.png" alt="11.png"><br>可以发现，倒数第二行成功输出 <code>&quot;hello world&quot;</code>，本小节试验成功ヽ(✿ﾟ▽ﾟ)ノ</p>
+</blockquote>
+<p><strong>清空重建流程（遇到冲突时的解决方法）</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nmcli c show</span><br><span class="line">nmcli c delete ens33</span><br><span class="line">nmcli c delete <span class="string">&quot;Wired connection 1&quot;</span></span><br><span class="line">nmcli c add <span class="built_in">type</span> ethernet ifname ens33 con-name ens33</span><br><span class="line">nmcli c up ens33</span><br></pre></td></tr></table></figure>
+
+<p><strong>搭建 Apache (httpd) 服务</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install -y httpd</span><br><span class="line">systemctl start httpd</span><br><span class="line">systemctl <span class="built_in">enable</span> httpd</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;hello world&quot;</span> &gt; /var/www/html/index.html</span><br><span class="line">curl http://10.0.0.136   <span class="comment"># 输出：hello world</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>小 tips</strong>：</p>
+<ul>
+<li>服务器必须用静态 IP</li>
+<li>网卡名要对应，配置错乱会导致启动失败</li>
+<li>DNS 配置不对会无法上网</li>
+<li>配置乱了就清空重建，不要硬修</li>
+</ul>
+<hr>
+<h2 id="第二部分：补充核心知识点（文件压缩、Shell、用户与权限管理）"><a href="#第二部分：补充核心知识点（文件压缩、Shell、用户与权限管理）" class="headerlink" title="第二部分：补充核心知识点（文件压缩、Shell、用户与权限管理）"></a>第二部分：补充核心知识点（文件压缩、Shell、用户与权限管理）</h2><blockquote>
+<p>以下内容基于课堂 AI 总结，涵盖运维必备基础。</p>
+</blockquote>
+<h3 id="一、文件压缩与解压"><a href="#一、文件压缩与解压" class="headerlink" title="一、文件压缩与解压"></a>一、文件压缩与解压</h3><p><strong>核心思想</strong>：使用 <code>tar</code> 命令打包，并结合不同压缩算法。</p>
+<h4 id="1-常见格式"><a href="#1-常见格式" class="headerlink" title="1. 常见格式"></a>1. 常见格式</h4><table>
+<thead>
+<tr>
+<th align="left">格式</th>
+<th align="left">压缩工具</th>
+<th align="left">特点</th>
+<th align="left">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>.tar.gz</code> &#x2F; <code>.tgz</code></td>
+<td align="left">gzip</td>
+<td align="left">压缩率较低，速度快</td>
+<td align="left">普通文件</td>
+</tr>
+<tr>
+<td align="left"><code>.tar.bz2</code></td>
+<td align="left">bzip2</td>
+<td align="left">压缩率更高，较慢</td>
+<td align="left">大文件（如 Linux 内核源码）</td>
+</tr>
+</tbody></table>
+<h4 id="2-核心命令"><a href="#2-核心命令" class="headerlink" title="2. 核心命令"></a>2. 核心命令</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建压缩包</span></span><br><span class="line">tar -czf 目标包名.tar.gz 要压缩的目录/文件</span><br><span class="line">tar -cjf 目标包名.tar.bz2 要压缩的目录/文件</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解压压缩包</span></span><br><span class="line">tar -xzf 压缩包名.tar.gz</span><br><span class="line">tar -xjf 压缩包名.tar.bz2</span><br><span class="line">tar -xzf xxx.tar.gz -C /指定路径   <span class="comment"># 解压到指定目录</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>参数解释</strong>：</p>
+<ul>
+<li><code>-c</code>：创建 (Create)</li>
+<li><code>-x</code>：解压 (eXtract)</li>
+<li><code>-z</code>：处理 gzip 格式</li>
+<li><code>-j</code>：处理 bzip2 格式</li>
+<li><code>-f</code>：指定文件名（后必须紧跟文件名）</li>
+<li><code>-C</code>：解压到指定路径</li>
+</ul>
+<hr>
+<h3 id="二、命令解释器-Shell-与环境变量"><a href="#二、命令解释器-Shell-与环境变量" class="headerlink" title="二、命令解释器 (Shell) 与环境变量"></a>二、命令解释器 (Shell) 与环境变量</h3><h4 id="1-Shell-基础"><a href="#1-Shell-基础" class="headerlink" title="1. Shell 基础"></a>1. Shell 基础</h4><ul>
+<li>Shell 是用户与系统内核交互的<strong>翻译官</strong>，负责解释和执行命令。</li>
+<li>命令分为<strong>内置命令</strong>（如 <code>cd</code>, <code>type</code>）和<strong>外置命令</strong>（如 <code>ls</code>, <code>tar</code>）。可用 <code>type -a 命令名</code> 查看。</li>
+</ul>
+<h4 id="2-别名-Alias"><a href="#2-别名-Alias" class="headerlink" title="2. 别名 (Alias)"></a>2. 别名 (Alias)</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">alias</span> ping3=<span class="string">&#x27;ping -c 3&#x27;</span>          <span class="comment"># 临时设置</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;alias ping3=&#x27;ping -c 3&#x27;&quot;</span> &gt;&gt; ~/.bashrc   <span class="comment"># 永久设置（需 source 或重登生效）</span></span><br><span class="line">\<span class="built_in">ls</span>                              <span class="comment"># 在命令前加反斜杠可忽略别名</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="3-环境变量-PATH"><a href="#3-环境变量-PATH" class="headerlink" title="3. 环境变量 PATH"></a>3. 环境变量 PATH</h4><ul>
+<li>系统通过 <code>PATH</code> 变量中定义的路径列表来查找可执行命令。</li>
+<li>自定义脚本全局执行方法：<ol>
+<li>添加可执行权限：<code>chmod +x 脚本名</code></li>
+<li>放入 PATH 包含的目录（如 <code>/usr/local/bin</code>、<code>~/bin</code>）。</li>
+</ol>
+</li>
+<li>修改 <code>PATH</code> 通常在 <code>~/.bash_profile</code> 或 <code>~/.bashrc</code> 文件中进行。</li>
+</ul>
+<h4 id="4-特殊符号"><a href="#4-特殊符号" class="headerlink" title="4. 特殊符号"></a>4. 特殊符号</h4><table>
+<thead>
+<tr>
+<th align="left">符号</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>;</code></td>
+<td align="left">顺序执行多条命令</td>
+</tr>
+<tr>
+<td align="left"><code>*</code> <code>?</code></td>
+<td align="left">通配符，匹配任意数量或单个字符</td>
+</tr>
+<tr>
+<td align="left"><code>[]</code></td>
+<td align="left">匹配括号内任意一个字符，<code>[! ]</code> 表示取反</td>
+</tr>
+<tr>
+<td align="left">`` (反引号)</td>
+<td align="left">命令替换，先执行反引号内命令，结果作为输入</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="三、用户、组与账号管理"><a href="#三、用户、组与账号管理" class="headerlink" title="三、用户、组与账号管理"></a>三、用户、组与账号管理</h3><h4 id="1-账户类型"><a href="#1-账户类型" class="headerlink" title="1. 账户类型"></a>1. 账户类型</h4><table>
+<thead>
+<tr>
+<th align="left">类型</th>
+<th align="left">UID</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">超级用户 (root)</td>
+<td align="left">0</td>
+<td align="left">拥有最高权限</td>
+</tr>
+<tr>
+<td align="left">系统账户</td>
+<td align="left">1-999</td>
+<td align="left">用于运行系统服务，通常无登录 Shell (<code>/sbin/nologin</code>)</td>
+</tr>
+<tr>
+<td align="left">普通用户</td>
+<td align="left">1000+</td>
+<td align="left">日常登录用户</td>
+</tr>
+</tbody></table>
+<h4 id="2-核心配置文件"><a href="#2-核心配置文件" class="headerlink" title="2. 核心配置文件"></a>2. 核心配置文件</h4><table>
+<thead>
+<tr>
+<th align="left">文件</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>/etc/passwd</code></td>
+<td align="left">存储用户账户信息（用户名、UID、GID、家目录、Shell）</td>
+</tr>
+<tr>
+<td align="left"><code>/etc/shadow</code></td>
+<td align="left">存储加密密码及密码策略（有效期、警告期等）</td>
+</tr>
+<tr>
+<td align="left"><code>/etc/group</code></td>
+<td align="left">存储用户组信息</td>
+</tr>
+</tbody></table>
+<h4 id="3-管理命令"><a href="#3-管理命令" class="headerlink" title="3. 管理命令"></a>3. 管理命令</h4><p><strong>用户管理</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">useradd [选项] 用户名          <span class="comment"># 创建用户（-u UID, -s Shell, -d 家目录, -g 主组, -G 附加组）</span></span><br><span class="line">usermod [选项] 用户名          <span class="comment"># 修改用户</span></span><br><span class="line">userdel -r 用户名              <span class="comment"># 删除用户并连带家目录</span></span><br><span class="line">passwd 用户名                  <span class="comment"># 设置密码</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;新密码&quot;</span> | passwd --stdin 用户名 &gt; /dev/null   <span class="comment"># 非交互式改密</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>组管理</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">groupadd 组名</span><br><span class="line">groupmod [选项] 组名</span><br><span class="line">groupdel 组名                 <span class="comment"># 组内无用户时才能删除</span></span><br><span class="line">gpasswd -a 用户 组名          <span class="comment"># 将用户加入组</span></span><br><span class="line">gpasswd -d 用户 组名          <span class="comment"># 将用户移出组</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>检查命令执行状态</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> $?     <span class="comment"># 返回 0 为成功，非 0 为失败</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="4-账号切换"><a href="#4-账号切换" class="headerlink" title="4. 账号切换"></a>4. 账号切换</h4><table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">区别</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>su - 用户名</code></td>
+<td align="left">完全切换用户环境（家目录、环境变量），需知道<strong>目标用户</strong>密码</td>
+</tr>
+<tr>
+<td align="left"><code>sudo 命令</code></td>
+<td align="left">授权普通用户执行特定命令，需验证<strong>当前用户</strong>密码，配置在 <code>/etc/sudoers</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="四、文件与目录权限管理"><a href="#四、文件与目录权限管理" class="headerlink" title="四、文件与目录权限管理"></a>四、文件与目录权限管理</h3><h4 id="1-基本权限-UGO-模型"><a href="#1-基本权限-UGO-模型" class="headerlink" title="1. 基本权限 (UGO 模型)"></a>1. 基本权限 (UGO 模型)</h4><ul>
+<li><strong>权限对象</strong>：<code>u</code> (User&#x2F;Owner)、<code>g</code> (Group)、<code>o</code> (Other)</li>
+<li><strong>权限类型</strong>：<ul>
+<li><code>r</code> (Read)：读取文件内容&#x2F;列出目录</li>
+<li><code>w</code> (Write)：修改文件&#x2F;在目录增删文件</li>
+<li><code>x</code> (Execute)：运行程序&#x2F;进入目录</li>
+</ul>
+</li>
+<li><strong>表示方法</strong>：<ul>
+<li>字母：<code>rwxr-xr--</code></li>
+<li>数字：<code>r=4, w=2, x=1</code>，相加即得。例如 <code>rwxr-xr--</code> &#x3D; <code>754</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="2-权限匹配顺序"><a href="#2-权限匹配顺序" class="headerlink" title="2. 权限匹配顺序"></a>2. 权限匹配顺序</h4><p>系统按 <strong>Owner → Group → Other</strong> 顺序检查，一旦匹配即应用对应权限。</p>
+<h4 id="3-修改权限命令"><a href="#3-修改权限命令" class="headerlink" title="3. 修改权限命令"></a>3. 修改权限命令</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 755 文件/目录               <span class="comment"># 数字法</span></span><br><span class="line"><span class="built_in">chmod</span> u=rwx,g=rx,o=r 文件/目录    <span class="comment"># 字符法</span></span><br><span class="line"><span class="built_in">chmod</span> -R 755 目录名               <span class="comment"># 递归修改</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">chown</span> 所有者:所属组 文件/目录      <span class="comment"># 修改所有者和所属组</span></span><br><span class="line"><span class="built_in">chgrp</span> 所属组 文件/目录             <span class="comment"># 仅修改所属组</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="4-特殊权限"><a href="#4-特殊权限" class="headerlink" title="4. 特殊权限"></a>4. 特殊权限</h4><table>
+<thead>
+<tr>
+<th align="left">权限</th>
+<th align="left">字母</th>
+<th align="left">数字前缀</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>SetUID</strong></td>
+<td align="left"><code>s</code> (u)</td>
+<td align="left">4</td>
+<td align="left">文件执行时，临时拥有<strong>文件所有者</strong>权限（风险高，慎用）</td>
+</tr>
+<tr>
+<td align="left"><strong>SetGID</strong></td>
+<td align="left"><code>s</code> (g)</td>
+<td align="left">2</td>
+<td align="left">文件：执行时临时拥有文件所属组权限；目录：新建文件继承目录所属组</td>
+</tr>
+<tr>
+<td align="left"><strong>Sticky Bit</strong></td>
+<td align="left"><code>t</code> (o)</td>
+<td align="left">1</td>
+<td align="left">仅对目录有效，文件只能被<strong>所有者、目录所有者、root</strong>删除（如 <code>/tmp</code>）</td>
+</tr>
+</tbody></table>
+<p>示例：<code>chmod 4755 file</code> 设置 SetUID；<code>chmod 1777 /shared</code> 设置 Sticky Bit。</p>
+<h4 id="5-访问控制列表-ACL"><a href="#5-访问控制列表-ACL" class="headerlink" title="5. 访问控制列表 (ACL)"></a>5. 访问控制列表 (ACL)</h4><p><strong>用途</strong>：提供比 UGO 更精细的权限控制，可为特定用户或组单独授权。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">setfacl -m u:用户名:权限 目录         <span class="comment"># 设置 ACL（如 u:tom:rx /project）</span></span><br><span class="line">getfacl 目录                          <span class="comment"># 查看 ACL（权限位末尾有 `+` 号表示存在 ACL）</span></span><br><span class="line">setfacl -x u:用户名 目录               <span class="comment"># 删除特定 ACL 条目</span></span><br><span class="line">setfacl -b 目录                       <span class="comment"># 清空所有 ACL</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="6-默认权限与-umask"><a href="#6-默认权限与-umask" class="headerlink" title="6. 默认权限与 umask"></a>6. 默认权限与 umask</h4><ul>
+<li>新建文件&#x2F;目录的默认权限由 <strong>最大权限</strong> 减去 <strong>umask</strong> 得到。</li>
+<li>最大权限：文件 <code>666</code>，目录 <code>777</code>。</li>
+<li>root 用户 umask 通常为 <code>0022</code>，普通用户为 <code>0002</code>。</li>
+<li>计算示例（root, umask&#x3D;0022）：<ul>
+<li>目录：<code>777 - 022 = 755</code> (rwxr-xr-x)</li>
+<li>文件：<code>666 - 022 = 644</code> (rw-r–r–) （系统自动去掉执行权限）</li>
+</ul>
+</li>
+</ul>
+<p><strong>设置 umask</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">umask</span> 077                           <span class="comment"># 临时设置</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;umask 077&quot;</span> &gt;&gt; ~/.bashrc       <span class="comment"># 永久设置（写入用户配置文件）</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<blockquote>
+<p>本次笔记到这里就整理完毕啦🤔</p>
+</blockquote>
+<pre><code>
+</code></pre>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day4</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E5%AE%9E%E8%AE%AD/" rel="tag">实训</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的网安小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记day5</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day4</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记 Day 3</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/">运维学习笔记 Day 2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/hello-world/">Hello World</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 20px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">运维</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
