@@ -59,210 +59,186 @@
         </section>
         <article class="post-content">
         
-            <p><strong>学习背景</strong>：大二暑假集训，2026&#x2F;7&#x2F;19 - 7&#x2F;20 课程内容。<br><strong>今日整理</strong>：2026&#x2F;7&#x2F;19，对已经学过的内容，进行二次梳理与深化。</p>
+            <hr>
+<h3 id="🐧-Linux-系统管理集训笔记"><a href="#🐧-Linux-系统管理集训笔记" class="headerlink" title="🐧 Linux 系统管理集训笔记"></a>🐧 Linux 系统管理集训笔记</h3><p><strong>前情提要</strong>：大二暑假集训开始啦～ 日程是 7&#x2F;19 起，上两天整理一天，休息一天。今天是 7&#x2F;21，整理 19 号和 20 号的内容。这两节课是第二次上了，学习和整理起来方便一些 (●’◡’●)。这一篇是7.19的</p>
 <hr>
-<h3 id="早上：远程管理、日志与任务调度"><a href="#早上：远程管理、日志与任务调度" class="headerlink" title="早上：远程管理、日志与任务调度"></a>早上：远程管理、日志与任务调度</h3><p>这小节课的主题是：<strong>SSH 服务、远程文件同步、系统日志及定时任务的配置与应用</strong>。</p>
-<h4 id="一、SSH-服务：安全的远程管理基石"><a href="#一、SSH-服务：安全的远程管理基石" class="headerlink" title="一、SSH 服务：安全的远程管理基石"></a>一、SSH 服务：安全的远程管理基石</h4><p>SSH (Secure Shell) 是管理 Linux 服务器最核心、最可靠的方式，通过非对称加密保证通信安全。</p>
-<p><strong>（一）核心知识点梳理</strong></p>
-<ol>
-<li><p><strong>基础连接</strong>：</p>
-<ul>
-<li><strong>登录格式</strong>：<code>ssh 用户名@IP</code> 或 <code>ssh -l 用户名 IP</code>。</li>
-<li><strong>默认用户</strong>：不指定用户名，会以当前本地用户身份尝试登录。</li>
-<li><strong>主机名连接</strong>：想直接用主机名（如 <code>ssh server2</code>），需先在本地 <code>/etc/hosts</code> 文件中做好解析。</li>
-<li><strong>初次认证</strong>：首次连接需输入<strong>远端主机上对应用户的密码</strong>。</li>
-<li><strong>退出会话</strong>：使用 <code>logout</code> 命令或按 <code>Ctrl+D</code>。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/0.png"></li>
-</ul>
-</li>
-<li><p><strong>管理方式</strong>：</p>
-<ul>
-<li>学习重心是 <code>systemd</code> 的管理方式，其采用并行启动机制，与传统 <code>init</code> 不同，效率更高。</li>
-<li><strong>服务管理命令</strong>：<code>systemctl {start|stop|restart|status} sshd</code>。</li>
-</ul>
-</li>
-</ol>
-<p><strong>（二）上机操作与安全加固</strong></p>
-<ol>
-<li><p><strong>SSH 单向免密登录（密钥认证）</strong><br><strong>原理</strong>：客户端生成一对密钥（公钥和私钥），将公钥上传到服务端的授权文件中。登录时，服务端用公钥加密挑战信息，只有持有对应私钥的客户端才能解密并正确回应。<br><strong>操作</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在 server2 (服务端) 生成密钥对</span></span><br><span class="line">ssh-keygen  <span class="comment"># 一路回车，会在 /root/.ssh/ 下生成 id_rsa (私钥) 和 id_rsa.pub (公钥)</span></span><br><span class="line"><span class="comment"># 在 server1 (客户端) 将公钥上传至 server2</span></span><br><span class="line">ssh-copy-id root@server2</span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/1.png"><br><strong>小插曲</strong>：<code>known_hosts</code> 文件会缓存首次连接的服务端公钥。若服务器 IP 变更（如从 164 变为 174），再次连接时会因公钥不匹配而报错，需在 <code>known_hosts</code> 文件中删除旧条目。</p>
-</li>
-<li><p><strong>多主机双向免密互联</strong><br><strong>场景</strong>：多台服务器之间需要频繁互传文件或执行命令。<br><strong>最佳实践</strong>：让它们共用一套密钥对。<br><strong>操作</strong>：</p>
-<ul>
-<li>在 server1 生成密钥对。</li>
-<li>将 server1 的 <code>.ssh</code> 目录完整同步到 server2。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/2.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/3.png"><br><strong>关键</strong>：多客户端的公钥可以累加写入服务端的 <code>~/.ssh/authorized_keys</code> 白名单文件，实现“一对多”或“多对多”免密。</li>
-</ul>
-</li>
-<li><p><strong>SSH 安全加固（修改配置文件）</strong><br>编辑主配置文件 <code>/etc/ssh/sshd_config</code>，修改后需 <code>systemctl restart sshd</code> 生效。<strong>测试完务必改回，否则可能断连！</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 修改默认端口，降低被自动扫描的风险</span></span><br><span class="line">Port 2222</span><br><span class="line"><span class="comment"># 禁止 root 用户直接远程登录，提高安全性</span></span><br><span class="line">PermitRootLogin no</span><br></pre></td></tr></table></figure>
-<p><strong>安全配置常用选项</strong>：</p>
-<ul>
-<li><code>Port</code>：监听端口号（默认 22）。</li>
-<li><code>PermitRootLogin no</code>：禁用 root 登录。</li>
-<li><code>AllowUsers user1 user2</code>：白名单，仅允许指定用户登录。</li>
-<li><code>DenyUsers user3</code>：黑名单，禁止指定用户登录。</li>
-</ul>
-</li>
-</ol>
-<h4 id="二、远程文件传输：SCP-与-rsync"><a href="#二、远程文件传输：SCP-与-rsync" class="headerlink" title="二、远程文件传输：SCP 与 rsync"></a>二、远程文件传输：SCP 与 rsync</h4><p>两者都依赖 SSH 协议，使用前必须确保 SSH 服务正常。</p>
-<ol>
-<li><p><strong>SCP (Secure Copy)：全覆盖拷贝</strong></p>
-<ul>
-<li><strong>特性</strong>：支持双向、目录传输，是完整的拷贝。</li>
-<li><strong>注意</strong>：普通用户创建的文件，用 <code>scp</code> 传输到远端后，默认会变成远端操作用户的文件。</li>
-<li><strong>示例</strong>：<code>scp server2:/mnt/paas ./</code> （双向免密后无需输密码）。</li>
-</ul>
-</li>
-<li><p><strong>rsync：灵活的增量同步利器</strong></p>
-<ul>
-<li><strong>核心优势</strong>：<ul>
-<li><strong>增量同步</strong>：仅传输有变动的部分，效率高。</li>
-<li><strong>属性保留</strong>：<code>-a</code> 参数可同步文件权限、所有者等属性。</li>
-<li><strong>灵活性</strong>：支持排除、删除等复杂同步规则。</li>
-</ul>
-</li>
-<li><strong>安装</strong>：源端和目标端都需安装 <code>yum install -y rsync</code>（若遇 yum 源问题，可清理旧缓存：<code>yum clean all &amp;&amp; yum makecache</code>）。</li>
-</ul>
-</li>
-</ol>
-<h4 id="三、系统任务调度"><a href="#三、系统任务调度" class="headerlink" title="三、系统任务调度"></a>三、系统任务调度</h4><ol>
-<li><p><strong>延时任务 <code>at</code>：一次性定时执行</strong></p>
-<ul>
-<li><strong>依赖</strong>：需 <code>atd</code> 服务保持运行。</li>
-<li><strong>时间格式</strong>：灵活，如 <code>now +10min</code>, <code>16:30</code>, <code>10:00 tomorrow</code>。</li>
-<li><strong>管理</strong>：<code>atq</code> 查看任务队列，<code>atrm &lt;任务号&gt;</code> 删除任务。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/8.png"></li>
-<li><strong>排错经验</strong>：<ul>
-<li><code>at</code> 命令找不到：检查 yum 源，安装 <code>at</code> 包。</li>
-<li>任务执行后查看邮箱 <code>You have mail in /var/spool/mail/root</code>，说明输出已邮寄。</li>
-<li>任务是一次性的，执行完会自动消失。</li>
-<li>执行时间不准：可能是时区&#x2F;时间不同步。解决：  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">timedatectl set-timezone Asia/Shanghai</span><br><span class="line">chronyc -a makestep</span><br><span class="line"><span class="built_in">date</span>  <span class="comment"># 验证时间</span></span><br></pre></td></tr></table></figure></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p><strong>周期任务 <code>crontab</code>：重复性定时执行</strong></p>
-<ul>
-<li><strong>语法</strong>：<code>* * * * * 执行命令</code> (分 时 日 月 周)</li>
-<li><strong>权限控制</strong>：黑白名单，<code>cron.allow</code> 优先级高于 <code>cron.deny</code>。</li>
-<li><strong>任务存放</strong>：<ul>
-<li>系统级：<code>/etc/crontab</code></li>
-<li>用户级：<code>/var/spool/cron/&lt;用户名&gt;</code><br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/9.png"></li>
-</ul>
-</li>
-<li><strong>技巧</strong>：<code>crontab</code> 最小粒度是分钟，实现秒级任务需结合 <code>sleep</code> 命令。例如，每30秒执行一次：<code>* * * * * /path/to/script; sleep 30; /path/to/script</code>。</li>
-</ul>
-</li>
-</ol>
-<h4 id="四、系统日志管理：从本地到远程集中收集"><a href="#四、系统日志管理：从本地到远程集中收集" class="headerlink" title="四、系统日志管理：从本地到远程集中收集"></a>四、系统日志管理：从本地到远程集中收集</h4><ol>
-<li><p><strong><code>systemd-journald</code> 日志持久化</strong></p>
-<ul>
-<li><strong>默认</strong>：日志存于内存 <code>/run/log/journal</code>，重启丢失。</li>
-<li><strong>持久化</strong>：配置后存于磁盘 <code>/var/log/journal</code>，重启保留。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/4.png"></li>
-</ul>
-</li>
-<li><p><strong><code>rsyslog</code> 远程日志集中收集</strong></p>
-<ul>
-<li><strong>架构</strong>：server1 (日志接收端)，server2 (日志发送端)。</li>
-<li><strong>协议</strong>：默认端口 <code>514</code>，支持 UDP (<code>@IP</code>) 和 TCP (<code>@@IP</code>)。</li>
-<li><strong>防火墙</strong>：服务端务必放行对应端口。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/5.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/6.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/7.png"></li>
-<li><strong>排错经历</strong>：客户端 <code>nc</code> 测试连接不上服务端 514 端口，但 <code>ping</code> 正常。最终发现是服务端防火墙 <code>firewall-cmd --reload</code> 命令拼写错误，未生效。<strong>重启或重载防火墙后才能生效</strong>是铁律。</li>
-</ul>
-</li>
-</ol>
+<h2 id="📅-早上：SSH、日志、定时任务-远程同步"><a href="#📅-早上：SSH、日志、定时任务-远程同步" class="headerlink" title="📅 早上：SSH、日志、定时任务 &amp; 远程同步"></a>📅 早上：SSH、日志、定时任务 &amp; 远程同步</h2><p>这小节课的主题是：<strong>SSH 服务、NFS 远程文件同步、系统日志及定时任务的配置与应用</strong></p>
 <hr>
-<h3 id="下午：网络共享存储：NFS-与-iSCSI"><a href="#下午：网络共享存储：NFS-与-iSCSI" class="headerlink" title="下午：网络共享存储：NFS 与 iSCSI"></a>下午：网络共享存储：NFS 与 iSCSI</h3><p>这小节主题是：<strong>NFS 文件共享与 iSCSI 块存储的应用与区别</strong>。</p>
-<h4 id="一、NFS-网络文件系统-NAS-思想"><a href="#一、NFS-网络文件系统-NAS-思想" class="headerlink" title="一、NFS 网络文件系统 (NAS 思想)"></a>一、NFS 网络文件系统 (NAS 思想)</h4><p>NFS 允许客户端通过 TCP&#x2F;IP 网络挂载服务端共享的目录，像使用本地文件系统一样。</p>
-<p><strong>架构</strong>：server1 &#x3D; NFS 服务端，server2 &#x3D; NFS 客户端。</p>
-<p><strong>（一）核心参数与三层权限控制</strong></p>
-<ol>
-<li><p><strong><code>/etc/exports</code> 核心参数</strong>：</p>
+<h3 id="一、SSH-服务：安全的远程管理基石"><a href="#一、SSH-服务：安全的远程管理基石" class="headerlink" title="一、SSH 服务：安全的远程管理基石"></a>一、SSH 服务：安全的远程管理基石</h3><h4 id="（一）核心知识点"><a href="#（一）核心知识点" class="headerlink" title="（一）核心知识点"></a>（一）核心知识点</h4><ol>
+<li><p><strong>SSH 服务与免密登录</strong></p>
 <ul>
-<li><code>ro</code> &#x2F; <code>rw</code>：只读&#x2F;读写权限。</li>
-<li><code>root_squash</code>：<strong>默认</strong>，客户端 root 映射为匿名用户 (nfsnobody)，权限受限。</li>
-<li><code>no_root_squash</code>：不压缩客户端 root 权限，保留 root 身份，生产环境慎用。</li>
+<li>SSH 是 Linux 系统<strong>最可靠的远程管理方式</strong>，通过非对称密钥实现加密通信。</li>
+<li>主要学习：<code>systemd</code> 管理方式（并行启动，比传统 init 快）、端口监听、<code>ssh-copy-id</code> 免密流程、安全配置加固。</li>
 </ul>
 </li>
-<li><p><strong>NFS 权限三层控制</strong>：</p>
+<li><p><strong>SSH 远程连接基础</strong></p>
 <ul>
-<li><strong>第一层</strong>：服务端 <code>/etc/exports</code> 中的共享权限（ro&#x2F;rw）。</li>
-<li><strong>第二层</strong>：服务端本地目录的文件系统 rwx 权限。</li>
-<li><strong>第三层</strong>：客户端挂载时的参数（ro&#x2F;rw）。</li>
+<li>登录格式：<code>ssh 用户名@IP</code> 或者 <code>ssh -l 用户名 IP</code></li>
+<li>不指定用户名？默认以当前身份登录远机～</li>
+<li>想直接用主机名连接？先配本地 <code>/etc/hosts</code> 解析，<code>ping</code> 一下通不通</li>
+<li>初次登录需要密码，是<strong>远端主机</strong>的账号密码哦</li>
+<li>结束啦？<code>logout</code> 或者 <code>Ctrl+D</code> 退出远程会话</li>
+</ul>
+<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/0.png"></p>
+</li>
+<li><p><strong>重头戏：SSH 非对称密钥免密登录</strong> ✨</p>
+</li>
+<li><p><strong>多主机免密互联怎么搞？</strong></p>
+<ul>
+<li>单台：客户端公钥推送到服务端，写入 <code>authorized_keys</code> 白名单</li>
+<li>多台：公钥可以累加！多客户端公钥都能加进去～</li>
+</ul>
+</li>
+<li><p><strong>SSH 免密登录要点</strong></p>
+<ul>
+<li>密钥对默认存放：用户家目录下的 <code>.ssh</code> 隐藏目录</li>
+<li>单方向免密：客户端推送公钥到服务端即可</li>
+<li>多主机双向免密：共用一套密钥，同步 <code>.ssh</code> 目录到所有主机</li>
+<li>安全强化：可以改监听端口、禁用 root 登录、加用户黑白名单</li>
 </ul>
 </li>
 </ol>
-<p><strong>（二）上机操作与排错</strong></p>
-<ol>
-<li><p><strong>服务端配置</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server1: 安装、创建共享目录、配置导出、启动服务</span></span><br><span class="line">yum install -y nfs-utils</span><br><span class="line"><span class="built_in">mkdir</span> /nfsshare</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;/nfsshare *(rw,no_root_squash)&quot;</span> &gt;&gt; /etc/exports</span><br><span class="line">systemctl start nfs-server &amp;&amp; systemctl <span class="built_in">enable</span> nfs-server</span><br><span class="line">exportfs -r  <span class="comment"># 重读配置文件，使改动生效</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/10.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/11.png"></p>
-</li>
-<li><p><strong>客户端挂载</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server2: 安装客户端工具、查看、手动挂载、开机挂载</span></span><br><span class="line">yum install -y nfs-utils</span><br><span class="line">showmount -e server1</span><br><span class="line"><span class="built_in">mkdir</span> /mnt/nfs</span><br><span class="line">mount -t nfs server1:/nfsshare /mnt/nfs</span><br><span class="line"><span class="comment"># 写入 /etc/fstab 实现开机自动挂载</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/12.png"><br><strong><code>/etc/fstab</code> 示例</strong>：<code>server1:/nfsshare /mnt/nfs nfs defaults 0 0</code></p>
-</li>
-<li><p><strong><code>autofs</code> 自动挂载：按需挂载，防止卡死</strong></p>
+<h4 id="（二）上机操作效果"><a href="#（二）上机操作效果" class="headerlink" title="（二）上机操作效果"></a>（二）上机操作效果</h4><p><strong>1. SSH 单向免密登录</strong><br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/1.png"></p>
+<p>在 server1 上登录 server2 之前，先在 server2 上 <code>ssh-keygen</code> 生成密钥对：</p>
 <ul>
-<li><strong>区别</strong>：<ul>
-<li><code>fstab</code>：<strong>开机永久挂载</strong>，但若网络或 NFS 服务断连，可能导致 <code>df</code> 等磁盘命令卡死。</li>
-<li><code>autofs</code>：<strong>按需挂载</strong>，访问时自动挂载，闲置一段时间后自动卸载，节省资源，避免卡死。</li>
+<li><code>/root/.ssh/id_rsa</code>（私钥，藏好！）</li>
+<li><code>/root/.ssh/id_rsa.pub</code>（公钥，可以给出去）</li>
 </ul>
-</li>
-<li><strong>排错</strong>：<code>df</code> 命令卡死，往往是有僵死的 NFS 挂载。应使用 <code>umount -l /挂载点</code> 或 <code>fuser -km /挂载点</code> 来强制清理。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/13.png"></li>
-<li><strong>注意</strong>：<code>autofs</code> 管理的挂载点根目录（如 <code>/autofs</code>）是由 <code>automount</code> 内核进程动态维护的，<strong>我们不能手动 <code>mkdir</code> 创建</strong>。</li>
-<li><strong>原则</strong>：NFS 文件系统在服务端创建，客户端通过网络挂载即可直接使用。</li>
-</ul>
-</li>
-</ol>
-<h4 id="二、iSCSI-存储：网络上的“本地磁盘”"><a href="#二、iSCSI-存储：网络上的“本地磁盘”" class="headerlink" title="二、iSCSI 存储：网络上的“本地磁盘”"></a>二、iSCSI 存储：网络上的“本地磁盘”</h4><p>iSCSI 是基于 TCP&#x2F;IP 的 <strong>SAN (块存储)</strong> 协议，默认端口 <code>3260</code>。它通过网络共享的是<strong>裸设备</strong>，而非文件系统。</p>
-<p><strong>架构</strong>：</p>
+<p>交互的时候一路默认回车就好～</p>
+<blockquote>
+<p>⚠️ <strong>小插曲</strong>：首次 SSH 连接会缓存服务器公钥到 <code>~/.ssh/known_hosts</code>。如果服务器 IP 变了（比如从 164 变成 174），再次连接会报错——因为缓存的公钥和实际不匹配啦！去文件里删掉旧条目就好～</p>
+</blockquote>
+<p><strong>2. 多主机双向免密 + SSH 安全加固</strong><br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/2.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/3.png"></p>
+<p>主机多的时候，为了方便，让它们<strong>共用一套密钥</strong>～</p>
+<p>server2 改了 <code>/etc/ssh/sshd_config</code> 文件内容（<strong>记得测试完改回去！不然远程连不上了</strong> 😱）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Port 2222              # 端口号，默认为 22，像门牌号～</span><br><span class="line">PermitRootLogin no     # 禁用 root 登录</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>💡 远程文件同步命令都依赖 <strong>SSH 协议</strong>，使用前确保 SSH 服务正常哦～</p>
+</blockquote>
+<hr>
+<h3 id="二、系统日志管理"><a href="#二、系统日志管理" class="headerlink" title="二、系统日志管理"></a>二、系统日志管理</h3><p><strong>1. <code>systemd-journald</code> 日志持久化</strong></p>
+<p>默认 <code>journald</code> 日志在<strong>内存</strong>里，重启就没了 😭。持久化到 <code>/var/log/journal</code> 目录后，重启也能保留！</p>
+<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/4.png"></p>
+<p><strong>2. <code>rsyslog</code> 远程日志同步（日志集中收集）</strong></p>
 <ul>
-<li><strong>服务端 (Target)</strong>：提供磁盘块设备。</li>
-<li><strong>客户端 (Initiator)</strong>：发起连接，将远程磁盘识别为本地硬盘（如 <code>/dev/sdb</code>）。</li>
+<li>架构：server1 &#x3D; 日志接收端，server2 &#x3D; 日志发送端</li>
+<li>默认端口：<code>514</code>，支持 UDP&#x2F;TCP</li>
 </ul>
-<p><strong>（一）核心区别：iSCSI (SAN) vs NFS (NAS)</strong></p>
+<p><strong>小知识点</strong> 🧀：</p>
+<ul>
+<li><code>*.*</code>：所有设施、所有级别日志</li>
+<li><code>@IP</code> &#x3D; UDP 协议，<code>@@IP</code> &#x3D; TCP 协议</li>
+<li>防火墙要放行 <code>514/tcp</code>、<code>514/udp</code></li>
+</ul>
+<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/5.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/6.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/7.png"></p>
+<blockquote>
+<p>😤 <strong>排错血泪史</strong>：客户端 <code>nc</code> 测试连不上服务端 514 端口，但 <code>ping</code> 正常……排查半天，发现是服务端防火墙 <code>--reload</code> 命令写错了根本没生效！（那错误很高级了）记住：改了防火墙规则一定要重启或 reload！</p>
+</blockquote>
+<hr>
+<h3 id="三、系统任务调度"><a href="#三、系统任务调度" class="headerlink" title="三、系统任务调度"></a>三、系统任务调度</h3><p><strong>1. 延时任务 <code>at</code>（一次性任务）</strong></p>
+<ul>
+<li>依赖 <code>atd</code> 服务，服务没跑起来任务不生效！</li>
+<li>时间格式：<code>now +10min</code>、<code>16:30</code>、<code>10:00 tomorrow</code></li>
+</ul>
+<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/8.png"></p>
+<p>看到 <code>You have mail in /var/spool/mail/root</code>？说明输出发邮箱啦～<br><code>atrm 3</code> 找不到任务？因为它是一次性的，执行完就消失了 OvO</p>
+<blockquote>
+<p>😤 <strong>遇到的问题</strong>：</p>
+<ul>
+<li>yum 源有问题导致 <code>at</code> 找不到 → 删损坏的 docker 仓库文件：<code>rm -f /etc/yum.repos.d/docker.repo &amp;&amp; yum clean all &amp;&amp; yum makecache</code></li>
+<li>时间不同步 → <code>timedatectl set-timezone Asia/Shanghai</code>，然后 <code>chronyc -a makestep</code>，最后 <code>date</code> 验证 ✅</li>
+</ul>
+</blockquote>
+<p><strong>2. 周期任务 <code>crontab</code>（重复执行）</strong></p>
+<ul>
+<li>基础语法：<code>* * * * * 执行命令</code>（分 时 日 月 周）</li>
+<li>0 和 7 都代表周日哦～</li>
+</ul>
+<p><strong>芝士点</strong> 🧀：</p>
+<ul>
+<li>黑白名单优先级：<code>cron.allow</code> &gt; <code>cron.deny</code></li>
+<li>系统级：<code>/etc/crontab</code>，用户级：<code>/var/spool/cron/&lt;用户名&gt;</code></li>
+</ul>
+<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/9.png"></p>
+<blockquote>
+<p>🤔 最小单位是分钟，怎么表示秒？用 <code>sleep</code>！其实这一分钟一直在运行的～</p>
+</blockquote>
+<hr>
+<h3 id="四、NFS-网络文件系统（网络共享目录）"><a href="#四、NFS-网络文件系统（网络共享目录）" class="headerlink" title="四、NFS 网络文件系统（网络共享目录）"></a>四、NFS 网络文件系统（网络共享目录）</h3><ul>
+<li>架构：server1 &#x3D; 服务端（共享目录），server2 &#x3D; 客户端（挂载使用）</li>
+</ul>
+<p><strong>核心参数</strong>：</p>
+<ul>
+<li><code>ro</code>：只读</li>
+<li><code>rw</code>：读写</li>
+<li><code>no_root_squash</code>：客户端 root 不压缩权限（保留 root 身份）</li>
+<li><code>root_squash</code>：默认，客户端 root 映射为匿名用户，权限受限</li>
+</ul>
+<p><strong>上机效果</strong>：<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/10.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/11.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/12.png"></p>
+<p>客户端创建挂载点 <code>/mnt/nfs</code> 后，写入 <code>/etc/fstab</code>（开机挂载），<code>mount -a</code> 生效～</p>
+<blockquote>
+<p>😫 <strong>痛苦经历</strong>：<code>df</code> 命令卡死了！！！需要清理僵死的 NFS 挂载才能继续搞自动挂载……<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/13.png"></p>
+</blockquote>
+<p><strong>芝士点</strong> 🧀：</p>
+<ul>
+<li>NFS 支持通过 TCP&#x2F;IP 网络共享资源</li>
+<li><code>fstab</code> vs <code>autofs</code>：fstab 开机永久挂载；autofs 按需挂载，闲置自动卸载，节省资源、避免网络断连后磁盘命令卡死！</li>
+<li>autofs 的 <code>/autofs</code> 目录是内核自动管理的，<strong>不能手动 mkdir</strong>！</li>
+<li>NFS 权限有三层：①服务端 <code>/etc/exports</code> 共享权限 → ②服务端本地目录 rwx 权限 → ③客户端挂载参数 ro&#x2F;rw</li>
+<li>文件系统在服务端创建，客户端挂载就能用，网络通就行～</li>
+</ul>
+<hr>
+<h2 id="📅-下午：iSCSI-存储"><a href="#📅-下午：iSCSI-存储" class="headerlink" title="📅 下午：iSCSI 存储"></a>📅 下午：iSCSI 存储</h2><h3 id="五、iSCSI-存储"><a href="#五、iSCSI-存储" class="headerlink" title="五、iSCSI 存储"></a>五、iSCSI 存储</h3><p><strong>1. 是什么？</strong></p>
+<ul>
+<li>iSCSI &#x3D; Internet Small Computer System Interface</li>
+<li>基于 TCP&#x2F;IP 的<strong>块存储 SAN 协议</strong>，默认端口 <code>3260</code></li>
+<li>作用：通过以太网把服务端磁盘裸设备共享给客户端，客户端识别成<strong>本地硬盘</strong>！</li>
+</ul>
+<p><strong>2. 角色分类</strong>：</p>
+<ul>
+<li>服务端：<strong>Target</strong>（提供磁盘块存储）</li>
+<li>客户端：<strong>Initiator</strong>（发起连接、使用远程裸盘）</li>
+</ul>
+<p><strong>3. 关键区别：iSCSI vs NFS</strong> 🔥</p>
 <table>
 <thead>
 <tr>
-<th align="left">特性</th>
-<th align="left"><strong>NFS (文件共享)</strong></th>
-<th align="left"><strong>iSCSI (块存储)</strong></th>
+<th></th>
+<th><strong>NFS</strong></th>
+<th><strong>iSCSI</strong></th>
 </tr>
 </thead>
 <tbody><tr>
-<td align="left"><strong>提供层</strong></td>
-<td align="left"><strong>文件系统</strong></td>
-<td align="left"><strong>裸块设备</strong></td>
+<td>提供的</td>
+<td><strong>文件系统</strong></td>
+<td><strong>裸盘设备</strong></td>
 </tr>
 <tr>
-<td align="left"><strong>管理方</strong></td>
-<td align="left">服务端管理文件系统</td>
-<td align="left"><strong>客户端</strong>管理文件系统</td>
+<td>文件系统在谁那创建</td>
+<td>服务端</td>
+<td><strong>客户端</strong></td>
 </tr>
 <tr>
-<td align="left"><strong>使用步骤</strong></td>
-<td align="left">挂载后直接使用</td>
-<td align="left">连接 → 分区 → 格式化 → 挂载</td>
+<td>使用步骤</td>
+<td>挂载直接用</td>
+<td>分区→格式化→挂载</td>
 </tr>
 <tr>
-<td align="left"><strong>类比</strong></td>
-<td align="left">直接给你一个共享文件夹</td>
-<td align="left">给你一块全新硬盘，你自己分区</td>
+<td>类型</td>
+<td>NAS（文件级）</td>
+<td>SAN（块级）</td>
 </tr>
 </tbody></table>
-<p><strong>（二）上机操作与效果</strong></p>
-<ol>
-<li><p><strong>服务端 (Target) 配置</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server1: 安装工具，进入 targetcli 交互环境</span></span><br><span class="line">yum install -y targetcli</span><br><span class="line">targetcli</span><br><span class="line"><span class="comment"># 在交互环境中，创建后端存储和共享</span></span><br><span class="line">/&gt;</span><br><span class="line">/&gt; <span class="built_in">cd</span> /backstores/block</span><br><span class="line">/&gt; create disk01 /dev/sdb  <span class="comment"># 将 /dev/sdb 设为共享的后端存储</span></span><br><span class="line">/&gt; <span class="built_in">cd</span> /iscsi</span><br><span class="line">/&gt; create iqn.2026-07.com.test:server1  <span class="comment"># 创建 target IQN</span></span><br><span class="line">/&gt; <span class="built_in">cd</span> iqn.2026-07.com.test:server1/tpg1/luns</span><br><span class="line">/&gt; create /backstores/block/disk01</span><br><span class="line">/&gt; <span class="built_in">cd</span> ../acls</span><br><span class="line">/&gt; create iqn.2026-07.com.test:client1 <span class="comment"># 创建 ACL，允许此IQN的客户端连接</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/14.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/15.png"></p>
-</li>
-<li><p><strong>客户端 (Initiator) 配置</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server2: 安装工具，修改 initiatorname，发现并连接</span></span><br><span class="line">yum install -y iscsi-initiator-utils</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;InitiatorName=iqn.2026-07.com.test:client1&quot;</span> &gt; /etc/iscsi/initiatorname.iscsi</span><br><span class="line">systemctl restart iscsid</span><br><span class="line">iscsiadm --mode discovery --<span class="built_in">type</span> sendtargets --portal server1</span><br><span class="line">iscsiadm --mode node --targetname iqn.2026-07.com.test:server1 --portal server1:3260 --login</span><br><span class="line">lsblk  <span class="comment"># 此时就能看到一块新磁盘，如 /dev/sdc</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/16.png"><br><strong>后续步骤</strong>：对新磁盘 <code>fdisk /dev/sdc</code> 分区，<code>mkfs.xfs /dev/sdc1</code> 格式化，再 <code>mount</code> 挂载到某个目录即可像本地盘一样使用。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/17.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/18.png"></p>
-</li>
-</ol>
 <blockquote>
-<p>笔记整理完毕。</p>
+<p>NFS 挂载就能用，iSCSI 提供的是”裸盘”，要先分区格式化！iSCSI 属于 SAN 存储，文件系统在客户端创建，需要后端支持服务～</p>
 </blockquote>
+<p><strong>4. 上机效果</strong>：<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/14.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/15.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/16.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/17.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/18.png"></p>
+<blockquote>
+<p>好啦，结束啦 ヽ(✿ﾟ▽ﾟ)ノ</p>
+</blockquote>
+<hr>
+<p><strong>下午小结</strong>：NFS 给你一个”共享文件夹”，拿来就用；iSCSI 给你一块”新硬盘”，自己分区格式化再挂载。都是网络存储，但层次完全不同～</p>
 
         </article>
         <section class="post-near">
