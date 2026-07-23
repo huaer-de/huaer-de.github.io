@@ -71,7 +71,7 @@
 <li><strong>默认用户</strong>：不指定用户名，会以当前本地用户身份尝试登录。</li>
 <li><strong>主机名连接</strong>：想直接用主机名（如 <code>ssh server2</code>），需先在本地 <code>/etc/hosts</code> 文件中做好解析。</li>
 <li><strong>初次认证</strong>：首次连接需输入<strong>远端主机上对应用户的密码</strong>。</li>
-<li><strong>退出会话</strong>：使用 <code>logout</code> 命令或按 <code>Ctrl+D</code>。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/0.png"></li>
+<li><strong>退出会话</strong>：使用 <code>logout</code> 命令或按 <code>Ctrl+D</code>。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/0.png"></li>
 </ul>
 </li>
 <li><p><strong>管理方式</strong>：</p>
@@ -85,12 +85,12 @@
 <ol>
 <li><p><strong>SSH 单向免密登录（密钥认证）</strong><br><strong>原理</strong>：客户端生成一对密钥（公钥和私钥），将公钥上传到服务端的授权文件中。登录时，服务端用公钥加密挑战信息，只有持有对应私钥的客户端才能解密并正确回应。<br><strong>操作</strong>：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在 server2 (服务端) 生成密钥对</span></span><br><span class="line">ssh-keygen  <span class="comment"># 一路回车，会在 /root/.ssh/ 下生成 id_rsa (私钥) 和 id_rsa.pub (公钥)</span></span><br><span class="line"><span class="comment"># 在 server1 (客户端) 将公钥上传至 server2</span></span><br><span class="line">ssh-copy-id root@server2</span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/1.png"><br><strong>小插曲</strong>：<code>known_hosts</code> 文件会缓存首次连接的服务端公钥。若服务器 IP 变更（如从 164 变为 174），再次连接时会因公钥不匹配而报错，需在 <code>known_hosts</code> 文件中删除旧条目。</p>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/1.png"><br><strong>小插曲</strong>：<code>known_hosts</code> 文件会缓存首次连接的服务端公钥。若服务器 IP 变更（如从 164 变为 174），再次连接时会因公钥不匹配而报错，需在 <code>known_hosts</code> 文件中删除旧条目。</p>
 </li>
 <li><p><strong>多主机双向免密互联</strong><br><strong>场景</strong>：多台服务器之间需要频繁互传文件或执行命令。<br><strong>最佳实践</strong>：让它们共用一套密钥对。<br><strong>操作</strong>：</p>
 <ul>
 <li>在 server1 生成密钥对。</li>
-<li>将 server1 的 <code>.ssh</code> 目录完整同步到 server2。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/2.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/3.png"><br><strong>关键</strong>：多客户端的公钥可以累加写入服务端的 <code>~/.ssh/authorized_keys</code> 白名单文件，实现“一对多”或“多对多”免密。</li>
+<li>将 server1 的 <code>.ssh</code> 目录完整同步到 server2。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/2.png"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/3.png"><br><strong>关键</strong>：多客户端的公钥可以累加写入服务端的 <code>~/.ssh/authorized_keys</code> 白名单文件，实现“一对多”或“多对多”免密。</li>
 </ul>
 </li>
 <li><p><strong>SSH 安全加固（修改配置文件）</strong><br>编辑主配置文件 <code>/etc/ssh/sshd_config</code>，修改后需 <code>systemctl restart sshd</code> 生效。<strong>测试完务必改回，否则可能断连！</strong></p>
@@ -130,7 +130,7 @@
 <ul>
 <li><strong>依赖</strong>：需 <code>atd</code> 服务保持运行。</li>
 <li><strong>时间格式</strong>：灵活，如 <code>now +10min</code>, <code>16:30</code>, <code>10:00 tomorrow</code>。</li>
-<li><strong>管理</strong>：<code>atq</code> 查看任务队列，<code>atrm &lt;任务号&gt;</code> 删除任务。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/8.png"></li>
+<li><strong>管理</strong>：<code>atq</code> 查看任务队列，<code>atrm &lt;任务号&gt;</code> 删除任务。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/8.png"></li>
 <li><strong>排错经验</strong>：<ul>
 <li><code>at</code> 命令找不到：检查 yum 源，安装 <code>at</code> 包。</li>
 <li>任务执行后查看邮箱 <code>You have mail in /var/spool/mail/root</code>，说明输出已邮寄。</li>
@@ -146,7 +146,7 @@
 <li><strong>权限控制</strong>：黑白名单，<code>cron.allow</code> 优先级高于 <code>cron.deny</code>。</li>
 <li><strong>任务存放</strong>：<ul>
 <li>系统级：<code>/etc/crontab</code></li>
-<li>用户级：<code>/var/spool/cron/&lt;用户名&gt;</code><br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/9.png"></li>
+<li>用户级：<code>/var/spool/cron/&lt;用户名&gt;</code><br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/9.png"></li>
 </ul>
 </li>
 <li><strong>技巧</strong>：<code>crontab</code> 最小粒度是分钟，实现秒级任务需结合 <code>sleep</code> 命令。例如，每30秒执行一次：<code>* * * * * /path/to/script; sleep 30; /path/to/script</code>。</li>
@@ -157,14 +157,14 @@
 <li><p><strong><code>systemd-journald</code> 日志持久化</strong></p>
 <ul>
 <li><strong>默认</strong>：日志存于内存 <code>/run/log/journal</code>，重启丢失。</li>
-<li><strong>持久化</strong>：配置后存于磁盘 <code>/var/log/journal</code>，重启保留。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/4.png"></li>
+<li><strong>持久化</strong>：配置后存于磁盘 <code>/var/log/journal</code>，重启保留。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/4.png"></li>
 </ul>
 </li>
 <li><p><strong><code>rsyslog</code> 远程日志集中收集</strong></p>
 <ul>
 <li><strong>架构</strong>：server1 (日志接收端)，server2 (日志发送端)。</li>
 <li><strong>协议</strong>：默认端口 <code>514</code>，支持 UDP (<code>@IP</code>) 和 TCP (<code>@@IP</code>)。</li>
-<li><strong>防火墙</strong>：服务端务必放行对应端口。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/5.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/6.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/7.png"></li>
+<li><strong>防火墙</strong>：服务端务必放行对应端口。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/5.png"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/6.png"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/7.png"></li>
 <li><strong>排错经历</strong>：客户端 <code>nc</code> 测试连接不上服务端 514 端口，但 <code>ping</code> 正常。最终发现是服务端防火墙 <code>firewall-cmd --reload</code> 命令拼写错误，未生效。<strong>重启或重载防火墙后才能生效</strong>是铁律。</li>
 </ul>
 </li>
@@ -194,11 +194,11 @@
 <ol>
 <li><p><strong>服务端配置</strong>：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server1: 安装、创建共享目录、配置导出、启动服务</span></span><br><span class="line">yum install -y nfs-utils</span><br><span class="line"><span class="built_in">mkdir</span> /nfsshare</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;/nfsshare *(rw,no_root_squash)&quot;</span> &gt;&gt; /etc/exports</span><br><span class="line">systemctl start nfs-server &amp;&amp; systemctl <span class="built_in">enable</span> nfs-server</span><br><span class="line">exportfs -r  <span class="comment"># 重读配置文件，使改动生效</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/10.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/11.png"></p>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/10.png"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/11.png"></p>
 </li>
 <li><p><strong>客户端挂载</strong>：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server2: 安装客户端工具、查看、手动挂载、开机挂载</span></span><br><span class="line">yum install -y nfs-utils</span><br><span class="line">showmount -e server1</span><br><span class="line"><span class="built_in">mkdir</span> /mnt/nfs</span><br><span class="line">mount -t nfs server1:/nfsshare /mnt/nfs</span><br><span class="line"><span class="comment"># 写入 /etc/fstab 实现开机自动挂载</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/12.png"><br><strong><code>/etc/fstab</code> 示例</strong>：<code>server1:/nfsshare /mnt/nfs nfs defaults 0 0</code></p>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/12.png"><br><strong><code>/etc/fstab</code> 示例</strong>：<code>server1:/nfsshare /mnt/nfs nfs defaults 0 0</code></p>
 </li>
 <li><p><strong><code>autofs</code> 自动挂载：按需挂载，防止卡死</strong></p>
 <ul>
@@ -207,7 +207,7 @@
 <li><code>autofs</code>：<strong>按需挂载</strong>，访问时自动挂载，闲置一段时间后自动卸载，节省资源，避免卡死。</li>
 </ul>
 </li>
-<li><strong>排错</strong>：<code>df</code> 命令卡死，往往是有僵死的 NFS 挂载。应使用 <code>umount -l /挂载点</code> 或 <code>fuser -km /挂载点</code> 来强制清理。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/13.png"></li>
+<li><strong>排错</strong>：<code>df</code> 命令卡死，往往是有僵死的 NFS 挂载。应使用 <code>umount -l /挂载点</code> 或 <code>fuser -km /挂载点</code> 来强制清理。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/13.png"></li>
 <li><strong>注意</strong>：<code>autofs</code> 管理的挂载点根目录（如 <code>/autofs</code>）是由 <code>automount</code> 内核进程动态维护的，<strong>我们不能手动 <code>mkdir</code> 创建</strong>。</li>
 <li><strong>原则</strong>：NFS 文件系统在服务端创建，客户端通过网络挂载即可直接使用。</li>
 </ul>
@@ -253,11 +253,11 @@
 <ol>
 <li><p><strong>服务端 (Target) 配置</strong>：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server1: 安装工具，进入 targetcli 交互环境</span></span><br><span class="line">yum install -y targetcli</span><br><span class="line">targetcli</span><br><span class="line"><span class="comment"># 在交互环境中，创建后端存储和共享</span></span><br><span class="line">/&gt;</span><br><span class="line">/&gt; <span class="built_in">cd</span> /backstores/block</span><br><span class="line">/&gt; create disk01 /dev/sdb  <span class="comment"># 将 /dev/sdb 设为共享的后端存储</span></span><br><span class="line">/&gt; <span class="built_in">cd</span> /iscsi</span><br><span class="line">/&gt; create iqn.2026-07.com.test:server1  <span class="comment"># 创建 target IQN</span></span><br><span class="line">/&gt; <span class="built_in">cd</span> iqn.2026-07.com.test:server1/tpg1/luns</span><br><span class="line">/&gt; create /backstores/block/disk01</span><br><span class="line">/&gt; <span class="built_in">cd</span> ../acls</span><br><span class="line">/&gt; create iqn.2026-07.com.test:client1 <span class="comment"># 创建 ACL，允许此IQN的客户端连接</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/14.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/15.png"></p>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/14.png"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/15.png"></p>
 </li>
 <li><p><strong>客户端 (Initiator) 配置</strong>：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server2: 安装工具，修改 initiatorname，发现并连接</span></span><br><span class="line">yum install -y iscsi-initiator-utils</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;InitiatorName=iqn.2026-07.com.test:client1&quot;</span> &gt; /etc/iscsi/initiatorname.iscsi</span><br><span class="line">systemctl restart iscsid</span><br><span class="line">iscsiadm --mode discovery --<span class="built_in">type</span> sendtargets --portal server1</span><br><span class="line">iscsiadm --mode node --targetname iqn.2026-07.com.test:server1 --portal server1:3260 --login</span><br><span class="line">lsblk  <span class="comment"># 此时就能看到一块新磁盘，如 /dev/sdc</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/16.png"><br><strong>后续步骤</strong>：对新磁盘 <code>fdisk /dev/sdc</code> 分区，<code>mkfs.xfs /dev/sdc1</code> 格式化，再 <code>mount</code> 挂载到某个目录即可像本地盘一样使用。<br><img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/17.png"> <img src="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/18.png"></p>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/16.png"><br><strong>后续步骤</strong>：对新磁盘 <code>fdisk /dev/sdc</code> 分区，<code>mkfs.xfs /dev/sdc1</code> 格式化，再 <code>mount</code> 挂载到某个目录即可像本地盘一样使用。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/17.png"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/18.png"></p>
 </li>
 </ol>
 <blockquote>
@@ -268,7 +268,7 @@
         <section class="post-near">
             <ul>
                 
-                    <li>上一篇: 看完啦 (つд⊂)</li>
+                    <li>上一篇: <a href="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li>
                 
                 
                     <li>下一篇: <a href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记day5</a></li>
@@ -301,7 +301,7 @@
             <div class="row">
                 <div class="col-m-4">
                     <h3 class="title-recent">最新文章：</h3>
-                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/07/21/%E8%BF%9C%E7%A8%8B%E7%AE%A1%E7%90%86%E4%B8%8E%E5%85%B1%E4%BA%AB%E5%AD%98%E5%82%A8/">远程管理与共享存储</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记day5</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day4</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记 Day 3</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/">运维学习笔记 Day 2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/13/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">我的第一篇博客</a></li></ul>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">高可用与负载均衡</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/">远程管理与共享存储</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记day5</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day4</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记 Day 3</a></li></ul>
                 </div>
                 <div class="col-m-4">
                     <h3 class="title-date">时光机：</h3>

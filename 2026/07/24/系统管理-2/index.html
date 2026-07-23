@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>系统管理-2 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="系统管理-2"/>
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a><a class="category-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>系统管理-2</h2>
+            <div class="post-meta">
+                <time class="date">2026.07.24</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <hr>
+<h2 id="前情提要：时间记错了，是上两天练一天，一周休息一天。嗯……也好，多学点东西也能更好地找工作……本篇文档整理的是7-20的学习内容，系统管理的第二节。"><a href="#前情提要：时间记错了，是上两天练一天，一周休息一天。嗯……也好，多学点东西也能更好地找工作……本篇文档整理的是7-20的学习内容，系统管理的第二节。" class="headerlink" title="前情提要：时间记错了，是上两天练一天，一周休息一天。嗯……也好，多学点东西也能更好地找工作……本篇文档整理的是7&#x2F;20的学习内容，系统管理的第二节。"></a><strong>前情提要：</strong><br>时间记错了，是上两天练一天，一周休息一天。嗯……也好，多学点东西也能更好地找工作……本篇文档整理的是7&#x2F;20的学习内容，系统管理的第二节。</h2><h2 id="7-20-am"><a href="#7-20-am" class="headerlink" title="7&#x2F;20 am"></a>7&#x2F;20 am</h2><h3 id="概览"><a href="#概览" class="headerlink" title="概览"></a>概览</h3><p>Linux系统引导的故障排查与修复方法，systemd服务管理</p>
+<hr>
+<h3 id="一、Linux系统引导及故障排查"><a href="#一、Linux系统引导及故障排查" class="headerlink" title="一、Linux系统引导及故障排查"></a>一、Linux系统引导及故障排查</h3><p><strong>(1) 系统引导流程</strong><br>系统启动时走的路线是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">BIOS/UEFI → GRUB引导程序 → 加载内核(vmlinuz) → 加载initramfs临时根文件系统 → 启动systemd(PID=1) → 用户空间</span><br></pre></td></tr></table></figure>
+<p>GRUB引导程序负责加载内核及后续的initramfs等文件，如果引导文件（如<code>grub.cfg</code>）损坏了，系统就无法自动引导了。</p>
+<p><strong>(2)</strong> small，对于CentOS&#x2F;RHEL系统，GRUB2文件在<code>/boot/grub2/grub.cfg</code>；对于Ubuntu&#x2F;Debian系统，GRUB2文件在<code>/boot/grub/grub.cfg</code>。这个配置文件里有很多启动条目，如正常模式和救援模式。</p>
+<blockquote>
+<p>🧀 <strong>补充</strong>：<code>grub.cfg</code>是自动生成的！不要手动改它。改<code>/etc/default/grub</code>后执行<code>grub2-mkconfig -o /boot/grub2/grub.cfg</code>重新生成。</p>
+</blockquote>
+<p><strong>(3) 开始实验吧</strong></p>
+<p><strong>实验①：轻度故障——删除grub.cfg</strong></p>
+<ol>
+<li>在虚拟机上 <code>rm -f /boot/grub2/grub.cfg</code> 删除配置文件，这时候 <code>ls /boot/grub2/ | grep cfg</code> 发现文件被删了（可选的是 <code>cp /boot/grub2/grub.cfg /boot/grub2/grub.cfg.bak</code> 备份）</li>
+<li>重启后，虚拟机黑屏，提示符为 <code>grub&gt;</code>，即进入了GRUB救援交互界面</li>
+</ol>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/1.png"></p>
+<p><strong>手动引导步骤：</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">grub&gt; set root=(hd0,msdos1)</span><br><span class="line">grub&gt; linux16 /vmlinuz-xxx root=/dev/mapper/centos-root ro</span><br><span class="line">grub&gt; initrd16 /initramfs-xxx.img</span><br><span class="line">grub&gt; boot</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🧀 <strong>补充</strong>：<code>root=/dev/mapper/centos-root</code>是软连接，指向<code>/dev/dm-0</code>，和<code>/dev/centos/root</code>等价。<code>ro</code>参数是先以只读方式挂载根文件系统。</p>
+</blockquote>
+<p>进入系统后重建配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grub2-mkconfig -o /boot/grub2/grub.cfg</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p><strong>实验②：重度故障——引导扇区也坏了</strong></p>
+<p>下面是进阶一点的实验，我们把根下boot的内容清理干净，即环境产生了重度故障。系统引导程序被破坏，缺少引导文件，我们要改为光盘引导虚拟机。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/2.png"></p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/3.png"></p>
+<p>重启之后，会进入救援模式，但要<strong>很快地点击F2</strong>，调整光驱的引导优先级，改为”光驱自动引导”（而不是磁盘）。</p>
+<p>然后到Exit界面，保存退出。进入Troubleshooting进行系统挽救，进去选 <strong>Rescue a CentOS system</strong>（第二个选项）。进去后，选 <strong>1) Continue…</strong></p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/4.png"></p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/5.png"></p>
+<p>测试网络连通性后，安装kernel（如果内核文件也丢了的话）。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/6.png"></p>
+<p><strong>修复的核心命令（累了o_o）：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chroot</span> /mnt/sysimage</span><br><span class="line">grub2-install /dev/sda</span><br><span class="line">grub2-mkconfig -o /boot/grub2/grub.cfg</span><br><span class="line"><span class="built_in">exit</span></span><br><span class="line">reboot</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🧀 <strong>补充</strong>：<code>grub2-install</code> 后面跟的是<strong>整块磁盘</strong> <code>/dev/sda</code>，不是分区 <code>/dev/sda1</code>！它能同时修复”重写引导扇区”和”分区里的第二阶段文件”两个引导文件。</p>
+</blockquote>
+<p>和上面F2一样，赶紧点击F2把Boot里的Hard Drive调整回去，调成第一个，保存退出能登进去了，<strong>终于修复好了o_o</strong></p>
+<hr>
+<h3 id="二、systemd服务管理"><a href="#二、systemd服务管理" class="headerlink" title="二、systemd服务管理"></a>二、systemd服务管理</h3><p><strong>(1) systemd是什么</strong><br>systemd是现代Linux系统的初始化系统（<strong>PID&#x3D;1一号程序</strong>）和服务管理器，负责并行启动和管理守护进程。它通过<code>systemctl</code>命令管理服务的生命周期（start&#x2F;stop&#x2F;restart&#x2F;status）和开机自启（enable&#x2F;disable）。</p>
+<p><strong>(2) 六大核心优势</strong></p>
+<table>
+<thead>
+<tr>
+<th>优势</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>并行化启动</strong></td>
+<td>不串行等待服务，开机速度远快于老式SysV-init</td>
+</tr>
+<tr>
+<td><strong>按需启动守护进程</strong></td>
+<td>闲置服务不占用资源，触发事件时才拉起</td>
+</tr>
+<tr>
+<td><strong>cgroup进程跟踪</strong></td>
+<td>通过Linux控制组完整追踪服务所有子进程，不会出现僵尸残留</td>
+</tr>
+<tr>
+<td><strong>自动管理挂载点</strong></td>
+<td>统一管理磁盘挂载、自动挂载设备</td>
+</tr>
+<tr>
+<td><strong>依赖关系调度</strong></td>
+<td>通过unit配置定义服务启动先后依赖，自动处理启动顺序</td>
+</tr>
+<tr>
+<td><strong>统一标准化管理</strong></td>
+<td>所有服务、挂载、套接字、定时器都以「单元unit」统一管理</td>
+</tr>
+</tbody></table>
+<p><strong>(3) unit文件位置</strong><br>服务的启动脚本（unit file）通常位于：</p>
+<ul>
+<li><code>/usr/lib/systemd/system/</code> —— 软件包安装的默认unit文件（不要直接改！）</li>
+<li><code>/etc/systemd/system/</code> —— 管理员自定义的unit文件（优先级更高）</li>
+</ul>
+<p>可使用 <code>systemctl mask</code> 命令屏蔽服务，使其无法被启动，常用于避免服务冲突。<strong><code>mask</code>会创建软链接指向<code>/dev/null</code>，手动、自动都无法启动，彻底锁定服务</strong>（区别于仅可以取消开机自启的<code>disable</code>）。</p>
+<p><strong>(4) 开始上机吧</strong></p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/7.png"></p>
+<p>服务运行控制的一些命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl status sshd.service</span><br><span class="line">● sshd.service - OpenSSH server daemon</span><br><span class="line">   Loaded: loaded (/usr/lib/systemd/system/sshd.service; enabled; vendor preset: enabled)</span><br><span class="line">   Active: active (running) since Tue 2026-07-21 17:03:21 CST; 15min ago</span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">[root@server1 ~]# systemctl stop sshd.service          <span class="comment"># 停止服务</span></span><br><span class="line">[root@server1 ~]# systemctl start sshd.service         <span class="comment"># 启动服务</span></span><br><span class="line">[root@server1 ~]# systemctl restart sshd.service      <span class="comment"># 重启服务，中断现有连接</span></span><br><span class="line">[root@server1 ~]# systemctl reload sshd.service       <span class="comment"># 热重载配置，不中断业务连接（Nginx重点！）</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🧀 <strong>补充</strong>：<code>reload</code>和<code>restart</code>的区别是考点！<code>reload</code>只重读配置文件，不断连接（适合Nginx改配置）；<code>restart</code>杀掉进程重新拉起，会断连接。</p>
+</blockquote>
+<hr>
+<p><strong>(5) 编译安装Nginx用systemd管理</strong></p>
+<p>我们操作nginx服务时，就不要再运行脚本了（交给系统管理后，不要手动干预），通过系统服务方式控制；日志、pid文件统一放在<code>/usr/local/nginx/logs</code>，unit文件内路径必须和<code>nginx.conf</code>完全一致。</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[Unit]</span></span><br><span class="line"><span class="attr">Description</span>=NGINX web server</span><br><span class="line"><span class="attr">After</span>=network.target</span><br><span class="line"></span><br><span class="line"><span class="section">[Service]</span></span><br><span class="line"><span class="attr">Type</span>=forking</span><br><span class="line"><span class="attr">PIDFile</span>=/usr/local/nginx/logs/nginx.pid</span><br><span class="line"><span class="attr">ExecStart</span>=/usr/local/nginx/sbin/nginx</span><br><span class="line"><span class="attr">ExecReload</span>=/usr/local/nginx/sbin/nginx -s reload</span><br><span class="line"><span class="attr">ExecStop</span>=/usr/local/nginx/sbin/nginx -s stop</span><br><span class="line"><span class="attr">PrivateTmp</span>=<span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="section">[Install]</span></span><br><span class="line"><span class="attr">WantedBy</span>=multi-user.target</span><br></pre></td></tr></table></figure>
+
+<p>配完后记得：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl daemon-reload</span><br><span class="line">systemctl start nginx</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/8.png"></p>
+<p><strong>早上的结束啦～ ps：最后讲到的一点关于防火墙的知识，主要还是下午在学</strong></p>
+<hr>
+<h2 id="7-20-pm"><a href="#7-20-pm" class="headerlink" title="7&#x2F;20 pm"></a>7&#x2F;20 pm</h2><h3 id="概览-1"><a href="#概览-1" class="headerlink" title="概览"></a>概览</h3><p>Linux防火墙iptables与firewalld的使用，Apache Web服务器的配置</p>
+<hr>
+<h3 id="一、Linux防火墙iptables"><a href="#一、Linux防火墙iptables" class="headerlink" title="一、Linux防火墙iptables"></a>一、Linux防火墙iptables</h3><p><strong>(1) iptables架构</strong><br>iptables是用户层配置工具，真正的防火墙功能是<strong>内核netfilter框架</strong>实现的。它的包过滤规则按顺序匹配（没有匹配就用默认策略了）。核心是<strong>三表五链</strong>。</p>
+<blockquote>
+<p>🧀 <strong>补充——三表五链速记</strong>：<br><strong>五条链</strong>：PREROUTING → INPUT → FORWARD → OUTPUT → POSTROUTING<br><strong>三个常用表</strong>：filter（过滤，最常用）、nat（地址转换）、mangle（修改数据包&#x2F;QoS）</p>
+</blockquote>
+<p><strong>(2) 实验开始吧</strong></p>
+<p><strong>① 环境准备（server1上操作）</strong></p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/9.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl <span class="built_in">disable</span> --now firewalld.service</span><br><span class="line">[root@server1 ~]# setenforce 0</span><br><span class="line">[root@server1 ~]# rpm -qa | grep iptables</span><br><span class="line">iptables-1.4.21-35.el7.x86_64</span><br><span class="line">iptables-services-1.4.21-35.el7.x86_64</span><br><span class="line">[root@server1 ~]# systemctl <span class="built_in">enable</span> --now iptables.service</span><br><span class="line">[root@server1 ~]# iptables -nL --line-numbers</span><br><span class="line">Chain INPUT (policy ACCEPT)</span><br><span class="line">num  target     prot opt <span class="built_in">source</span>               destination</span><br><span class="line">1    ACCEPT     all  --  0.0.0.0/0           0.0.0.0/0           state RELATED,ESTABLISHED</span><br><span class="line">2    ACCEPT     icmp --  0.0.0.0/0           0.0.0.0/0</span><br><span class="line">3    ACCEPT     all  --  0.0.0.0/0           0.0.0.0/0</span><br><span class="line">4    ACCEPT     tcp  --  0.0.0.0/0           0.0.0.0/0           state NEW tcp dpt:22</span><br><span class="line">5    REJECT     all  --  0.0.0.0/0           0.0.0.0/0           reject-with icmp-host-prohibited</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p><strong>② 清空默认规则后，放行SSH</strong></p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/10.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">iptables -F</span><br><span class="line">iptables -X</span><br><span class="line">iptables -A INPUT -p tcp --dport 22 -j ACCEPT</span><br><span class="line">iptables -A INPUT -i lo -j ACCEPT</span><br><span class="line">iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🧀 <strong>补充</strong>：<code>-m state --state ESTABLISHED,RELATED</code> 是<strong>连接追踪模块</strong>，已建立的连接直接放行，大幅提升性能。这条几乎每个iptables配置都要加！</p>
+</blockquote>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/11.png"></p>
+<p>好哒，我们从server2上能连到server1：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@server2 ~]# ssh root@192.168.63.134</span><br><span class="line">The authenticity of host <span class="string">&#x27;192.168.63.134&#x27;</span> can<span class="string">&#x27;t be established.</span></span><br><span class="line"><span class="string">...</span></span><br><span class="line"><span class="string">Last login: Thu Jul 23 21:11:07 2026 from 192.168.63.1</span></span><br><span class="line"><span class="string">[root@server1 ~]#</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>③ 实验①：禁止server2 ping server1</strong></p>
+<p>我们在INPUT链首部插入规则（<code>iptables -I INPUT 1 -s 192.168.63.135 -p icmp -j REJECT</code>），拒绝server2的icmp协议后，server2 ping server1时，返回了<code>Destination Port Unreachable</code>，即目标端口不可达。规则生效了。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/12.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# iptables -I INPUT 1 -s 192.168.63.135 -p icmp -j REJECT</span><br><span class="line">[root@server1 ~]# iptables -nL</span><br><span class="line">Chain INPUT (policy ACCEPT)</span><br><span class="line">target     prot opt <span class="built_in">source</span>               destination</span><br><span class="line">REJECT     icmp --  192.168.63.135       0.0.0.0/0           reject-with icmp-host-prohibited</span><br><span class="line">...</span><br><span class="line">[root@server1 ~]# iptables -D INPUT 1    <span class="comment"># 删除规则恢复</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>④ 实验②：禁止server2通过SSH连接server1</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -I INPUT 1 -s 192.168.63.135 -p tcp --dport 22 -j REJECT</span><br></pre></td></tr></table></figure>
+
+<p>我们原先列表里没有80端口规则，是因为firewalld和iptables冲突了。CentOS7默认启用firewalld，它会接管底层iptables，直接敲iptables命令容易丢失规则。我们在关闭firewalld后，为80端口添加规则。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/13.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp --dport 80 -j ACCEPT</span><br></pre></td></tr></table></figure>
+
+<p>这时候，我们就能访问到server1了（但是没有添加index首页，暂时404找不到界面了）。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/14.png"></p>
+<p>想要访问到界面（而不是404的话），我们需要在server1上新建一个Apache的目录，然后写入一个测试界面，重启Apache就好啦。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p /var/www/test</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;hello iptables&quot;</span> &gt; /var/www/test/index.html</span><br><span class="line">systemctl restart httpd</span><br></pre></td></tr></table></figure>
+
+<p><strong>⑤ 设置默认策略为DROP（白名单模式，重点！）</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -P INPUT DROP</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🧀 <strong>补充</strong>：白名单（DROP）&#x3D; 没明确允许的统统拒绝，生产环境推荐。设DROP之前<strong>必须</strong>先放行SSH，不然会被踢出去！</p>
+</blockquote>
+<p><strong>⑥ 规则持久化（不保存重启就丢了！）</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">iptables-save &gt; /etc/sysconfig/iptables</span><br><span class="line">systemctl restart iptables</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="二、Firewalld"><a href="#二、Firewalld" class="headerlink" title="二、Firewalld"></a>二、Firewalld</h3><p><strong>(1) firewalld和iptables的关系</strong><br>firewalld是iptables的前端管理器，<strong>底层还是netfilter</strong>。二者不能混用！开了firewalld就别手动敲iptables命令。</p>
+<p><strong>(2) 实验</strong></p>
+<p>我们关闭之前的iptables环境，打开firewalld服务。可以通过命令查看firewalld的默认区域、可用区域、当前生效的规则。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/15.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl <span class="built_in">disable</span> --now iptables.service</span><br><span class="line">[root@server1 ~]# systemctl <span class="built_in">enable</span> --now firewalld.service</span><br><span class="line">[root@server1 ~]# firewall-cmd --state</span><br><span class="line">running</span><br><span class="line">[root@server1 ~]# firewall-cmd --get-default-zone</span><br><span class="line">public</span><br><span class="line">[root@server1 ~]# firewall-cmd --get-zones</span><br><span class="line">block dmz drop external home internal public trusted work</span><br><span class="line">[root@server1 ~]# firewall-cmd --list-all</span><br><span class="line">public (active)</span><br><span class="line">  target: default</span><br><span class="line">  services: dhcpv6-client http ssh</span><br><span class="line">  ports: 8080/tcp 514/udp 514/tcp 3260/tcp</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p><strong>① 切换区域</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# firewall-cmd --set-default-zone=trusted</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --reload</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --get-default-zone</span><br><span class="line">trusted</span><br></pre></td></tr></table></figure>
+
+<p>我们把区域切换为trusted（允许所有流量）；再改回public区域，用服务方式放行HTTP：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# firewall-cmd --set-default-zone=public</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --permanent --add-service=http</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --reload</span><br><span class="line">success</span><br></pre></td></tr></table></figure>
+
+<p><strong>② rich rule 精确控制（只允许server2访问80端口）</strong></p>
+<p>如果我们只允许server2访问80端口，需要用rich rule精确控制。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/16.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# firewall-cmd --permanent --remove-service=http</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --permanent \</span><br><span class="line">  --add-rich-rule=<span class="string">&#x27;rule family=&quot;ipv4&quot; source address=&quot;192.168.63.135&quot; port port=&quot;80&quot; protocol=&quot;tcp&quot; accept&#x27;</span></span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --reload</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --list-all</span><br><span class="line">...</span><br><span class="line">rich rules:</span><br><span class="line">    rule family=<span class="string">&quot;ipv4&quot;</span> <span class="built_in">source</span> address=<span class="string">&quot;192.168.63.135&quot;</span> port port=<span class="string">&quot;80&quot;</span> protocol=<span class="string">&quot;tcp&quot;</span> accept</span><br></pre></td></tr></table></figure>
+
+<p>这样之后，在server2上curl访问时，就能发现server1的主页面了。</p>
+<hr>
+<h3 id="三、Apache-Web服务器配置"><a href="#三、Apache-Web服务器配置" class="headerlink" title="三、Apache Web服务器配置"></a>三、Apache Web服务器配置</h3><p><strong>(1) Apache安装与基础配置</strong></p>
+<p>这个实验比较简单，我们安装好Apache服务后，放行防火墙；就可以访问到主页面了。</p>
+<p>修改监听端口需要我们先修改主配置文件（<code>/etc/httpd/conf/httpd.conf</code>），找到<code>Listen 80</code>改为<code>Listen 8080</code>，然后重启一下服务就好啦。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/17.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# yum install -y httpd</span><br><span class="line">[root@server1 ~]# systemctl <span class="built_in">enable</span> --now httpd</span><br><span class="line">[root@server1 ~]# firewall-cmd --permanent --add-service=http</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --reload</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# vim /etc/httpd/conf/httpd.conf</span><br><span class="line"><span class="comment"># 找到 Listen 80 改为 Listen 8080</span></span><br><span class="line">[root@server1 ~]# firewall-cmd --permanent --add-port=8080/tcp</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# firewall-cmd --reload</span><br><span class="line">success</span><br><span class="line">[root@server1 ~]# systemctl restart httpd</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/18.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@server2 ~]# curl http://192.168.63.134</span><br><span class="line">hello iptables</span><br><span class="line">[root@server2 ~]# curl http://192.168.63.134:8080</span><br><span class="line">hello iptables</span><br></pre></td></tr></table></figure>
+
+<p>但为了后续实验用80端口方便，我们后面把8080又改回去了。</p>
+<hr>
+<p><strong>(2) Apache目录访问控制</strong></p>
+<p>我们创建一下admin目录和测试页面，然后重启服务。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/19.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# <span class="built_in">mkdir</span> -p /var/www/html/admin</span><br><span class="line">[root@server1 ~]# <span class="built_in">echo</span> <span class="string">&quot;Admin Page&quot;</span> &gt; /var/www/html/admin/index.html</span><br></pre></td></tr></table></figure>
+
+<p>编辑<code>/etc/httpd/conf/httpd.conf</code>，在末尾添加：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">&lt;Directory <span class="string">&quot;/var/www/html/admin&quot;</span>&gt;</span></span><br><span class="line">    <span class="attribute">Order</span> <span class="literal">deny</span>,<span class="literal">allow</span></span><br><span class="line">    <span class="attribute">Deny</span> from <span class="literal">all</span></span><br><span class="line">    <span class="attribute">Allow</span> from <span class="number">192.168.63.135</span></span><br><span class="line"><span class="section">&lt;/Directory&gt;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl restart httpd</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🧀 <strong>补充（重点考点！）</strong>：<code>Order</code>指令的执行顺序：<code>Order deny,allow</code> → 先Deny后Allow；<code>Order allow,deny</code> → 先Allow后Deny。后面的规则覆盖前面的。</p>
+</blockquote>
+<p>然后就只有server2（192.168.63.135）可以访问admin界面了：</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/20.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@server2 ~]# curl http://192.168.63.134/admin/</span><br><span class="line">Admin Page</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p><strong>(3) Apache用户认证（.htaccess）</strong></p>
+<p><strong>① 创建认证文件和用户</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# htpasswd -c /etc/httpd/conf/.htpasswd admin</span><br><span class="line">New password: </span><br><span class="line">Re-<span class="built_in">type</span> new password:</span><br><span class="line">Adding password <span class="keyword">for</span> user admin</span><br><span class="line">[root@server1 ~]# htpasswd /etc/httpd/conf/.htpasswd user1</span><br><span class="line">New password:</span><br><span class="line">Re-<span class="built_in">type</span> new password:</span><br><span class="line">Adding password <span class="keyword">for</span> user user1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ <code>-c</code> 参数只在<strong>第一次创建文件</strong>时用！之后再添加用户不要加 <code>-c</code>，否则会覆盖原文件！</p>
+</blockquote>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/21.png"></p>
+<p><strong>② 启用.htaccess认证</strong></p>
+<p>修改<code>/etc/httpd/conf/httpd.conf</code>中admin目录的配置：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">&lt;Directory <span class="string">&quot;/var/www/html/admin&quot;</span>&gt;</span></span><br><span class="line">    <span class="attribute">AllowOverride</span> <span class="literal">All</span></span><br><span class="line">    <span class="attribute">Order</span> <span class="literal">allow</span>,<span class="literal">deny</span></span><br><span class="line">    <span class="attribute">Allow</span> from <span class="literal">all</span></span><br><span class="line"><span class="section">&lt;/Directory&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>在<code>/var/www/html/admin/</code>下创建<code>.htaccess</code>文件：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">AuthType</span> Basic</span><br><span class="line"><span class="attribute">AuthName</span> <span class="string">&quot;Restricted Area - Admin Only&quot;</span></span><br><span class="line"><span class="attribute">AuthUserFile</span> /etc/httpd/conf/.htpasswd</span><br><span class="line"><span class="attribute">Require</span> valid-user</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl restart httpd</span><br></pre></td></tr></table></figure>
+
+<p>然后就可以密码登录admin界面啦：</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/22.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@server2 ~]# curl -u admin:密码 http://192.168.63.134/admin/</span><br><span class="line">Admin Page</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p><strong>(4) 基于域名的虚拟主机</strong></p>
+<p>我们创建两个网站的目录和首页，为他们配置虚拟主机（在<code>/etc/httpd/conf.d/</code>下新建配置文件）。</p>
+<p><img src="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/23.png"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# <span class="built_in">mkdir</span> -p /var/www/web1</span><br><span class="line">[root@server1 ~]# <span class="built_in">mkdir</span> -p /var/www/web2</span><br><span class="line">[root@server1 ~]# <span class="built_in">echo</span> <span class="string">&quot;Website 1 - www.web1.test&quot;</span> &gt; /var/www/web1/index.html</span><br><span class="line">[root@server1 ~]# <span class="built_in">echo</span> <span class="string">&quot;Website 2 - www.web2.test&quot;</span> &gt; /var/www/web2/index.html</span><br></pre></td></tr></table></figure>
+
+<p>新建 <code>/etc/httpd/conf.d/vhost.conf</code>：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">&lt;VirtualHost *<span class="number">:80</span>&gt;</span></span><br><span class="line">    <span class="attribute">ServerName</span> www.web1.test</span><br><span class="line">    <span class="attribute">DocumentRoot</span> /var/www/web1</span><br><span class="line">    <span class="section">&lt;Directory <span class="string">&quot;/var/www/web1&quot;</span>&gt;</span></span><br><span class="line">        <span class="attribute">Require</span> <span class="literal">all</span> granted</span><br><span class="line">    <span class="section">&lt;/Directory&gt;</span></span><br><span class="line"><span class="section">&lt;/VirtualHost&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="section">&lt;VirtualHost *<span class="number">:80</span>&gt;</span></span><br><span class="line">    <span class="attribute">ServerName</span> www.web2.test</span><br><span class="line">    <span class="attribute">DocumentRoot</span> /var/www/web2</span><br><span class="line">    <span class="section">&lt;Directory <span class="string">&quot;/var/www/web2&quot;</span>&gt;</span></span><br><span class="line">        <span class="attribute">Require</span> <span class="literal">all</span> granted</span><br><span class="line">    <span class="section">&lt;/Directory&gt;</span></span><br><span class="line"><span class="section">&lt;/VirtualHost&gt;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl restart httpd</span><br></pre></td></tr></table></figure>
+
+<p>在server2上完成域名解析后，就可以访问到两个界面啦，即虚拟主机配置成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root@server2 ~]# <span class="built_in">cat</span> /etc/hosts</span><br><span class="line">192.168.63.134 server1 www.web1.test www.web2.test</span><br><span class="line">192.168.63.135 server2</span><br><span class="line"></span><br><span class="line">[root@server2 ~]# curl http://www.web1.<span class="built_in">test</span></span><br><span class="line">Website 1 - www.web1.test</span><br><span class="line">[root@server2 ~]# curl http://www.web2.<span class="built_in">test</span></span><br><span class="line">Website 2 - www.web2.test</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="四、SELinux"><a href="#四、SELinux" class="headerlink" title="四、SELinux"></a>四、SELinux</h3><p><strong>(1) SELinux是什么</strong><br>SELinux &#x3D; Security-Enhanced Linux，内核级<strong>强制访问控制（MAC）</strong>。传统Linux权限是DAC（自主访问控制），root能干一切；SELinux是MAC（强制访问控制），即使你是root，不符合策略也不让干。</p>
+<p><strong>(2) 三种模式</strong></p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Enforcing</td>
+<td>强制执行策略，违规就拒绝（生产环境）</td>
+</tr>
+<tr>
+<td>Permissive</td>
+<td>只记录不拒绝（排错用）</td>
+</tr>
+<tr>
+<td>Disabled</td>
+<td>完全关闭（需重启）</td>
+</tr>
+</tbody></table>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">getenforce              <span class="comment"># 查看当前模式</span></span><br><span class="line">setenforce 0            <span class="comment"># 临时改为Permissive</span></span><br><span class="line">setenforce 1            <span class="comment"># 临时改为Enforcing</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>(3) 为什么Apache访问会出现403</strong></p>
+<p>即使文件权限是755，SELinux也可能拦住。Apache只能访问标记为<code>httpd_sys_content_t</code>的文件。如果把网站放在<code>/web</code>等非默认目录，需要改安全上下文：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chcon</span> -R -t httpd_sys_content_t /web/</span><br><span class="line"><span class="built_in">ls</span> -Z /var/www/html/                <span class="comment"># 查看安全上下文</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>🧀 <strong>补充</strong>：实验里我们<code>setenforce 0</code>关掉SELinux是为了排除干扰，但生产环境不建议关，而是正确配置上下文标签。</p>
+</blockquote>
+<p><strong>终于整理完了o_o</strong></p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">高可用与负载均衡</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/">远程管理与共享存储</a></li>
+                
+            </ul>
+        </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的网安小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/">高可用与负载均衡</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/">远程管理与共享存储</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记day5</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day4</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记 Day 3</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 20px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">运维</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
