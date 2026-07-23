@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>高可用与负载均衡-1 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="高可用与负载均衡-1"/>
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a><a class="category-link" href="/categories/%E7%94%9F%E6%B4%BB/">生活</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>高可用与负载均衡-1</h2>
+            <div class="post-meta">
+                <time class="date">2026.07.24</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <blockquote>
+<p>7&#x2F;22 am </p>
+</blockquote>
+<p>本节进入了新的一个小专题，与服务器架构相关，老师给这节课取名为”高可用与负载均衡”。我们可以新开虚拟机的环境，让实验环境是干净清晰的。</p>
+<hr>
+<h2 id="一、服务器架构与核心概念"><a href="#一、服务器架构与核心概念" class="headerlink" title="一、服务器架构与核心概念"></a>一、服务器架构与核心概念</h2><h3 id="1-高可用（HA）与负载均衡（LB）"><a href="#1-高可用（HA）与负载均衡（LB）" class="headerlink" title="1. 高可用（HA）与负载均衡（LB）"></a>1. 高可用（HA）与负载均衡（LB）</h3><blockquote>
+<p>我们先了解一下这几个关键词吧</p>
+</blockquote>
+<ul>
+<li><p><strong>高可用</strong>：核心目标是消除单点故障，当系统某个组件（如服务器、调度器）发生故障时，能自动切换到备用组件，保证服务不中断。最典型的实现是双机热备，分为主备模式（仅主节点工作，备节点待命）和双活模式（双节点同时处理请求，需搭配分布式文件系统如 Ceph&#x2F;GFS，避免存储脑裂）。生产环境中还需配合电源控制器、直连心跳线（独立于业务网络的网卡直连，规避交换机故障风险）进一步提升可靠性。</p>
+</li>
+<li><p><strong>负载均衡</strong>：通过将客户端流量合理分发到多台后端服务器，解决单台服务器性能瓶颈，提升系统整体处理能力。负载均衡器本身也是单点，因此通常与高可用方案结合部署。常见调度算法包括轮询、加权轮询、最少连接、源地址哈希等。</p>
+</li>
+<li><p><strong>CDN（内容分发网络）</strong>：现代网站的标配组件，通过全球边缘节点缓存静态内容，将用户请求就近返回，既加速访问又减轻源站压力。其工作原理类似分级缓存：用户请求先查本地 CDN 节点，未命中则查询邻近节点，最终才回源站。需注意 CDN 失效时可能引发后端流量雪崩，需配合降级、限流等手段兜底。中小厂商通常采购云厂商 CDN 服务，自建 CDN 成本过高，仅适合超大型互联网企业。</p>
+</li>
+</ul>
+<h3 id="2-常见服务器架构对比"><a href="#2-常见服务器架构对比" class="headerlink" title="2. 常见服务器架构对比"></a>2. 常见服务器架构对比</h3><ul>
+<li><strong>CS 架构（客户端-服务器）</strong>：适合低并发场景，早期应用较多，客户端需安装专用软件。</li>
+<li><strong>BS 架构（浏览器-服务器）</strong>：当前主流架构，用户通过浏览器以 HTTP 协议访问 Web 服务器，后端对接数据库，更适配现代动态网页需求。云端环境通常直接提供封装好的高可用与负载均衡能力，自建架构则需手动实现相关技术栈。</li>
+</ul>
+<h3 id="3-负载均衡技术分层"><a href="#3-负载均衡技术分层" class="headerlink" title="3. 负载均衡技术分层"></a>3. 负载均衡技术分层</h3><ul>
+<li><strong>四层负载均衡</strong>：工作在传输层（OSI 第四层），代表方案为 LVS，基于 IP+端口转发流量，性能极高，但无法识别应用层内容。</li>
+<li><strong>七层负载均衡</strong>：工作在应用层（OSI 第七层），代表方案为 HAProxy、Nginx，可基于 HTTP URL、Header 等内容做精细化调度（如动静分离、会话保持），对后端服务透明，无需配置 VIP。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/0.png"></p>
+<blockquote>
+<p>📌 <strong>补充知识点</strong>：四层和七层不是替代关系，而是分层协作。生产环境常见架构：<strong>LVS（四层入口）→ HAProxy（七层分发）→ 后端集群</strong>，兼顾性能和灵活性。</p>
+</blockquote>
+<hr>
+<h2 id="二、LVS-DR-模式负载均衡"><a href="#二、LVS-DR-模式负载均衡" class="headerlink" title="二、LVS-DR 模式负载均衡"></a>二、LVS-DR 模式负载均衡</h2><h3 id="（1）ipvsadm-工具与基础命令"><a href="#（1）ipvsadm-工具与基础命令" class="headerlink" title="（1）ipvsadm 工具与基础命令"></a>（1）ipvsadm 工具与基础命令</h3><ol>
+<li><p><code>ipvsadm</code> 是 Linux 下用于管理 IPVS（IP Virtual Server，IP 虚拟服务器）的命令行工具，主要用于构建 LVS（Linux Virtual Server）负载均衡集群。它允许管理员配置和管理虚拟服务、真实服务器（后端节点）以及负载均衡策略。</p>
+</li>
+<li><p>一些相关命令</p>
+<p>1）基础的查看命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ipvsadm -Ln           <span class="comment"># 查看规则</span></span><br><span class="line">ipvsadm -Ln --stats   <span class="comment"># 查看流量统计</span></span><br><span class="line">ipvsadm -Ln --rate    <span class="comment"># 查看连接速率</span></span><br></pre></td></tr></table></figure>
+
+<p>2）添加 VIP 虚拟服务</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ipvsadm -A -t VIP:端口 -s 算法</span><br><span class="line"><span class="comment"># -A：新建虚拟服务  -t：TCP协议  -s：指定调度算法</span></span><br></pre></td></tr></table></figure>
+
+<p>3）添加后端 RS 节点</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ipvsadm -a -t VIP:端口 -r RIP:端口 -g/-m/-i</span><br><span class="line"><span class="comment"># -a：增加真实服务器  -r：后端服务器地址</span></span><br><span class="line"><span class="comment"># 转发模式三选一：</span></span><br><span class="line"><span class="comment"># -g DR 直接路由（本次实验，性能最高）</span></span><br><span class="line"><span class="comment"># -m NAT 模式</span></span><br><span class="line"><span class="comment"># -i IP 隧道 TUN</span></span><br></pre></td></tr></table></figure>
+
+<p>4）持久化保存</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ipvsadm-save &gt; /etc/sysconfig/ipvsadm</span><br><span class="line">ipvsadm-restore &lt; /etc/sysconfig/ipvsadm</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>LVS 有三种转发工作模式：</p>
+<ul>
+<li><strong>DR（Direct Routing）模式</strong> <code>-g</code>：性能最优，调度器与后端服务器在同一网段，通过修改数据包的 MAC 地址实现转发，后端服务器需绑定 VIP。</li>
+<li><strong>NAT（Network Address Translation）模式</strong> <code>-m</code>：性能较差，调度器与后端服务器不在同一网段，调度器需进行地址转换（SNAT），后端服务器需配置网关指向调度器。</li>
+<li><strong>TUN（IP Tunneling，IP 隧道）模式</strong> <code>-i</code>：适用于跨网段场景（公网），通过 IP 隧道协议封装数据包，性能介于 DR 和 NAT 之间。</li>
+</ul>
+<blockquote>
+<p>📌 <strong>补充知识点：第四种模式 — FULLNAT</strong><br>除了 DR&#x2F;NAT&#x2F;TUN 三种经典模式外，还有 <strong>FULLNAT 模式</strong>（由阿里开源贡献）。它将请求和响应的源 IP、目标 IP 都做转换，使 RS 看不到客户端真实 IP，但部署更灵活（RS 可跨 VLAN），常用于大型云厂商内部。</p>
+</blockquote>
+</li>
+<li><p>常用的调度算法有四个：</p>
+<ul>
+<li><code>rr</code> 轮询：请求依次轮流分配，不考虑负载</li>
+<li><code>wrr</code> 加权轮询：根据权重分配请求</li>
+<li><code>lc</code> 最少连接；<code>wlc</code> 加权最少连接</li>
+<li><code>sh</code> 源地址哈希，实现会话保持</li>
+</ul>
+</li>
+</ol>
+<h3 id="（2）具体的实验"><a href="#（2）具体的实验" class="headerlink" title="（2）具体的实验"></a>（2）具体的实验</h3><p>这次实验需要四台机子，他们的功能如下：</p>
+<table>
+<thead>
+<tr>
+<th>主机名</th>
+<th>IP (RIP)</th>
+<th>VIP</th>
+<th>角色</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>server1</td>
+<td>192.168.63.131</td>
+<td>192.168.63.100</td>
+<td>调度器（VS）</td>
+<td>负载调度器，接收客户端请求，分发流量</td>
+</tr>
+<tr>
+<td>server2</td>
+<td>192.168.63.128</td>
+<td>192.168.63.100</td>
+<td>真实服务器（RS）</td>
+<td>真实业务服务器，处理请求并返回响应</td>
+</tr>
+<tr>
+<td>server3</td>
+<td>192.168.63.129</td>
+<td>192.168.63.100</td>
+<td>真实服务器（RS）</td>
+<td>真实业务服务器，处理请求并返回响应</td>
+</tr>
+<tr>
+<td>server4</td>
+<td>192.168.63.130</td>
+<td>—</td>
+<td>测试机</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Ps: vip 长得和会员 VIP 用户的 VIP 好像（VIP：虚拟 IP，客户端访问的入口）</p>
+</blockquote>
+<p><strong>1. 在实验开始之前，我们需要了解一下这是在干什么。</strong></p>
+<p>我们想要搭建四层的负载均衡集群，让调度器 server1 分发流量给后端 server2、server3。由于 DR 模式性能最高，我们选用 DR 模式。</p>
+<p>好的，实验开始了。</p>
+<p>我们先给所有主机配置静态 IP（防止 DHCP 自动分配改变 IP，LVS 规则和关系失控），这样也方便 PC 互相 ssh。</p>
+<blockquote>
+<p>Ps: 我之前实验时，把网关配置成 10 网段的了（如 10.0.0.132），但是老师用的是 192.168. 的，想改回去。这要求我们关闭虚拟机，打开”编辑”里面的”虚拟网络编辑器”，使它恢复默认。</p>
+</blockquote>
+<p>打开 <code>/etc/sysconfig/network-scripts/ifcfg-ens33</code>（网卡配置文件），添加 <code>IPADDR=192.168.63.131</code>、<code>NETMASK=255.255.255.0</code>、<code>GATEWAY=192.168.63.2</code>、<code>DNS1=192.168.63.2</code>。保存退出后，重启网络。之后，重新配置主机名。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/1.png"></p>
+<p><strong>2. 在调度器 server1 上配置 LVS</strong></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/2.png"></p>
+<p>我们安装好 ipvsadm 后，找到物理网卡（ens33），绑定 VIP（对外的接口 &#x2F;24）；</p>
+<p>清空旧规则（虽然我没搞这个，命令是 <code>ipvsadm -C</code>）；</p>
+<p>创建虚拟服务，用 rr 轮询算法（rr 轮询算法，是请求依次轮流分给后端服务器，一人一次，循环往复，不考虑服务器的负载和性能，即使故障也会发过去）；</p>
+<p>添加两台后端 RS，指定 DR 模式 <code>-g</code>（-g 是 DR 模式，直接路由）；</p>
+<p>最后可以通过 <code>ipvsadm -Ln</code> 核对规则；</p>
+<p><strong>3. 在后端服务器 server2、server3（RS）上的服务器配置</strong></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/3.png"> server3 和 server2 类似</p>
+<p><strong>4. 在客户端（测试机）上验证一下</strong></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/4.png"><br>成功啦好的</p>
+<p>但其实第一次实验时，实验失败了。分两种情况：</p>
+<p>1）<code>curl 192.168.63.100</code> 行不通，返回超时。这时候我们可以通过抓包（<code>tcpdump -i ens32 host 192.168.63.100 and port 80</code>），检查一下 TCP 三次握手是否成功，如果没有回 SYN+ACK 应答包，应该是 server2 和 server3 的 ARP 内核参数有问题；</p>
+<p>2）响应时只返回 server3，不返回 server2，检查调度器 server1。最开始操作时，把 VIP <code>192.168.63.100/24</code> 绑定在物理网卡 ens33，而非 lo 回环网卡、掩码 &#x2F;32。虽然后续清理修正，但局域网内 ARP 缓存会持续生效，短时干扰网络。</p>
+<blockquote>
+<p>📌 <strong>补充知识点：排错时可用工具</strong></p>
+<ul>
+<li><code>tcpdump -i ens33 host 192.168.63.100 and port 80</code> → 抓包看三次握手</li>
+<li><code>arp -a</code> → 查看 ARP 缓存，确认 VIP 对应的 MAC 是调度器的</li>
+<li><code>arp -d 192.168.63.100</code> → 清除指定 ARP 缓存条目</li>
+<li><code>ipvsadm -Ln --stats</code> → 查看流量统计，确认请求是否到达 RS</li>
+</ul>
+</blockquote>
+<p><strong>5. 一些疑问</strong></p>
+<p>1）我们什么时候用 &#x2F;24, ens33，什么时候用 &#x2F;32, lo 取决于我们的使用角色。</p>
+<p>Director 调度器使用 ens33，ens33 时对外的物理网卡，需要让全网用户访问到 VIP。而 RealServer 后端服务器使用 <code>VIP/32 dev lo</code>，绑定在 lo 回环网卡，只让本机内部程序识别 VIP，禁止对外响应 VIP 的 ARP 请求，防止冲突。</p>
+<p>2）<code>arp_ignore</code> 和 <code>arp_announce</code> 是什么</p>
+<ul>
+<li><code>arp_ignore</code>（收到别人 ARP 请求时，怎么应答）<ul>
+<li>外部 ARP 询问 192.168.63.100 的 MAC 地址。请求包从 ens33 进来，但是 VIP 绑在 lo 上。此时 <code>arp_ignore=1</code> → 拒绝回复 ARP，防止 RS 对外宣称 VIP。</li>
+</ul>
+</li>
+<li><code>arp_announce</code>（本机对外发送 ARP 包时，源 IP 怎么选）<ul>
+<li><code>arp_announce=2</code> 尽量使用和出接口网段匹配的 IP 作为 ARP 源地址。不会拿 lo 上的 VIP 当做源 IP 向外发送 ARP。能够防止 RS 主动向外广播【源 IP&#x3D;VIP】的 ARP 报文。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>📌 <strong>补充知识点：arp_ignore &#x2F; arp_announce 取值含义</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>取值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>arp_ignore</td>
+<td>0</td>
+<td>只要本机有这个 IP，任何网卡都应答</td>
+</tr>
+<tr>
+<td>arp_ignore</td>
+<td>1</td>
+<td>只在接收请求的网卡上有该 IP 时才应答</td>
+</tr>
+<tr>
+<td>arp_ignore</td>
+<td>2</td>
+<td>只应答本机所有网卡上配置的 IP（更严格）</td>
+</tr>
+<tr>
+<td>arp_announce</td>
+<td>0</td>
+<td>允许使用任意 IP 作为 ARP 源地址</td>
+</tr>
+<tr>
+<td>arp_announce</td>
+<td>1</td>
+<td>优先选择与目标 IP 同网段的地址</td>
+</tr>
+<tr>
+<td>arp_announce</td>
+<td>2</td>
+<td>始终选择最匹配的地址（最严格，DR 模式推荐）</td>
+</tr>
+</tbody></table>
+</blockquote>
+<hr>
+<h2 id="三、LVS-NAT-模式负载均衡（双网卡拓扑）"><a href="#三、LVS-NAT-模式负载均衡（双网卡拓扑）" class="headerlink" title="三、LVS-NAT 模式负载均衡（双网卡拓扑）"></a>三、LVS-NAT 模式负载均衡（双网卡拓扑）</h2><h3 id="（1）原理"><a href="#（1）原理" class="headerlink" title="（1）原理"></a>（1）原理</h3><ol>
+<li><p>VS&#x2F;NAT 的优点是服务器可以运行任何支持 TCP&#x2F;IP 的操作系统，它只需要一个 IP 地址配置在调度器上，服务器组可以用私有的 IP 地址。</p>
+</li>
+<li><p>缺点是它的伸缩能力有限，当服务器结点数目升到 20 时，调度器本身有可能成为系统的新瓶颈，因为在 VS&#x2F;NAT 中请求和响应报文都需要通过负载调度器。</p>
+</li>
+<li><p>在这次实验里，调度器 VS 有双网卡：</p>
+<ul>
+<li><strong>ens32（外网）</strong>：192.168.10.100 【VIP，客户端访问入口】</li>
+<li><strong>ens33（内网）</strong>：192.168.63.131 【连接后端 RS，同时作为 RS 的默认网关】</li>
+</ul>
+<p>后端 RS 的网关仍在 192.168.63.x；测试的客户端在 192.168.10.x（与调度器外网同网段）</p>
+</li>
+<li><p>工作原理是：</p>
+<p>客户端访问虚拟 VIP，请求报文到达调度器；调度器将目标 IP 修改为后端真实服务器 RIP 并转发（<strong>DNAT</strong>）。后端服务器收到请求后，响应报文必须经由调度器回包，调度器再把源 IP 改回 VIP（<strong>SNAT</strong>）返回客户端。入站、出站所有流量都经过调度器完成地址转换，从而实现四层负载均衡。</p>
+</li>
+</ol>
+<blockquote>
+<p>📌 <strong>补充知识点：iptables 优先级 &gt; IPVS</strong><br>如果调度器上 iptables 的 INPUT 链拦截了 80 端口，请求到不了 LVS，负载均衡就会失效。排查时先 <code>iptables -L -n</code> 确认没有 DROP 规则，或干脆 <code>systemctl stop firewalld</code> 关闭防火墙再测试。</p>
+</blockquote>
+<h3 id="（2）具体的上机实验"><a href="#（2）具体的上机实验" class="headerlink" title="（2）具体的上机实验"></a>（2）具体的上机实验</h3><ol>
+<li><p>这个实验是 LVS 的另一种转发方式，用到了双网卡，调度器做网关。与 DR 模式不同，它不用处理 ARP，性能会弱一点。我们可以对比着来看。因为 NAT 和 DR 不能混用，我们要先清理上一轮 DR 实验的配置。</p>
+</li>
+<li><p>在 server1 调度器上，我们要配置双网卡。于是我们关机后，返回 VMware，在设置里添加网络适配器，选择和现有网卡一致的网络连接模式连接（此处截图省略）。</p>
+<p>开机后，重新配置环境。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/5.png"></p>
+<p>我们开启 IP 转发并让它生效，加载 net 模块，清空旧规则后，写入新的 LVS NAT 规则。</p>
+<blockquote>
+<p>📌 <strong>关键命令补充</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 开启内核路由转发（NAT 必须！否则 RS 回包过不来）</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;net.ipv4.ip_forward = 1&quot;</span> &gt; /etc/sysctl.d/lvs.conf</span><br><span class="line">sysctl -p /etc/sysctl.d/lvs.conf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加载 NAT 内核模块</span></span><br><span class="line">modprobe iptable_nat</span><br><span class="line">lsmod | grep nat</span><br><span class="line"></span><br><span class="line"><span class="comment"># 写入 NAT 规则（-m = Masquerade 伪装模式）</span></span><br><span class="line">ipvsadm -A -t 192.168.10.100:80 -s rr</span><br><span class="line">ipvsadm -a -t 192.168.10.100:80 -r 192.168.63.128:80 -m</span><br><span class="line">ipvsadm -a -t 192.168.10.100:80 -r 192.168.63.129:80 -m</span><br></pre></td></tr></table></figure>
+
+<p>验证：<code>ipvsadm -Ln</code> 看到 Forward 列显示 <strong>Masq</strong> 就说明 NAT 模式配置正确。</p>
+</blockquote>
+</li>
+<li><p>在 server2 和 server3 上设置新的网关，指向调度器的内网 IP。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/6.png"></p>
+<blockquote>
+<p>补充完整命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 清理 DR 实验残留</span></span><br><span class="line">ip addr del 192.168.63.100/32 dev lo</span><br><span class="line"><span class="built_in">echo</span> 0 &gt; /proc/sys/net/ipv4/conf/lo/arp_ignore</span><br><span class="line"><span class="built_in">echo</span> 0 &gt; /proc/sys/net/ipv4/conf/lo/arp_announce</span><br><span class="line"><span class="built_in">echo</span> 0 &gt; /proc/sys/net/ipv4/conf/ens33/arp_ignore</span><br><span class="line"><span class="built_in">echo</span> 0 &gt; /proc/sys/net/ipv4/conf/ens33/arp_announce</span><br><span class="line">arptables -F</span><br><span class="line"></span><br><span class="line"><span class="comment"># 修改网关指向调度器</span></span><br><span class="line">ip route del default via 192.168.63.2</span><br><span class="line">ip route add default via 192.168.63.131</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关闭防火墙和 SELinux</span></span><br><span class="line">systemctl stop firewalld</span><br><span class="line">setenforce 0</span><br></pre></td></tr></table></figure></blockquote>
+</li>
+<li><p>测试一下</p>
+<p>我们去 VMware 上，把 server4 的 IP 设置为静态的 192.168.10. 网段（才能 ping 通外网卡），然后通过 <code>curl 192.168.10.100</code> 测试一下。成功了。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/7.png"></p>
+<blockquote>
+<p>📌 <strong>补充验证</strong>：NAT 模式下客户端 <code>arp -a</code> 看到的 VIP MAC 是调度器外网网卡 ens32 的 MAC，和 DR 模式一样，流量确实经过调度器。</p>
+</blockquote>
+</li>
+</ol>
+<hr>
+<h2 id="四、Keepalived-LVS-DR-高可用集群（主备调度器，解决调度器单点故障）"><a href="#四、Keepalived-LVS-DR-高可用集群（主备调度器，解决调度器单点故障）" class="headerlink" title="四、Keepalived + LVS-DR 高可用集群（主备调度器，解决调度器单点故障）"></a>四、Keepalived + LVS-DR 高可用集群（主备调度器，解决调度器单点故障）</h2><h3 id="（1）原理-1"><a href="#（1）原理-1" class="headerlink" title="（1）原理"></a>（1）原理</h3><ol>
+<li><p>只用 ipvsadm 部署 LVS-DR 存在两大缺陷：一个是调度器单点故障（只有一台 server1 做调度器，一旦宕机，整个集群全部断网）；另一个是无后端健康检查（后端 server2&#x2F;server3 的 httpd 宕机，LVS 依旧分发流量，用户访问报错）。</p>
+</li>
+<li><p>Keepalived 是为 LVS 设计的高可用软件，基于 VRRP 虚拟路由冗余协议。</p>
+</li>
+<li><p>核心原理是：VRRP 协议与 VIP 漂移</p>
+<p>Keepalived 的高可用能力依赖 VRRP 协议，本质是让多台节点（主、备）共享一个”虚拟 IP（VIP）”，对外呈现为一个统一的服务入口，核心逻辑如下：</p>
+<p>1）<strong>角色划分</strong>：集群包含 1 个主节点（Master）和 1 个&#x2F;多个备节点（Backup）。<br>2）<strong>心跳检测</strong>：主节点定期向备节点发送 VRRP 通告报文（默认每 1 秒），证明自己”存活”。<br>3）<strong>VIP 持有</strong>：正常情况下，主节点绑定 VIP 并对外提供服务，备节点仅监听心跳，不持有 VIP。<br>4）<strong>故障切换</strong>：若备节点超过指定时间（默认 3 秒）未收到主节点心跳，判定主节点故障，备节点立即升级为新主节点，绑定 VIP 并接管服务，整个过程无需人工干预。</p>
+</li>
+<li><p>配置文件（以双节点为例）</p>
+<p>Keepalived 主配置文件默认路径为 <code>/etc/keepalived/keepalived.conf</code>，主、备节点配置差异主要在 <code>state</code>（角色）和 <code>priority</code>（优先级，数值越高越优先成为主节点）。</p>
+</li>
+</ol>
+<h3 id="（2）具体的实验如下"><a href="#（2）具体的实验如下" class="headerlink" title="（2）具体的实验如下"></a>（2）具体的实验如下</h3><ol>
+<li>实验拓扑（我的在 63 网段）</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>主机</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>server1</td>
+<td>Master LVS 调度器（192.168.63.131）</td>
+</tr>
+<tr>
+<td>server4</td>
+<td>Backup LVS 调度器（192.168.63.130）</td>
+</tr>
+<tr>
+<td>server2</td>
+<td>RS1（192.168.63.128）httpd 服务</td>
+</tr>
+<tr>
+<td>server3</td>
+<td>RS2（192.168.63.129）httpd 服务</td>
+</tr>
+<tr>
+<td>server4</td>
+<td>同时作为备调度器 + 测试客户端</td>
+</tr>
+</tbody></table>
+<ol start="2">
+<li><p>Master 调度器 server1（192.168.63.131）</p>
+<p>我们关闭全部的防火墙，保持 DR 环境，即在 server2、server3 上如下；</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/8.png"></p>
+<p>然后就回到 server1，清理旧的手动 LVS 规则、旧 VIP，安装 keepalived，编辑配置文件 <code>vim /etc/keepalived/keepalived.conf</code>，再启动服务；</p>
+<p>验证状态发现，ens33 上存在 192.168.63.100，也自动生成两条 RS 规则，Forward 为 Route（DR 模式）</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/9.png"></p>
+<p>具体的文件内容如下（server4 上也差不多）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">! Configuration File for keepalived</span><br><span class="line"></span><br><span class="line">global_defs &#123;</span><br><span class="line">    notification_email &#123;</span><br><span class="line">        root@localhost        # 接收警报的 email 地址,可以添加多个</span><br><span class="line">    &#125;</span><br><span class="line">    notification_email_from keepalived@localhost  # 设置邮件的发送地址</span><br><span class="line">    smtp_server 127.0.0.1    # 设置 smtp server 地址</span><br><span class="line">    smtp_connect_timeout 30   # 设置连接 smtp 服务器超时时间</span><br><span class="line">    router_id LVS_DEVEL       # load balancer 的标识 ID,用于 email 警报</span><br><span class="line">    vrrp_skip_check_adv_addr  # 跳过对 VRRP 通告报文中 adv_addr 字段的检查</span><br><span class="line">    #vrrp_strict              # 关闭&quot;严格模式&quot;</span><br><span class="line">    vrrp_garp_interval 0      # 设置发送 GARP 报文的间隔时间，0 表示禁用</span><br><span class="line">    vrrp_gna_interval 0       # 设置发送邻居通告报文的间隔时间，0 表示禁用</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state MASTER              # 备机改为 BACKUP,此状态是由 priority 的值来决定的</span><br><span class="line">    interface ens33           # HA 监测网络接口，根据实际网络接口填写</span><br><span class="line">    virtual_router_id 51      # 主、备机的 virtual_router_id 必须相同,取值 0-255</span><br><span class="line">    priority 100              # 主机的优先级,主机优先级一定要大于备机</span><br><span class="line">    advert_int 1              # 主备之间的通告间隔秒数</span><br><span class="line"></span><br><span class="line">    authentication &#123;          # 主备切换时的验证</span><br><span class="line">        auth_type PASS         # 设置验证类型，主要有 PASS 和 AH 两种</span><br><span class="line">        auth_pass 1111         # 设置验证密码，8 个字符以内</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.63.100        # 设置虚拟 IP 地址，每行一个</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">virtual_server 192.168.63.100 80 &#123;  # 定义虚拟服务器</span><br><span class="line">    delay_loop 3              # 每隔 3 秒查询 realserver 状态</span><br><span class="line">    lb_algo rr                # lvs 调度算法,这里使用轮询</span><br><span class="line">    lb_kind DR                # LVS 使用 DR 模式，需要大写</span><br><span class="line">    #persistence_timeout 50   # 会话保持时间（秒），无状态服务注释掉</span><br><span class="line">    protocol TCP              # 指定转发协议类型</span><br><span class="line"></span><br><span class="line">    real_server 192.168.63.128 80 &#123;  # 配置服务节点</span><br><span class="line">        weight 1              # 权值</span><br><span class="line">        TCP_CHECK &#123;           # realserver 状态检测</span><br><span class="line">            connect_timeout 3 # 连接超时</span><br><span class="line">            retry 3           # 重试次数</span><br><span class="line">            delay_before_retry 3 # 重试间隔</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    real_server 192.168.63.129 80 &#123;</span><br><span class="line">        weight 1</span><br><span class="line">        TCP_CHECK &#123;</span><br><span class="line">            connect_timeout 3</span><br><span class="line">            retry 3</span><br><span class="line">            delay_before_retry 3</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>📌 <strong>补充知识点：几个容易踩的坑</strong></p>
+<ul>
+<li><code>vrrp_strict</code> 必须注释掉！否则 Keepalived 会自动添加 iptables 规则拦截流量，导致 curl 超时。</li>
+<li><code>persistence_timeout</code> 无状态服务要注释掉，否则同一个客户端始终被分到同一台 RS，看不出轮询效果。</li>
+<li><code>advert_int 1</code> 表示每秒发一次心跳，3 秒收不到就切换。</li>
+<li><code>virtual_router_id</code> 主备必须相同，否则 VRRP 不通。</li>
+</ul>
+</blockquote>
+</li>
+<li><p>后端 RS 健康检测（Keepalived 内置功能）</p>
+<p>我们通过 <code>systemctl stop httpd</code> 在 server2 模拟 web 服务故障，发现调度器上 server2 消失了，server2 恢复服务后，server2 自动重新加入集群，恢复负载分发。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/10.png"></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/11.png"></p>
+<blockquote>
+<p>📌 <strong>补充知识点：LVS 原生没有健康检测能力</strong><br>只用 <code>ipvsadm</code> 时，后端 RS 宕机了 LVS 照样分发流量，用户会访问报错。Keepalived 的 <code>TCP_CHECK</code> 解决了这个问题——它每隔 <code>delay_loop</code> 秒去探测 RS 的 80 端口，连不上就自动摘除，恢复后自动加回。</p>
+</blockquote>
+</li>
+</ol>
+<h3 id="（3）主备切换验证（VIP-漂移）⬅-笔记原缺失部分"><a href="#（3）主备切换验证（VIP-漂移）⬅-笔记原缺失部分" class="headerlink" title="（3）主备切换验证（VIP 漂移）⬅ 笔记原缺失部分"></a>（3）主备切换验证（VIP 漂移）⬅ 笔记原缺失部分</h3><blockquote>
+<p>上面验证了后端 RS 的健康检测，但 Keepalived 最核心的功能——<strong>调度器主备切换</strong>还没验证。下面是完整操作。</p>
+</blockquote>
+<p><strong>1）正常状态下查看主备日志</strong></p>
+<p>Master (server1) 的日志：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# <span class="built_in">tail</span> -5 /var/log/messages</span><br><span class="line">Keepalived_vrrp[3125]: VRRP_Instance(VI_1) Transition to MASTER STATE</span><br><span class="line">Keepalived_vrrp[3125]: VRRP_Instance(VI_1) Entering MASTER STATE</span><br><span class="line">Keepalived_vrrp[3125]: VRRP_Instance(VI_1) setting protocol VIPs.</span><br><span class="line">Keepalived_vrrp[3125]: Sending gratuitous ARP on ens33 <span class="keyword">for</span> 192.168.63.100</span><br></pre></td></tr></table></figure>
+
+<p>Backup (server4) 的日志：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# <span class="built_in">tail</span> -5 /var/log/messages</span><br><span class="line">Keepalived_vrrp[xxxx]: VRRP_Instance(VI_1) Entering BACKUP STATE</span><br><span class="line">Keepalived_vrrp[xxxx]: VRRP_Instance(VI_1) removing protocol VIPs.</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Master 持有 VIP，Backup 只监听不持有。</p>
+</blockquote>
+<p><strong>2）模拟 Master 宕机</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl stop keepalived</span><br></pre></td></tr></table></figure>
+
+<p>等待 3 秒后，查看 Backup (server4)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# <span class="built_in">tail</span> -10 /var/log/messages</span><br><span class="line">Keepalived_vrrp[xxxx]: VRRP_Instance(VI_1) Transition to MASTER STATE</span><br><span class="line">Keepalived_vrrp[xxxx]: VRRP_Instance(VI_1) Entering MASTER STATE</span><br><span class="line">Keepalived_vrrp[xxxx]: VRRP_Instance(VI_1) setting protocol VIPs.</span><br><span class="line">Keepalived_vrrp[xxxx]: Sending gratuitous ARP on ens33 <span class="keyword">for</span> 192.168.63.100</span><br></pre></td></tr></table></figure>
+
+<p>验证 VIP 已漂移：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# ip addr show ens33 | grep 100</span><br><span class="line">    inet 192.168.63.100/32 scope global ens33</span><br></pre></td></tr></table></figure>
+
+<p>验证调度规则自动生成：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# ipvsadm -Ln</span><br><span class="line">IP Virtual Server version 1.2.1 (size=4096)</span><br><span class="line">Prot LocalAddress:Port Scheduler Flags</span><br><span class="line">  -&gt; RemoteAddress:Port           Forward Weight ActiveConn InActConn</span><br><span class="line">TCP  192.168.63.100:80 rr</span><br><span class="line">  -&gt; 192.168.63.128:80            Route   1      0          0</span><br><span class="line">  -&gt; 192.168.63.129:80            Route   1      0          0</span><br></pre></td></tr></table></figure>
+
+<p>客户端测试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# <span class="keyword">for</span> i <span class="keyword">in</span> &#123;1..6&#125;; <span class="keyword">do</span> curl 192.168.63.100; <span class="keyword">done</span></span><br><span class="line">server2</span><br><span class="line">server3</span><br><span class="line">server2</span><br><span class="line">server3</span><br><span class="line">server2</span><br><span class="line">server3</span><br></pre></td></tr></table></figure>
+
+<p>✅ <strong>服务不中断，客户端完全无感知！VIP 从 server1 漂移到 server4。</strong></p>
+<p><strong>3）恢复 Master</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl start keepalived</span><br></pre></td></tr></table></figure>
+
+<p>查看 Backup 日志：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# <span class="built_in">tail</span> -5 /var/log/messages</span><br><span class="line">Keepalived_vrrp[xxxx]: VRRP_Instance(VI_1) Entering BACKUP STATE</span><br><span class="line">Keepalived_vrrp[xxxx]: VRRP_Instance(VI_1) removing protocol VIPs.</span><br></pre></td></tr></table></figure>
+
+<p>查看 Master：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# ip addr show ens33 | grep 100</span><br><span class="line">    inet 192.168.63.100/32 scope global ens33</span><br></pre></td></tr></table></figure>
+
+<p>✅ <strong>因为 server1 priority&#x3D;100 &gt; server4 priority&#x3D;50，Master 恢复后自动抢回 VIP（抢占模式）。</strong></p>
+<blockquote>
+<p>📌 <strong>补充知识点：抢占 vs 非抢占</strong></p>
+<ul>
+<li>默认是<strong>抢占模式</strong>：优先级高的节点恢复后自动夺回 VIP。</li>
+<li>如需<strong>非抢占</strong>（避免频繁切换），在主备配置中加 <code>nopreempt</code>，且两节点 state 都设为 <code>BACKUP</code>。</li>
+</ul>
+</blockquote>
+<hr>
+<h2 id="五、HAProxy-七层负载均衡-⬅-笔记原缺失部分"><a href="#五、HAProxy-七层负载均衡-⬅-笔记原缺失部分" class="headerlink" title="五、HAProxy 七层负载均衡 ⬅ 笔记原缺失部分"></a>五、HAProxy 七层负载均衡 ⬅ 笔记原缺失部分</h2><h3 id="（1）原理-2"><a href="#（1）原理-2" class="headerlink" title="（1）原理"></a>（1）原理</h3><p>HAProxy 是七层（应用层）负载均衡器，和 LVS 的四层转发不同，它能识别 HTTP 协议内容，做精细化调度。</p>
+<p><strong>HAProxy vs LVS 核心区别：</strong></p>
+<table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>LVS（四层）</th>
+<th>HAProxy（七层）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作层次</td>
+<td>传输层（TCP&#x2F;UDP）</td>
+<td>应用层（HTTP&#x2F;HTTPS）</td>
+</tr>
+<tr>
+<td>调度依据</td>
+<td>IP + 端口</td>
+<td>URL &#x2F; Header &#x2F; Cookie 等</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>★★★★★ 内核态</td>
+<td>★★★★ 用户态</td>
+</tr>
+<tr>
+<td>动静分离</td>
+<td>不支持</td>
+<td>支持（ACL 规则）</td>
+</tr>
+<tr>
+<td>会话保持</td>
+<td>源 IP 哈希</td>
+<td>Cookie &#x2F; Session 粘性</td>
+</tr>
+<tr>
+<td>RS 需 VIP</td>
+<td>DR 模式需要</td>
+<td>不需要</td>
+</tr>
+<tr>
+<td>RS 需 ARP 抑制</td>
+<td>DR 模式需要</td>
+<td>不需要</td>
+</tr>
+<tr>
+<td>端口转发</td>
+<td>不支持</td>
+<td>支持任意端口映射</td>
+</tr>
+<tr>
+<td>健康检测</td>
+<td>需 Keepalived</td>
+<td>内置</td>
+</tr>
+<tr>
+<td>监控页面</td>
+<td>无</td>
+<td>有（stats page）</td>
+</tr>
+</tbody></table>
+<p><strong>七层负载的关键优势</strong>：对后端服务完全透明——RS 不需要配置 VIP、不需要 ARP 抑制、不需要和调度器同网段，部署极其简单。</p>
+<h3 id="（2）安装与配置"><a href="#（2）安装与配置" class="headerlink" title="（2）安装与配置"></a>（2）安装与配置</h3><p>在 server1 上安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# yum install -y haproxy</span><br><span class="line">[root@server1 ~]# rpm -qa | grep haproxy</span><br><span class="line">haproxy-1.5.18-9.el7.x86_64</span><br></pre></td></tr></table></figure>
+
+<p>编辑配置文件 <code>/etc/haproxy/haproxy.cfg</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line">#---------------------------------------------------------------------</span><br><span class="line"># Global settings</span><br><span class="line">#---------------------------------------------------------------------</span><br><span class="line">global</span><br><span class="line">    log         127.0.0.1 local2</span><br><span class="line">    chroot      /var/lib/haproxy</span><br><span class="line">    pidfile     /var/run/haproxy.pid</span><br><span class="line">    maxconn     4000</span><br><span class="line">    user        haproxy</span><br><span class="line">    group       haproxy</span><br><span class="line">    daemon</span><br><span class="line"></span><br><span class="line">#---------------------------------------------------------------------</span><br><span class="line"># Defaults</span><br><span class="line">#---------------------------------------------------------------------</span><br><span class="line">defaults</span><br><span class="line">    mode                    http</span><br><span class="line">    log                     global</span><br><span class="line">    option                  httplog</span><br><span class="line">    option                  dontlognull</span><br><span class="line">    retries                 3</span><br><span class="line">    timeout connect         10s</span><br><span class="line">    timeout client          1m</span><br><span class="line">    timeout server          1m</span><br><span class="line">    timeout check           10s</span><br><span class="line">    maxconn                 3000</span><br><span class="line"></span><br><span class="line">#---------------------------------------------------------------------</span><br><span class="line"># Stats page（监控页面）</span><br><span class="line">#---------------------------------------------------------------------</span><br><span class="line">listen stats</span><br><span class="line">    mode http</span><br><span class="line">    bind *:8081</span><br><span class="line">    stats enable</span><br><span class="line">    stats uri /haproxy</span><br><span class="line">    stats realm &quot;HAProxy Statistics&quot;</span><br><span class="line">    stats auth admin:admin123</span><br><span class="line"></span><br><span class="line">#---------------------------------------------------------------------</span><br><span class="line"># Frontend + Backend</span><br><span class="line">#---------------------------------------------------------------------</span><br><span class="line">frontend http_front</span><br><span class="line">    mode http</span><br><span class="line">    bind *:80</span><br><span class="line"></span><br><span class="line">    # ACL: 匹配静态资源请求</span><br><span class="line">    acl url_static path_beg -i /static /images /js /css</span><br><span class="line">    acl url_static path_end -i .jpg .jpeg .gif .png .css .js .html</span><br><span class="line"></span><br><span class="line">    # 动静分离</span><br><span class="line">    use_backend static_servers if url_static</span><br><span class="line">    default_backend app_servers</span><br><span class="line"></span><br><span class="line">backend static_servers</span><br><span class="line">    mode http</span><br><span class="line">    balance roundrobin</span><br><span class="line">    server s1 192.168.63.128:80 check weight 1</span><br><span class="line"></span><br><span class="line">backend app_servers</span><br><span class="line">    mode http</span><br><span class="line">    balance roundrobin</span><br><span class="line">    server app1 192.168.63.128:80 check weight 1</span><br><span class="line">    server app2 192.168.63.129:8080 check weight 1</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>📌 <strong>配置说明</strong>：</p>
+<ul>
+<li><code>frontend</code> 定义客户端入口（绑 80 端口）</li>
+<li><code>backend</code> 定义后端服务器池</li>
+<li><code>acl</code> 是七层专属能力，可以按 URL 路径做路由</li>
+<li><code>check</code> 表示开启健康检测</li>
+<li><code>stats</code> 页面可在浏览器访问 <code>http://IP:8081/haproxy</code>，账号 admin &#x2F; admin123</li>
+</ul>
+</blockquote>
+<h3 id="（3）修改-server3-端口为-8080（演示端口转发）"><a href="#（3）修改-server3-端口为-8080（演示端口转发）" class="headerlink" title="（3）修改 server3 端口为 8080（演示端口转发）"></a>（3）修改 server3 端口为 8080（演示端口转发）</h3><p>七层负载可以转发到 RS 的任意端口，这是 LVS DR 模式做不到的。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server3 上修改 httpd 监听端口</span></span><br><span class="line">[root@server3 ~]# vim /etc/httpd/conf/httpd.conf</span><br><span class="line"><span class="comment"># 找到 Listen 80，改为：</span></span><br><span class="line">Listen 8080</span><br><span class="line"></span><br><span class="line">[root@server3 ~]# systemctl restart httpd</span><br><span class="line">[root@server3 ~]# ss -tlnp | grep 8080</span><br><span class="line">LISTEN 0 128 :::8080 :::* <span class="built_in">users</span>:((&quot;httpd&quot;,pid=xxxx,fd=<span class="number">4</span>))</span><br><span class="line"></span><br><span class="line">[root@server3 ~]# <span class="built_in">echo</span> <span class="string">&#x27;server3-8080&#x27;</span> &gt; /var/www/html/index.html</span><br></pre></td></tr></table></figure>
+
+<h3 id="（4）启动并验证"><a href="#（4）启动并验证" class="headerlink" title="（4）启动并验证"></a>（4）启动并验证</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# systemctl <span class="built_in">enable</span> --now haproxy</span><br><span class="line">[root@server1 ~]# systemctl status haproxy</span><br><span class="line">● haproxy.service - HAProxy Load Balancer</span><br><span class="line">   Active: active (running) since Wed 2026-07-22 11:00:00 EDT</span><br><span class="line">   Main PID: 4567 (haproxy)</span><br><span class="line"></span><br><span class="line">[root@server1 ~]# ss -tlnp | grep haproxy</span><br><span class="line">LISTEN 0 128 *:80 haproxy</span><br><span class="line">LISTEN 0 128 *:8081 haproxy</span><br></pre></td></tr></table></figure>
+
+<p>客户端验证：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# <span class="keyword">for</span> i <span class="keyword">in</span> &#123;1..10&#125;; <span class="keyword">do</span> curl 192.168.63.131; <span class="keyword">done</span></span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br></pre></td></tr></table></figure>
+
+<p>✅ <strong>轮询生效！server3 通过 8080 端口响应，七层端口转发正常。</strong></p>
+<p>动静分离验证：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># server2 上创建测试图片</span></span><br><span class="line">[root@server2 ~]# <span class="built_in">mkdir</span> -p /var/www/html/images</span><br><span class="line">[root@server2 ~]# <span class="built_in">echo</span> <span class="string">&#x27;STATIC-IMAGE&#x27;</span> &gt; /var/www/html/images/test.jpg</span><br><span class="line"></span><br><span class="line"><span class="comment"># 客户端请求静态资源</span></span><br><span class="line">[root@server4 ~]# curl http://192.168.63.131/images/test.jpg</span><br><span class="line">STATIC-IMAGE</span><br></pre></td></tr></table></figure>
+
+<p>✅ <strong>静态资源请求被 ACL 规则路由到 static_servers 组。</strong></p>
+<hr>
+<h2 id="六、HAProxy-Keepalived-高可用整合-⬅-笔记原缺失部分"><a href="#六、HAProxy-Keepalived-高可用整合-⬅-笔记原缺失部分" class="headerlink" title="六、HAProxy + Keepalived 高可用整合 ⬅ 笔记原缺失部分"></a>六、HAProxy + Keepalived 高可用整合 ⬅ 笔记原缺失部分</h2><h3 id="（1）为什么需要整合"><a href="#（1）为什么需要整合" class="headerlink" title="（1）为什么需要整合"></a>（1）为什么需要整合</h3><p>HAProxy 本身也有单点故障问题——如果 HAProxy 进程崩溃或 server1 宕机，七层负载均衡就断了。</p>
+<p>解决方案：用 Keepalived 做 VIP 漂移，配合自定义检测脚本实现<strong>服务级高可用</strong>（不仅检测机器是否在线，还检测 HAProxy 服务是否真的正常）。</p>
+<h3 id="（2）编写-HAProxy-健康检测脚本"><a href="#（2）编写-HAProxy-健康检测脚本" class="headerlink" title="（2）编写 HAProxy 健康检测脚本"></a>（2）编写 HAProxy 健康检测脚本</h3><p>Keepalived 默认只做主机级 VRRP 心跳检测，不会检查 HAProxy 进程状态。需要自定义脚本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># /etc/keepalived/check_haproxy.sh</span></span><br><span class="line"><span class="comment">#!/bin/bash</span></span><br><span class="line"><span class="comment"># 检测 HAProxy 是否运行</span></span><br><span class="line">systemctl is-active --quiet haproxy</span><br><span class="line"><span class="keyword">if</span> [ $? -ne 0 ]; <span class="keyword">then</span></span><br><span class="line">    <span class="comment"># 尝试重启</span></span><br><span class="line">    systemctl start haproxy</span><br><span class="line">    <span class="built_in">sleep</span> 2</span><br><span class="line">    systemctl is-active --quiet haproxy</span><br><span class="line">    <span class="keyword">if</span> [ $? -ne 0 ]; <span class="keyword">then</span></span><br><span class="line">        <span class="comment"># 重启失败，停止 keepalived 触发 VIP 漂移</span></span><br><span class="line">        systemctl stop keepalived</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# <span class="built_in">chmod</span> +x /etc/keepalived/check_haproxy.sh</span><br><span class="line">[root@server1 ~]# scp /etc/keepalived/check_haproxy.sh server4:/etc/keepalived/</span><br></pre></td></tr></table></figure>
+
+<h3 id="（3）修改-Keepalived-配置"><a href="#（3）修改-Keepalived-配置" class="headerlink" title="（3）修改 Keepalived 配置"></a>（3）修改 Keepalived 配置</h3><p>关键点：<strong>注释掉 <code>virtual_server</code> 段</strong>（那是给 LVS 用的），改为调用检测脚本。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"># 添加 vrrp_script 段</span><br><span class="line">vrrp_script chk_haproxy &#123;</span><br><span class="line">    script &quot;/etc/keepalived/check_haproxy.sh&quot;</span><br><span class="line">    interval 2          # 每 2 秒检测一次</span><br><span class="line">    timeout 3           # 超时 3 秒</span><br><span class="line">    fall 2              # 连续 2 次失败才判定故障</span><br><span class="line">    rise 2              # 连续 2 次成功才判定恢复</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">vrrp_instance VI_1 &#123;</span><br><span class="line">    state MASTER         # server4 → BACKUP</span><br><span class="line">    interface ens33</span><br><span class="line">    virtual_router_id 51</span><br><span class="line">    priority 100         # server4 → 50</span><br><span class="line">    advert_int 1</span><br><span class="line"></span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass 1111</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.63.100</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    # 调用检测脚本</span><br><span class="line">    track_script &#123;</span><br><span class="line">        chk_haproxy</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 注意：virtual_server 段全部注释掉</span><br><span class="line"># HAProxy 自己做负载均衡，不需要 LVS 规则</span><br></pre></td></tr></table></figure>
+
+<p>server4 同步配置（<code>state BACKUP</code>，<code>priority 50</code>），然后启动：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# systemctl <span class="built_in">enable</span> --now keepalived</span><br></pre></td></tr></table></figure>
+
+<h3 id="（4）验证"><a href="#（4）验证" class="headerlink" title="（4）验证"></a>（4）验证</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Master 持有 VIP</span></span><br><span class="line">[root@server1 ~]# ip addr show ens33 | grep 100</span><br><span class="line">    inet 192.168.63.100/32 scope global ens33</span><br><span class="line"></span><br><span class="line"><span class="comment"># HAProxy 绑定在 VIP 上</span></span><br><span class="line">[root@server1 ~]# ss -tlnp | grep haproxy</span><br><span class="line">LISTEN 0 128 192.168.63.100:80 haproxy</span><br></pre></td></tr></table></figure>
+
+<p>✅ HAProxy 绑定在 VIP 上，客户端通过 VIP 访问。</p>
+<h3 id="（5）高可用测试：HAProxy-故障转移"><a href="#（5）高可用测试：HAProxy-故障转移" class="headerlink" title="（5）高可用测试：HAProxy 故障转移"></a>（5）高可用测试：HAProxy 故障转移</h3><p><strong>场景 A：HAProxy 崩溃但可恢复</strong></p>
+<p>脚本自动重启 HAProxy，VIP 不漂移：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# killall haproxy</span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看日志</span></span><br><span class="line">[root@server1 ~]# <span class="built_in">tail</span> -5 /var/log/messages</span><br><span class="line">keepalived: VRRP_Script(chk_haproxy) failed</span><br><span class="line">keepalived: Entering FAULT STATE</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3 秒后脚本重启成功</span></span><br><span class="line">[root@server1 ~]# systemctl is-active haproxy</span><br><span class="line">active</span><br></pre></td></tr></table></figure>
+<p>✅ <strong>脚本成功重启 HAProxy，VIP 不漂移。</strong></p>
+<p><strong>场景 B：HAProxy 彻底无法恢复</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 模拟二进制损坏</span></span><br><span class="line">[root@server1 ~]# <span class="built_in">mv</span> /usr/sbin/haproxy /usr/sbin/haproxy.bak</span><br><span class="line">[root@server1 ~]# killall haproxy</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5 秒后</span></span><br><span class="line">[root@server1 ~]# <span class="built_in">tail</span> -10 /var/log/messages</span><br><span class="line">keepalived: VRRP_Script(chk_haproxy) failed</span><br><span class="line">keepalived: Stopping keepalived</span><br><span class="line">keepalived: VRRP_Instance(VI_1) removing protocol VIPs.</span><br></pre></td></tr></table></figure>
+
+<p>VIP 漂移到 Backup：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@server4 ~]# ip addr show ens33 | grep 100</span><br><span class="line">    inet 192.168.63.100/32 scope global ens33</span><br><span class="line"></span><br><span class="line">[root@server4 ~]# ss -tlnp | grep haproxy</span><br><span class="line">LISTEN 0 128 192.168.63.100:80 haproxy</span><br><span class="line"></span><br><span class="line">[root@server4 ~]# <span class="keyword">for</span> i <span class="keyword">in</span> &#123;1..6&#125;; <span class="keyword">do</span> curl 192.168.63.100; <span class="keyword">done</span></span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br><span class="line">server2</span><br><span class="line">server3-8080</span><br></pre></td></tr></table></figure>
+
+<p>✅ <strong>服务不中断！客户端完全无感知。</strong></p>
+<p>恢复 Master：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@server1 ~]# <span class="built_in">mv</span> /usr/sbin/haproxy.bak /usr/sbin/haproxy</span><br><span class="line">[root@server1 ~]# systemctl start keepalived</span><br><span class="line"></span><br><span class="line">[root@server1 ~]# ip addr show ens33 | grep 100</span><br><span class="line">    inet 192.168.63.100/32 scope global ens33</span><br></pre></td></tr></table></figure>
+<p>✅ <strong>priority 100 &gt; 50，Master 抢占回 VIP。</strong></p>
+<hr>
+<h2 id="七、总结：四层-vs-七层-选型建议"><a href="#七、总结：四层-vs-七层-选型建议" class="headerlink" title="七、总结：四层 vs 七层 &amp; 选型建议"></a>七、总结：四层 vs 七层 &amp; 选型建议</h2><h3 id="LVS-vs-HAProxy-对比"><a href="#LVS-vs-HAProxy-对比" class="headerlink" title="LVS vs HAProxy 对比"></a>LVS vs HAProxy 对比</h3><table>
+<thead>
+<tr>
+<th>对比项</th>
+<th>LVS（四层）</th>
+<th>HAProxy（七层）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作层次</td>
+<td>传输层（TCP&#x2F;UDP）</td>
+<td>应用层（HTTP&#x2F;HTTPS）</td>
+</tr>
+<tr>
+<td>调度依据</td>
+<td>IP + 端口</td>
+<td>URL &#x2F; Header &#x2F; Cookie 等</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>★★★★★ 内核态</td>
+<td>★★★★ 用户态</td>
+</tr>
+<tr>
+<td>动静分离</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>会话保持</td>
+<td>源 IP 哈希</td>
+<td>Cookie &#x2F; Session</td>
+</tr>
+<tr>
+<td>RS 需 VIP</td>
+<td>DR 模式需要</td>
+<td>不需要</td>
+</tr>
+<tr>
+<td>RS 需 ARP 抑制</td>
+<td>DR 模式需要</td>
+<td>不需要</td>
+</tr>
+<tr>
+<td>端口转发</td>
+<td>不支持</td>
+<td>支持任意端口映射</td>
+</tr>
+<tr>
+<td>健康检测</td>
+<td>需 Keepalived</td>
+<td>内置</td>
+</tr>
+<tr>
+<td>监控页面</td>
+<td>无</td>
+<td>有（stats page）</td>
+</tr>
+</tbody></table>
+<h3 id="生产环境推荐架构"><a href="#生产环境推荐架构" class="headerlink" title="生产环境推荐架构"></a>生产环境推荐架构</h3><blockquote>
+<p><strong>LVS（四层入口）→ HAProxy（七层分发）→ 后端集群</strong></p>
+<p>三者结合兼顾性能、灵活性和可靠性：</p>
+<ul>
+<li>LVS 扛住海量并发连接（内核态，性能天花板）</li>
+<li>HAProxy 做精细化调度（动静分离、会话保持）</li>
+<li>Keepalived 做双活高可用（VIP 漂移 + 服务级检测）</li>
+</ul>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8C%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" rel="tag">运维，高可用与负载均衡</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的网安小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/">高可用与负载均衡-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/">远程管理与共享存储</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记day5</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记 Day4</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记 Day 3</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 20px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E6%97%A5%E8%AE%B0/" style="font-size: 10px;">日记</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">运维</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8C%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 10px;">运维，高可用与负载均衡</a> <a href="/tags/%E9%9A%8F%E7%AC%94/" style="font-size: 10px;">随笔</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
