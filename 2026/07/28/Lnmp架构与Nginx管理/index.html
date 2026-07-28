@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>Lnmp架构与Nginx管理 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Lnmp架构与Nginx管理"/>
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Lnmp架构与Nginx管理</h2>
+            <div class="post-meta">
+                <time class="date">2026.07.28</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="7-24-课程笔记：LNMP-架构与-Nginx-管理"><a href="#7-24-课程笔记：LNMP-架构与-Nginx-管理" class="headerlink" title="7.24 课程笔记：LNMP 架构与 Nginx 管理"></a>7.24 课程笔记：LNMP 架构与 Nginx 管理</h1><blockquote>
+<p>今天打开文档，发现上一次关闭电脑时居然没有保存笔记。同时，虚拟机突然说母机丢了……辛辛苦苦下载配置的内容全没了（心痛中）。以此为戒，<strong>及时保存重要数据很重要</strong> qwq。</p>
+</blockquote>
+<hr>
+<h2 id="一、Nginx-反向代理与负载均衡"><a href="#一、Nginx-反向代理与负载均衡" class="headerlink" title="一、Nginx 反向代理与负载均衡"></a>一、Nginx 反向代理与负载均衡</h2><h3 id="（一）实验前梳理"><a href="#（一）实验前梳理" class="headerlink" title="（一）实验前梳理"></a>（一）实验前梳理</h3><p><strong>1. 反向代理</strong></p>
+<ul>
+<li>代理，相当于一个服务台，帮我们和后台联系交接。</li>
+<li>我们不知道后台到底是怎么服务的，具体步骤对客户端透明。</li>
+<li>反向代理是客户端的**”入口统一管家”**——客户端只访问 Nginx，由 Nginx 决定将请求转发给谁，并把结果返回给客户端。</li>
+<li>反向代理主要做五件事：<strong>负载均衡、隐藏真实服务器、转发请求、缓存加速、协议转换</strong>。</li>
+<li>需要定义一个后端服务器池，通过代理将请求转发给后端池，并传送客户端的真实 IP 给后端。</li>
+</ul>
+<p><strong>2. 负载均衡</strong></p>
+<ul>
+<li>负载均衡概念之前已讲过。</li>
+<li>本节课新内容：<ul>
+<li><strong>权重</strong>：给性能好的服务器分配更多请求。</li>
+<li><strong>backup 备用服务器</strong>：所有主服务器都挂了，才启用 backup（通常是代理本身）。<strong>backup 不能用在 <code>ip_hash</code> 算法下</strong>。</li>
+<li><strong>IP Hash 会话保持</strong>：同一个客户端 IP 固定分配到同一台后端服务器，适用于购物车、登录状态等需要会话保持的场景。</li>
+<li><strong>CDN 场景下 IP Hash 失效</strong>：需要用 Cookie 代替 IP 做会话保持，即 <strong>Sticky Cookie 会话保持</strong>。编译好第三方 sticky 模块，给客户端下发名为 <code>srv_id</code> 的 Cookie 即可解决。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="（二）具体实验"><a href="#（二）具体实验" class="headerlink" title="（二）具体实验"></a>（二）具体实验</h3><p><strong>1. 权重与 backup</strong></p>
+<p>在 server1 上启动 Nginx 服务，修改配置：</p>
+<ul>
+<li>server2 对应权重设为 <code>2</code>。</li>
+<li>server4 设为 <code>backup</code>（备用，不参与正常流量分担）。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/1.png" alt="1.png"><br><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/2.png" alt="2.png"></p>
+<blockquote>
+<p>ps：这里 server4 的 IP 应为 <code>192.168.63.130</code> 而不是 131，后面已修改。</p>
+</blockquote>
+<ul>
+<li>启动 server2 和 server3 的 httpd 服务，开始测试。</li>
+<li>关掉 server2 的 httpd，只能访问 server3。</li>
+<li>再关掉 server3 的 httpd，发现访问到了 server4（backup 接管）。</li>
+</ul>
+<p><strong>2. 本机 backup 配置</strong></p>
+<p>继续修改配置，注释掉 server4 的 backup，改为：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">server</span> <span class="number">127.0.0.1:8000</span> backup;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>将本机 localhost 的 server 块提前，放在第一个，端口 8000。</li>
+<li>测试时，访问到了 server1 上。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/3.png" alt="3.png"></p>
+<blockquote>
+<p><strong>注意</strong>：localhost 如果不放第一个 server 块，Nginx 会把负载均衡器自己当成默认主机，造成死循环，从而卡死访问不到正确界面。</p>
+</blockquote>
+<p><strong>3. IP Hash 会话保持</strong></p>
+<p>在后端池开头加上 <code>ip_hash</code>，注释掉 backup 相关内容，重启服务。</p>
+<ul>
+<li>发现即使 server3 正常，我们仍然只能访问 server2（同一 IP 被固定分配）。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/4.png" alt="4.png"></p>
+<p><strong>4. Sticky Cookie 会话保持（CDN 场景）</strong></p>
+<p>确认已编译过 sticky 模块，修改配置：</p>
+<ul>
+<li><p>注释掉 <code>ip_hash</code>。</p>
+</li>
+<li><p>加上：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">sticky</span> name=srv_id expires=<span class="number">1h</span> domain=.westos.org path=/;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>含义：给客户端下发名为 <code>srv_id</code> 的 Cookie，1 小时后过期，作用域为所有 <code>westos.org</code> 子域名，作用路径为全体。</p>
+</blockquote>
+</li>
+<li><p>在浏览器通过域名访问，先在主机上做域名解析。</p>
+</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/5.png" alt="5.png"></p>
+<blockquote>
+<p><strong>小知识：PowerShell vs CMD</strong></p>
+<ul>
+<li>CMD：古老 Windows 原生命令解释器，从 DOS 延续而来，不识别 Linux 原生命令（如 <code>ls</code>、<code>grep</code>）。</li>
+<li>PowerShell：微软新一代现代化 Shell，专门替代 CMD，兼容更多写法，管理系统能力更强，更适合运维管理。</li>
+</ul>
+</blockquote>
+<ul>
+<li>浏览器访问域名，第一次返回 <code>200</code>，后面返回 <code>304</code>，看到了对应的 Cookie 且 Cookie 值没有变化。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/6.png" alt="6.png"></p>
+<blockquote>
+<p><strong>HTTP 常见状态码速记</strong>：</p>
+<ul>
+<li><code>200</code>：正常，拿到页面</li>
+<li><code>301</code>：永久跳转</li>
+<li><code>304</code>：文件没变，用本地缓存</li>
+<li><code>403</code>：找到了但不给看（防盗链&#x2F;权限）</li>
+<li><code>404</code>：文件找不到</li>
+<li><code>502</code>：代理连不上后端 Web</li>
+<li>规律：<code>2xx</code> 成功，<code>3xx</code> 重定向&#x2F;缓存协商，<code>4xx</code> 客户端错误，<code>5xx</code> 服务端错误。</li>
+</ul>
+</blockquote>
+<hr>
+<h2 id="二、Nginx-安全控制"><a href="#二、Nginx-安全控制" class="headerlink" title="二、Nginx 安全控制"></a>二、Nginx 安全控制</h2><h3 id="（一）含义"><a href="#（一）含义" class="headerlink" title="（一）含义"></a>（一）含义</h3><p>Nginx 安全控制的核心是<strong>保护服务器不被”挤爆”或”拖死”</strong>，有四个核心功能：</p>
+<table>
+<thead>
+<tr>
+<th align="left">功能</th>
+<th align="left">指令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">并发连接数限制</td>
+<td align="left"><code>limit_conn</code></td>
+<td align="left">限制单个 IP 同时能建立多少个连接，防止恶意占用资源</td>
+</tr>
+<tr>
+<td align="left">请求速率限制</td>
+<td align="left"><code>limit_req</code></td>
+<td align="left">限制单位时间内请求数量，防止 CC 攻击或爬虫暴力刷接口</td>
+</tr>
+<tr>
+<td align="left">带宽限制</td>
+<td align="left"><code>limit_rate</code></td>
+<td align="left">限制下载速度，防止单用户占满带宽</td>
+</tr>
+<tr>
+<td align="left">日志轮转</td>
+<td align="left">crontab 脚本</td>
+<td align="left">防止日志文件撑爆硬盘</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="（二）实验"><a href="#（二）实验" class="headerlink" title="（二）实验"></a>（二）实验</h3><p><strong>1. 限制并发连接数</strong></p>
+<p>在 server 块外面的 <code>http</code> 里加上：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">limit_conn_zone</span> <span class="variable">$binary_remote_addr</span> zone=perip:<span class="number">10m</span>;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>在内存开辟 10MB 空间记录每个 IP 的连接状态，以客户端 IP 为 key。</p>
+</blockquote>
+<p>在 download 里加上：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">limit_conn</span> perip <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>限制每个 IP 只能有 1 个并发连接。</p>
+</blockquote>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/7.png" alt="7.png"></p>
+<p>在 server4 上用 <code>ab</code> 测试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ab -c 10 -n 10 http://192.168.63.131/download/vim.jpg</span><br></pre></td></tr></table></figure>
+<p>输出日志显示大部分请求被限制，返回 <code>503 Service Unavailable</code>。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/8.png" alt="8.png"></p>
+<p><strong>2. 限制请求速率（限流）</strong></p>
+<p>加上：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">limit_req_zone</span> <span class="variable">$binary_remote_addr</span> zone=one:<span class="number">10m</span> rate=1r/s;</span><br><span class="line"><span class="attribute">limit_req</span> zone=one burst=<span class="number">5</span> nodelay;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>每秒处理 1 个请求，允许 5 个排队，超出直接拒绝（<code>nodelay</code>）。</p>
+</blockquote>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/9.png" alt="9.png"></p>
+<p>正常情况下，访问 10 个请求：<code>1r/s + burst(5) = 6 个成功</code>，其余 4 个返回 503。</p>
+<p><strong>3. 带宽限制</strong></p>
+<p>在 download 里添加：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">limit_rate</span> <span class="number">100k</span>;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>单连接限速 100KB&#x2F;s。</p>
+</blockquote>
+<ul>
+<li>单线程下测速稳定在 100KB&#x2F;s 左右，多线程下每个 100KB&#x2F;s，总带宽约 500KB&#x2F;s。</li>
+<li>因为有限制并发连接，单个 <code>wget</code> 返回 200，但 <code>ab</code> 测压时只能返回一个 200，其余超出限制。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/10.png" alt="10.png"></p>
+<hr>
+<h2 id="三、Nginx-高级配置与管理"><a href="#三、Nginx-高级配置与管理" class="headerlink" title="三、Nginx 高级配置与管理"></a>三、Nginx 高级配置与管理</h2><h3 id="（一）理解"><a href="#（一）理解" class="headerlink" title="（一）理解"></a>（一）理解</h3><p>“安全控制”让产品<strong>能用</strong>，”高级配置与管理”偏向优化和运维便利性，让产品<strong>好用</strong>。主要学习五项功能：</p>
+<table>
+<thead>
+<tr>
+<th align="left">功能</th>
+<th align="left">指令&#x2F;工具</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">自动索引</td>
+<td align="left"><code>autoindex on;</code></td>
+<td align="left">浏览器访问目录直接列出文件，方便临时查看&#x2F;下载</td>
+</tr>
+<tr>
+<td align="left">缓存配置</td>
+<td align="left"><code>expires 30d;</code></td>
+<td align="left">设置静态资源缓存有效期，省带宽省 CPU</td>
+</tr>
+<tr>
+<td align="left">站点访问控制</td>
+<td align="left"><code>deny</code>&#x2F;<code>allow</code></td>
+<td align="left">配合 IP 或 IP 段限制特定路径访问，保护敏感目录</td>
+</tr>
+<tr>
+<td align="left">HTTPS 配置</td>
+<td align="left">SSL 证书 + 强制跳转</td>
+<td align="left">防窃听防篡改，登录&#x2F;支付等敏感信息必须加密</td>
+</tr>
+<tr>
+<td align="left">日志可视化</td>
+<td align="left">GoAccess 工具</td>
+<td align="left">实时监控网站健康度，不用手动翻几十 GB 日志</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="（二）实验-1"><a href="#（二）实验-1" class="headerlink" title="（二）实验"></a>（二）实验</h3><p><strong>1. 自动索引</strong></p>
+<p>在专门的下载目录（如 <code>location /download/</code>）块里加上：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">autoindex</span> <span class="literal">on</span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>浏览器访问该目录时，如果没有 <code>index.html</code>，不会返回 403，而是自动生成文件列表页面并提供下载链接。</li>
+<li><strong>注意</strong>：不能在根目录 <code>/</code> 开启 <code>autoindex</code>，否则整个网站文件结构全暴露了。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/11.png" alt="11.png"></p>
+<p><strong>2. 缓存配置</strong></p>
+<p>添加含 <code>expires</code> 指令的 location 块：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">location</span> <span class="regexp">~ .*\.(gif|jpg|png)$</span> &#123;</span><br><span class="line">    <span class="attribute">expires</span> <span class="number">30d</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><code>expires</code> 自动添加 <code>Cache-Control</code> 与 <code>Expires</code> 响应头，有效期内浏览器直接使用本地缓存。</p>
+</blockquote>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/12.png" alt="12.png"></p>
+<p>再次访问图片时，响应头中出现 <code>Expires</code> 和 <code>Cache-Control</code>（单位为秒），表示缓存生效。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/13.png" alt="13.png"></p>
+<p><strong>3. 日志轮转（crontab 脚本）</strong></p>
+<p>白天大量访问使 <code>access.log</code> 持续增大，编写 Shell 脚本实现自动切割：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mv</span> access.log access_$(<span class="built_in">date</span> +%F -d -1day).<span class="built_in">log</span></span><br><span class="line"><span class="built_in">kill</span> -USR1 $(<span class="built_in">cat</span> /usr/local/nginx/logs/nginx.pid)</span><br></pre></td></tr></table></figure>
+<blockquote>
+<ul>
+<li><code>%F</code> &#x3D; <code>yyyy-MM-dd</code>，<code>-d -1day</code> 往前倒推一天。</li>
+<li><code>USR1</code> 是 Nginx 专用信号：Nginx 发现原日志被改名，会自动新建空白 <code>access.log</code>，<strong>不会杀死 Nginx</strong>。</li>
+</ul>
+</blockquote>
+<p>结合 <code>crontab</code> 定时任务，每日凌晨自动切割，防止日志撑爆硬盘。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/14.png" alt="14.png"></p>
+<p><strong>4. GoAccess 日志可视化</strong></p>
+<p>GoAccess 是开源轻量的 Web 日志实时分析工具，解析 Nginx&#x2F;Apache&#x2F;Tomcat 的 <code>access.log</code>，无需数据库即可生成可视化统计网页。</p>
+<ul>
+<li>为兼容 CentOS 7，安装 1.8 版本（之前安了 11 和 9 发现白安了 qwq）。</li>
+<li>确认有 <code>ncurses-devel</code>、<code>GeoIP-devel</code> 依赖库后，编译安装：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make &amp;&amp; make install</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/15.png" alt="15.png"></p>
+<p>启动命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">goaccess /usr/local/nginx/logs/access.log \</span><br><span class="line">    -o /usr/local/nginx/html/report.html \</span><br><span class="line">    --log-format=COMBINED --real-time-html &amp;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>读取 Nginx 访问日志，持续生成网页 <code>report.html</code>，<code>--real-time-html</code> 实时刷新，末尾 <code>&amp;</code> 放后台运行。</p>
+</blockquote>
+<p>浏览器访问 <code>report.html</code> 查看日志可视化页面。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/16.png" alt="16.png"></p>
+<blockquote>
+<p>内容虽然有点少，但配置应该没问题，多访问几次就好了……（应该）</p>
+</blockquote>
+<p><strong>5. 监控模块</strong></p>
+<p>在 Nginx 配置中添加 <code>ngx_http_stub_status_module</code> 监控模块，查看当前运行连接和请求统计。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/17.png" alt="17.png"></p>
+<p>主机访问成功。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/18.png" alt="18.png"></p>
+<p><strong>6. 解决中文乱码</strong></p>
+<p>在本机 server 块内、location 块外，加上：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">charset</span> utf-<span class="number">8</span>;</span><br></pre></td></tr></table></figure>
+<p>即可解决中文乱码问题。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/19.png" alt="19.png"></p>
+<p><strong>7. 域名虚拟主机</strong></p>
+<p>一台 Nginx 服务器，只占用 1 个 80 端口，依靠访问域名不同，区分打开不同网站，这就是域名虚拟主机。</p>
+<ul>
+<li>准备好网站目录与首页文件，写入首页内容 <code>web1</code>。</li>
+<li>在配置中添加虚拟主机，绑定域名和对应网站文件目录，重启服务。</li>
+<li>测试，<code>web1</code> 访问成功。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/20.png" alt="20.png"><br><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/21.png" alt="21.png"></p>
+<p><strong>8. HTTPS 配置</strong></p>
+<p>给网站 <code>www1.westos.org</code> 启用 HTTPS 访问（443 端口加密）。</p>
+<ul>
+<li>通过系统自带 <code>openssl</code> 工具，在 server1 上生成自签名 SSL 证书 <code>cert.pem</code>（同时包含公钥证书 + 私钥）。</li>
+<li>修改 Nginx 配置，添加 HTTPS 虚拟主机。</li>
+</ul>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/22.png" alt="22.png"></p>
+<p>重载后，访问网站必须加上证书。</p>
+<p><img src="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/23.png" alt="23.png"></p>
+<blockquote>
+<p><strong>常见端口速记</strong>：</p>
+<table>
+<thead>
+<tr>
+<th align="left">端口</th>
+<th align="left">服务</th>
+<th align="left">用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">22</td>
+<td align="left">sshd</td>
+<td align="left">SSH 远程连接</td>
+</tr>
+<tr>
+<td align="left">80</td>
+<td align="left">nginx</td>
+<td align="left">HTTP 网页服务</td>
+</tr>
+<tr>
+<td align="left">443</td>
+<td align="left">nginx</td>
+<td align="left">HTTPS 加密网页</td>
+</tr>
+<tr>
+<td align="left">25</td>
+<td align="left">master&#x2F;postfix</td>
+<td align="left">本机邮件，仅监听本机</td>
+</tr>
+<tr>
+<td align="left">111</td>
+<td align="left">rpcbind</td>
+<td align="left">RPC 服务，NFS 共享存储挂载使用</td>
+</tr>
+<tr>
+<td align="left">2224</td>
+<td align="left">ruby 程序</td>
+<td align="left">自定义业务程序监听，实验&#x2F;项目使用</td>
+</tr>
+</tbody></table>
+</blockquote>
+<hr>
+<blockquote>
+<p>笔记整理完毕，愿不要再有数据丢失的现象。</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/">高可用与负载均衡-2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8CLnmp%E6%9E%B6%E6%9E%84%EF%BC%8CNginx%E7%AE%A1%E7%90%86/" rel="tag">运维，Lnmp架构，Nginx管理</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的网安小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/">Lnmp架构与Nginx管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/">高可用与负载均衡-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/">高可用与负载均衡-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/23/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/">系统管理-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记day5</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 20px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 16.67px;">实训</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">运维</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8CLnmp%E6%9E%B6%E6%9E%84%EF%BC%8CNginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">运维，Lnmp架构，Nginx管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8C%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 13.33px;">运维，系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8C%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 13.33px;">运维，高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
