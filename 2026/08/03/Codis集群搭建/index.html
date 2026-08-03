@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>Codis集群搭建 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Codis集群搭建"/>
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Codis集群搭建</h2>
+            <div class="post-meta">
+                <time class="date">2026.08.03</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="Codis-集群搭建笔记（完善版）"><a href="#Codis-集群搭建笔记（完善版）" class="headerlink" title="Codis 集群搭建笔记（完善版）"></a>Codis 集群搭建笔记（完善版）</h1><h2 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1. 介绍"></a>1. 介绍</h2><p>Codis 是一个由豆瓣开源的分布式 Redis 解决方案。对于上层应用来说，连接到 Codis Proxy 和连接原生的 Redis Server 没有显著区别，底层会处理请求的转发和不停机的数据迁移等工作。</p>
+<hr>
+<h2 id="2-环境准备"><a href="#2-环境准备" class="headerlink" title="2. 环境准备"></a>2. 环境准备</h2><p><strong>实验环境</strong>：CentOS 7 虚拟机，IP: 192.168.86.135</p>
+<h3 id="2-1-安装-JDK"><a href="#2-1-安装-JDK" class="headerlink" title="2.1 安装 JDK"></a>2.1 安装 JDK</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf jdk-8uXXX-linux-x64.tar.gz -C /usr/local/</span><br><span class="line"><span class="built_in">mv</span> /usr/local/jdk1.8.0_XXX /usr/local/java</span><br></pre></td></tr></table></figure>
+
+<p>配置 JAVA_HOME 环境变量后，验证安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -version</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/1.png"></p>
+<h3 id="2-2-安装-ZooKeeper"><a href="#2-2-安装-ZooKeeper" class="headerlink" title="2.2 安装 ZooKeeper"></a>2.2 安装 ZooKeeper</h3><p>Codis 使用 ZooKeeper 作为外部存储，管理集群元数据。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf zookeeper-3.4.14.tar.gz -C /usr/local/</span><br><span class="line"><span class="built_in">mv</span> /usr/local/zookeeper-3.4.14 /usr/local/zookeeper</span><br><span class="line"><span class="built_in">mkdir</span> -p /data/zookeeper</span><br><span class="line"><span class="built_in">cp</span> /usr/local/zookeeper/conf/zoo_sample.cfg /usr/local/zookeeper/conf/zoo.cfg</span><br><span class="line">sed -i <span class="string">&#x27;s@dataDir=/tmp/zookeeper@dataDir=/data/zookeeper@&#x27;</span> /usr/local/zookeeper/conf/zoo.cfg</span><br></pre></td></tr></table></figure>
+
+<p>启动并验证 ZooKeeper：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/zookeeper/bin/zkServer.sh start</span><br><span class="line">/usr/local/zookeeper/bin/zkServer.sh status</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/2.png"></p>
+<h3 id="2-3-安装-Go-运行环境"><a href="#2-3-安装-Go-运行环境" class="headerlink" title="2.3 安装 Go 运行环境"></a>2.3 安装 Go 运行环境</h3><p>Codis 由 Go 语言编写，需要 Go 运行环境。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 下载并安装 Go（以 1.7.3 为例）</span></span><br><span class="line">wget https://golang.org/dl/go1.7.3.linux-amd64.tar.gz</span><br><span class="line">tar -zxvf go1.7.3.linux-amd64.tar.gz -C /usr/local/</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;export PATH=$PATH:/usr/local/go/bin&#x27;</span> &gt;&gt; /etc/profile</span><br><span class="line"><span class="built_in">source</span> /etc/profile</span><br><span class="line">go version   <span class="comment"># 验证安装</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>注意</strong>：需要设置 <code>$GOPATH</code> 环境变量，Codis 源码需下载到 <code>$GOPATH/src/github.com/CodisLabs/codis</code>。</p>
+</blockquote>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/3.png"></p>
+<hr>
+<h2 id="3-编译-Codis"><a href="#3-编译-Codis" class="headerlink" title="3. 编译 Codis"></a>3. 编译 Codis</h2><p>从 GitHub 下载 Codis 3.2 分支源码并编译：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p <span class="variable">$GOPATH</span>/src/github.com/CodisLabs</span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$GOPATH</span>/src/github.com/CodisLabs</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/CodisLabs/codis.git -b release3.2</span><br><span class="line"><span class="built_in">cd</span> codis</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+
+<p>编译成功后，<code>bin/</code> 目录下会生成以下可执行文件：</p>
+<ul>
+<li><code>codis-dashboard</code> — 集群管理服务</li>
+<li><code>codis-proxy</code> — 代理服务</li>
+<li><code>codis-admin</code> — 命令行管理工具</li>
+<li><code>codis-fe</code> — Web 管理界面</li>
+<li><code>codis-server</code> — 基于 Redis 3.2.8 的服务端</li>
+</ul>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/4.png"></p>
+<hr>
+<h2 id="4-修改配置文件"><a href="#4-修改配置文件" class="headerlink" title="4. 修改配置文件"></a>4. 修改配置文件</h2><p>需要修改以下三个配置文件（位于 <code>config/</code> 目录下）：</p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/5.png"></p>
+<h3 id="4-1-dashboard-toml"><a href="#4-1-dashboard-toml" class="headerlink" title="4.1 dashboard.toml"></a>4.1 dashboard.toml</h3><p>配置 Dashboard 参数：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">coordinator_name</span> = <span class="string">&quot;zookeeper&quot;</span>        <span class="comment"># 外部存储类型：zookeeper/etcd</span></span><br><span class="line"><span class="attr">coordinator_addr</span> = <span class="string">&quot;192.168.86.135:2181&quot;</span>  <span class="comment"># ZooKeeper 地址</span></span><br><span class="line"><span class="attr">product_name</span> = <span class="string">&quot;codis-demo&quot;</span>           <span class="comment"># 集群名称</span></span><br><span class="line"><span class="attr">product_auth</span> = <span class="string">&quot;&quot;</span>                     <span class="comment"># 集群密码（默认为空）</span></span><br><span class="line"><span class="attr">admin_addr</span> = <span class="string">&quot;0.0.0.0:18080&quot;</span>          <span class="comment"># Dashboard API 端口</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-proxy-toml"><a href="#4-2-proxy-toml" class="headerlink" title="4.2 proxy.toml"></a>4.2 proxy.toml</h3><p>配置 Proxy 参数：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">product_name</span> = <span class="string">&quot;codis-demo&quot;</span>           <span class="comment"># 必须与 Dashboard 一致</span></span><br><span class="line"><span class="attr">product_auth</span> = <span class="string">&quot;&quot;</span>                     <span class="comment"># 必须与 Dashboard 一致</span></span><br><span class="line"><span class="attr">admin_addr</span> = <span class="string">&quot;0.0.0.0:11080&quot;</span>          <span class="comment"># Proxy 管理端口</span></span><br><span class="line"><span class="attr">proto_type</span> = <span class="string">&quot;tcp4&quot;</span></span><br><span class="line"><span class="attr">proxy_addr</span> = <span class="string">&quot;0.0.0.0:19000&quot;</span>          <span class="comment"># Proxy 服务端口（客户端连接端口）</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-redis-conf"><a href="#4-3-redis-conf" class="headerlink" title="4.3 redis.conf"></a>4.3 redis.conf</h3><p>Codis Server 基于 Redis，使用标准 Redis 配置文件，默认端口 6379。</p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/6.png"></p>
+<hr>
+<h2 id="5-启动集群"><a href="#5-启动集群" class="headerlink" title="5. 启动集群"></a>5. 启动集群</h2><blockquote>
+<p><strong>启动顺序</strong>：必须按照 Dashboard → Proxy → Server → FE 的顺序启动。</p>
+</blockquote>
+<h3 id="5-1-启动-Dashboard"><a href="#5-1-启动-Dashboard" class="headerlink" title="5.1 启动 Dashboard"></a>5.1 启动 Dashboard</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> ./bin/codis-dashboard --ncpu=4 --config=config/dashboard.toml \</span><br><span class="line">  --<span class="built_in">log</span>=logs/dashboard.log --log-level=WARN &amp;</span><br></pre></td></tr></table></figure>
+
+<p>启动后 Dashboard 监听 <code>18080</code> 端口提供 RESTful API。可通过日志确认启动状态：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">tail</span> -100 logs/dashboard.log</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-启动-Proxy"><a href="#5-2-启动-Proxy" class="headerlink" title="5.2 启动 Proxy"></a>5.2 启动 Proxy</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> ./bin/codis-proxy --ncpu=4 --config=config/proxy.toml \</span><br><span class="line">  --<span class="built_in">log</span>=logs/proxy.log --log-level=WARN &amp;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>重要</strong>：Proxy 启动后处于 <code>waiting</code> 状态，不会接受客户端连接，需要添加到集群并完成状态同步后才能变为 <code>online</code>。</p>
+</blockquote>
+<h3 id="5-3-将-Proxy-添加到集群并设为-Online"><a href="#5-3-将-Proxy-添加到集群并设为-Online" class="headerlink" title="5.3 将 Proxy 添加到集群并设为 Online"></a>5.3 将 Proxy 添加到集群并设为 Online</h3><p>通过 <code>codis-admin</code> 命令行工具将 Proxy 加入集群：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">./bin/codis-admin --dashboard=192.168.86.135:18080 \</span><br><span class="line">  --create-proxy --addr=192.168.86.135:11080</span><br><span class="line"></span><br><span class="line">./bin/codis-admin --dashboard=192.168.86.135:18080 \</span><br><span class="line">  --online-proxy --addr=192.168.86.135:11080</span><br></pre></td></tr></table></figure>
+
+<p>添加过程中，Dashboard 会完成：验证集群 name 和 auth、将 Proxy 信息写入外部存储、同步 slots 状态、标记 Proxy 为 online。</p>
+<h3 id="5-4-启动-Codis-Server"><a href="#5-4-启动-Codis-Server" class="headerlink" title="5.4 启动 Codis Server"></a>5.4 启动 Codis Server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/codis-server config/redis.conf</span><br></pre></td></tr></table></figure>
+
+<p>启动方式与普通 Redis 完全一致。</p>
+<h3 id="5-5-启动-Codis-FE（Web-管理界面）"><a href="#5-5-启动-Codis-FE（Web-管理界面）" class="headerlink" title="5.5 启动 Codis FE（Web 管理界面）"></a>5.5 启动 Codis FE（Web 管理界面）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> ./bin/codis-fe --zookeeper=192.168.86.135:2181 \</span><br><span class="line">  --listen=0.0.0.0:9090 --<span class="built_in">log</span>=logs/fe.log --log-level=WARN &amp;</span><br></pre></td></tr></table></figure>
+
+<p>FE 启动后监听 <code>9090</code> 端口。通过浏览器访问 <code>http://192.168.86.135:9090</code> 即可进入管理界面。</p>
+<p>检查端口：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -tlnp | grep 9090</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/7.png"></p>
+<hr>
+<h2 id="6-配置集群"><a href="#6-配置集群" class="headerlink" title="6. 配置集群"></a>6. 配置集群</h2><h3 id="6-1-创建-Group-并添加-Server"><a href="#6-1-创建-Group-并添加-Server" class="headerlink" title="6.1 创建 Group 并添加 Server"></a>6.1 创建 Group 并添加 Server</h3><p>通过 FE 界面操作：</p>
+<ol>
+<li>在集群管理页面选择对应集群（如 <code>codis-demo</code>）</li>
+<li>在 <strong>Group</strong> 栏点击 <strong>NEW GROUP</strong>，输入 Group ID（如 1）</li>
+<li>在 <strong>Add Server</strong> 输入框填写 Codis Server 地址（<code>192.168.86.135:6379</code>），点击 <strong>Add Server</strong></li>
+</ol>
+<blockquote>
+<p><strong>原理</strong>：Group 是 Codis 中的服务器组，每个 Group 包含一个 Master 和多个 Slave，负责存储一部分数据。</p>
+</blockquote>
+<p>创建 Group 界面：</p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/8.png"></p>
+<p>添加 Server 后，界面显示状态如下（Data Center 显示 NO:ONE 可忽略，Memory 和 Keys 正常）：</p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/9.png"></p>
+<h3 id="6-2-初始化-Slots"><a href="#6-2-初始化-Slots" class="headerlink" title="6.2 初始化 Slots"></a>6.2 初始化 Slots</h3><p>Codis 将数据分散到 <strong>1024 个槽位（Slots）</strong> 中。新增集群的 slot 状态为 <code>offline</code>，需要进行初始化：</p>
+<p>在 FE 界面点击 <strong>Rebalance All Slots</strong> 按钮，系统会将 1024 个 slot 自动分配到各个 Group。</p>
+<blockquote>
+<p><strong>原理</strong>：Codis 3.x 的 rebalance 算法基于 Group 下的 slot 数量进行分配。分配完成后，蓝色条（未分配）消失，表示所有 slot 已分配完毕。</p>
+</blockquote>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/10.png"></p>
+<h3 id="6-3-通过-redis-cli-测试"><a href="#6-3-通过-redis-cli-测试" class="headerlink" title="6.3 通过 redis-cli 测试"></a>6.3 通过 redis-cli 测试</h3><p>通过 <code>redis-cli</code> 连接 Codis Proxy（端口 19000）进行测试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">redis-cli -h 192.168.86.135 -p 19000</span><br><span class="line">127.0.0.1:19000&gt; <span class="built_in">set</span> key1 value1</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:19000&gt; get key1</span><br><span class="line"><span class="string">&quot;value1&quot;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>注意</strong>：客户端应连接 Proxy 端口（19000），而非直接连接 Codis Server（6379）。</p>
+</blockquote>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/11.png"></p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/08/02/MySQL%E5%8A%A0%E5%9B%BA%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">MySQL加固主从复制</a></li>
+                
+            </ul>
+        </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的网安小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/02/MySQL%E5%8A%A0%E5%9B%BA%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">MySQL加固主从复制</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/">Lump架构-MySQL主从同步</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/">Lnmp架构与Nginx管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/">高可用与负载均衡-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/">高可用与负载均衡-1</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 20px;">CentOS</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 16.67px;">实训</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">运维</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8CLnmp%E6%9E%B6%E6%9E%84%EF%BC%8CMySQL/" style="font-size: 10px;">运维，Lnmp架构，MySQL</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8CLnmp%E6%9E%B6%E6%9E%84%EF%BC%8CNginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">运维，Lnmp架构，Nginx管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8CMySQL/" style="font-size: 10px;">运维，MySQL</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8C%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 13.33px;">运维，系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4%EF%BC%8C%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 13.33px;">运维，高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
