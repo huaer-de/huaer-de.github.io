@@ -61,8 +61,8 @@
         </section>
         <article class="post-content">
         
-            <h1 id="8-10-笔记：ELK-日志分析"><a href="#8-10-笔记：ELK-日志分析" class="headerlink" title="8.10 笔记：ELK 日志分析"></a>8.10 笔记：ELK 日志分析</h1><p>这次笔记是8&#x2F;10的，我们来学习ELK日志分析。</p>
-<p>ELK是一款开源的有关日志分析的技术栈，由三款核心软件Elasticsearch，Logstash和Kibana组成。现在行业经常会再加上Filebeat（轻量日志采集器），四款软件合称ELFK。</p>
+            <h1 id="8-10-笔记：ELK-日志分析"><a href="#8-10-笔记：ELK-日志分析" class="headerlink" title="8.10 笔记：ELK 日志分析"></a>8.10 笔记：ELK 日志分析</h1><!-- 这次笔记是8/10的， -->
+<p>这次笔记，我们来学习 <strong>ELK日志分析</strong>。<br>ELK是一款开源的有关日志分析的技术栈，由三款核心软件Elasticsearch，Logstash和Kibana组成。现在行业经常会再加上Filebeat（轻量日志采集器），四款软件合称ELFK。</p>
 <hr>
 <h2 id="一、Elasticsearch"><a href="#一、Elasticsearch" class="headerlink" title="一、Elasticsearch"></a>一、Elasticsearch</h2><h3 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>ELK中，E就是Elasticsearch（ES）。这是一个分布式搜索引擎、日志存储引擎。负责存放所有日志，提供快速全文检索、聚合统计功能，同时支持集群扩容。</p>
 <p>ES中，只有单机是容易丢数据的，搭建一个集群比较好。在本次实验中，我们将在server1，server2，server3上搭建集群，有1个用来管理集群的master，和2个存放日志数据的data。因为我们在模拟实验，用到的机子数量很少，只有三台，我们把这三台都开放master+data，可以同时实现高可用。集群庞大时不建议，太费钱。</p>
