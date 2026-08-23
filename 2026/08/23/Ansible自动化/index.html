@@ -71,8 +71,8 @@
 <h3 id="2-实验环境准备"><a href="#2-实验环境准备" class="headerlink" title="2. 实验环境准备"></a>2. 实验环境准备</h3><p>我新开了一个Rocky9的虚拟机，启动了<code>dnf update</code>后，启动菜单多核选择界面多了一个Rocky9.8的启动项。选择它，重新修改&#x2F;boot&#x2F;loader&#x2F;entries&#x2F;下面的配置文件，添加<code>net.ifnames=0</code>，禁止systemd使用可预测的网卡名，这样网卡的名字就规律地变成eth0，eth1……了（在这里还是浅浅有点后悔，最开始的Rocky9.6，应该给它的磁盘空间放的更大一点，毕竟，克隆后的新虚拟机，是不能调整最初的磁盘空间大小的）。</p>
 <p>在这台虚拟机的基础上，克隆server1和server2，再添加CentOS7的server3。我们将通过server1的剧本，控制server2和server3。</p>
 <p>来到server1，我们安装好Ansible，安装epel-release和ansible（因为Rocky9默认仓库中，没有ansible，我们先启用Extra Packages for Enterprise Linux源），并为server2和server3配置SSH免密登录，设置静态IP。</p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/1.png" loading="lazy"></p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/2.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/1.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/2.png" loading="lazy"></p>
 <p>下面，我们要创建一个存放主机清单的目录，<code>mkdir -p ~/ansible_project/inventory</code>，编辑主机清单文件，存放web服务器。</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@server1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p ~/ansible_project</span>
 <span class="token punctuation">[</span>root@server1 ~<span class="token punctuation">]</span><span class="token comment"># cd ~/ansible_project</span>
@@ -85,7 +85,7 @@ node1 <span class="token assign-left variable">ansible_host</span><span class="t
 
 <p>我们可以通过<code>ansible -i inventory all -m ping</code>，再测试一下连通性。</p>
 <p>如果是第一次测试连通性，可能出现下面的警告。</p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/3.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/3.png" loading="lazy"></p>
 <p>这是因为server1从未通过SSH连接过node1，系统无法确认它的身份，我们先连接一下node1，或者在ansible.cfg中设置<code>host_key_checking = False</code>，都可以解决这个问题。</p>
 <p>我们在此连接，返回pong，成功连通。</p>
 <h2 id="二、Playbook部署Apache"><a href="#二、Playbook部署Apache" class="headerlink" title="二、Playbook部署Apache"></a>二、Playbook部署Apache</h2><h3 id="1-理解-1"><a href="#1-理解-1" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>我们将通过编写一个Ansible Playbook，在server2和node1上安装并启动Apache HTTP服务。我们先了解Playbook的基础结构。</p>
@@ -151,11 +151,11 @@ node1 <span class="token assign-left variable">ansible_host</span><span class="t
       <span class="token key atrule">when</span><span class="token punctuation">:</span> ansible_facts<span class="token punctuation">[</span><span class="token string">'os_family'</span><span class="token punctuation">]</span> == "RedHat"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>接着，我们可以通过<code>ansible-playbook -i inventory apache.yml --syntax-check</code>检查一下语法，没问题的话，就开始运行吧。下面的截图是第二次运行剧本的效果啦。</p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/4.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/4.png" loading="lazy"></p>
 <p>这里执行剧本结束，发现所有的任务都是绿色ok状态，而不是changed，这是Ansible的幂等性在起作用。执行剧本前，先检查一下当前的系统状态，如果已经符合期望状态，就不会重复执行不必要的操作。</p>
 <p>如果害怕运行出错，我们可以在运行命令中加上<code>-C</code>来模拟执行。我们在虚拟机中，害怕出错的话，其实多加快照比较方便。</p>
 <p>我们验证一下部署的结果。</p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/5.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/5.png" loading="lazy"></p>
 <p>部署成功啦，好耶。</p>
 <h2 id="三、Playbook中的变量与事实"><a href="#三、Playbook中的变量与事实" class="headerlink" title="三、Playbook中的变量与事实"></a>三、Playbook中的变量与事实</h2><h3 id="1-理解-2"><a href="#1-理解-2" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>Ansible中有很多变量，它们组成了一个变量系统，包括内置Facts变量、自定义变量以及不同作用域的变量使用。</p>
 <p>常见的Facts变量如下：</p>
@@ -274,7 +274,7 @@ ansible <span class="token parameter variable">-i</span> inventory server2 <span
 <p>第二个任务使用package模块（通用包管理模块，自动适配不同发行版），条件判断<code>when: ansible_os_family == &quot;RedHat&quot;</code>确保只在RedHat系列系统执行；</p>
 <p>第三个任务使用sysctl模块调整内核参数，使用了条件表达式根据内存大小设置不同值。</p>
 <p>执行剧本，验证一下效果，发现&#x2F;tmp&#x2F;system_info.txt文件里写入了很多变量信息。</p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/6.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/6.png" loading="lazy"></p>
 <p>下面，我们试试自定义变量。</p>
 <p><strong>第一种方式，我们可以直接在Playbook中定义变量vars。</strong> 演示一个示例吧。</p>
 <p>先创建一个使用自定义变量的Playbook <code>custom_vars.yml</code>，写入下面内容：</p>
@@ -316,7 +316,7 @@ ansible <span class="token parameter variable">-i</span> inventory server2 <span
         <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0644'</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>运行结果是正常的。</p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/7.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/7.png" loading="lazy"></p>
 <p><strong>第二种方式，我们可以在inventory文件中定义主机变量和组变量。</strong> 修改inventory文件，添加变量，效果如下。</p>
 <pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">web_servers</span><span class="token punctuation">]</span></span>
 <span class="token key attr-name">server2 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.132 http_port=8080 server_role=backend</span>
@@ -377,7 +377,7 @@ ansible <span class="token parameter variable">-i</span> inventory server2 <span
         <span class="token key atrule">state</span><span class="token punctuation">:</span> present<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>执行剧本后，成功创建了应用用户。</p>
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/8.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/8.png" loading="lazy"></p>
 <p>三种方式就讲完啦。</p>
 <p><strong>我们可以使用register注册任务输出。</strong> 有时我们需要获取任务的执行结果，register关键字可以将任务输出保存到变量中。</p>
 <pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
@@ -545,7 +545,7 @@ ansible <span class="token parameter variable">-i</span> inventory server2 <span
         <span class="token key atrule">name</span><span class="token punctuation">:</span> httpd
         <span class="token key atrule">state</span><span class="token punctuation">:</span> restarted<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/9.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/9.png" loading="lazy"></p>
 <p>剧本没有问题，模板调取成功啦。我们访问网页看看效果吧。</p>
 <p><img src="/10.png" loading="lazy"></p>
 <p>虽然界面丑丑的，但确实通过模板自动化部署成功啦，好耶。</p>
@@ -983,7 +983,7 @@ ansible-playbook <span class="token parameter variable">-i</span> inventory hapr
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好耶，至此Ansible的笔记就写完了！从环境搭建到Playbook编写，从变量使用到模板渲染，再到高可用集群和负载均衡的部署，也算是把Ansible的核心功能都过了一遍。</p>
 <p>虽然中间有几天学习不太认真（挠头），但笔记还是坚持整理完了。希望后面复习的时候能派上用场吧。</p>
 <p>人生啊……继续加油吧！</p>
-<p>虽然但是，马上就开学了捏…</p>
+<p>虽然但是，马上就开学了捏…s</p>
 
         </article>
         <section class="post-near">
@@ -1022,7 +1022,7 @@ ansible-playbook <span class="token parameter variable">-i</span> inventory hapr
             <div class="row">
                 <div class="col-m-4">
                     <h3 class="title-recent">最新文章：</h3>
-                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/">Ansible自动化学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li></ul>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/">Ansible自动化学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li></ul>
                 </div>
                 <div class="col-m-4">
                     <h3 class="title-date">时光机：</h3>
