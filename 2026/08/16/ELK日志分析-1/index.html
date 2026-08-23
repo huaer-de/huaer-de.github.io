@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>ELK日志分析-1 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="ELK日志分析-1"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>ELK日志分析-1</h2>
+            <div class="post-meta">
+                <time class="date">2026.08.16</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <!-- # 8.10 笔记：ELK 日志分析 -->
+
+<h1 id="ELK日志分析"><a href="#ELK日志分析" class="headerlink" title="ELK日志分析"></a>ELK日志分析</h1><!-- 这次笔记是8/10的， -->
+<p>这次笔记，我们来学习 <strong>ELK日志分析</strong>。<br>ELK是一款开源的有关日志分析的技术栈，由三款核心软件Elasticsearch，Logstash和Kibana组成。现在行业经常会再加上Filebeat（轻量日志采集器），四款软件合称ELFK。</p>
+<hr>
+<h2 id="一、Elasticsearch"><a href="#一、Elasticsearch" class="headerlink" title="一、Elasticsearch"></a>一、Elasticsearch</h2><h3 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>ELK中，E就是Elasticsearch（ES）。这是一个分布式搜索引擎、日志存储引擎。负责存放所有日志，提供快速全文检索、聚合统计功能，同时支持集群扩容。</p>
+<p>ES中，只有单机是容易丢数据的，搭建一个集群比较好。在本次实验中，我们将在server1，server2，server3上搭建集群，有1个用来管理集群的master，和2个存放日志数据的data。因为我们在模拟实验，用到的机子数量很少，只有三台，我们把这三台都开放master+data，可以同时实现高可用。集群庞大时不建议，太费钱。</p>
+<p>ES本身没有网页，我们在server4安装Cerebro工具，使在网页上能直接查看三台节点的内存、磁盘、分片状态。</p>
+<h3 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h3><p><strong>1. 集群部署</strong><br>	实验开始，首先，我们要新开三台Centos7虚拟机，完成IP静态配置，域名解析。后续我们会用到scp传输，建议打开免密。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/1.png" loading="lazy"></p>
+<p>在server1上安装ES rpm包，就正常地监控系统修改核心配置，修改文件句柄、进程限制limits.conf。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/2.png" loading="lazy"></p>
+<p>具体的，核心配置 <code>elasticsearch.yml</code> 里，部分语句的含义如下。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token comment"># 1.集群名称，三台机器必须一字不差！</span>
+<span class="token key atrule">cluster.name</span><span class="token punctuation">:</span> my<span class="token punctuation">-</span>es
+<span class="token comment"># 作用：只有集群名相同的机器，才会自动合并成一个集群；名字不一样会分成两个独立集群</span>
+
+<span class="token comment"># 2.数据、日志存放路径（rpm安装自动生成，保留默认即可）</span>
+<span class="token key atrule">path.data</span><span class="token punctuation">:</span> /var/lib/elasticsearch
+<span class="token key atrule">path.logs</span><span class="token punctuation">:</span> /var/log/elasticsearch
+<span class="token comment"># 作用：指定数据和日志存在哪里，不能删，删了找不到数据</span>
+
+<span class="token comment"># 3.锁定内存，禁止swap交换分区</span>
+<span class="token key atrule">bootstrap.memory_lock</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token comment"># 重点解释：swap是硬盘虚拟内存，速度极慢。ES靠内存做搜索缓存，一旦使用swap，查询直接卡死崩溃。这行强制不让ES用swap。</span>
+
+<span class="token comment"># 4.网络监听地址</span>
+<span class="token key atrule">network.host</span><span class="token punctuation">:</span> 0.0.0.0
+<span class="token comment"># 默认是127.0.0.1，只能本机访问；0.0.0.0代表允许局域网内所有其他机器、浏览器访问ES端口9200</span>
+<span class="token comment"># 不写0.0.0.0：外部电脑、cerebro、另外两台server无法连接这台ES</span>
+
+<span class="token comment"># 5.对外访问端口</span>
+<span class="token key atrule">http.port</span><span class="token punctuation">:</span> <span class="token number">9200</span>
+<span class="token comment"># ES对外网页/API访问固定端口，默认9200，不用修改</span>
+
+<span class="token comment"># 6.集群发现列表（告诉本机：去找这三台机器组队集群）</span>
+<span class="token key atrule">discovery.seed_hosts</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"server1"</span><span class="token punctuation">,</span><span class="token string">"server2"</span><span class="token punctuation">,</span><span class="token string">"server3"</span><span class="token punctuation">]</span>
+<span class="token comment"># 依靠前面/etc/hosts的主机名解析，自动ping这三台机器，互相建立连接</span>
+
+<span class="token comment"># 7.初始化集群时，有资格竞选master主节点的机器列表</span>
+<span class="token key atrule">cluster.initial_master_nodes</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"server1"</span><span class="token punctuation">,</span><span class="token string">"server2"</span><span class="token punctuation">,</span><span class="token string">"server3"</span><span class="token punctuation">]</span>
+<span class="token comment"># 集群第一次启动必须写！作用：三台机器都能当集群管理者。</span>
+<span class="token comment"># 三台机器同时启动时，自动投票选出一台作为active master，另外两台备用；一台宕机，剩下两台重新投票出新master，集群不会瘫痪。</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>下面我们优化系统内核，系统权限。</p>
+<p>首先调整资源限制。我们在 <code>/etc/security/limits.conf</code> 里，文件末尾追加四行语句（开放内存锁定权限，提升文件上限，放大进程限制数）。在systemd服务里开启内存锁定（<code>[service]</code> 段添加 <code>LimitMEMLOCK=infinity</code>），然后重载systemd配置。关闭swap交换分区，取消swap挂载。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/3.png" loading="lazy"></p>
+<p>此时，server1的配置已经调好了。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/4.png" loading="lazy"></p>
+<p>我们把server1相关的文件包，配置文件传给server2和server3。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/5.png" loading="lazy"></p>
+<p>在server2和server3上安装好软件，关闭swap分区。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/6.png" loading="lazy"></p>
+<p>我们可以通过 <code>curl http://192.168.86.161:9200/_cat/nodes?v</code> 验证他们是否变成一个群组。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/7.png" loading="lazy"></p>
+<p><strong>2. cerebro部署</strong><br>	创建一个docker镜像加速配置文件，写入国内镜像源内容，启动docker服务，拉取cerebro镜像。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/8.png" loading="lazy"></p>
+<p>然后就可以浏览器访问。在Node address可以填任意ES的节点IP，但要注意格式 <code>http://192.168.x.x:9200</code>。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/9.png" loading="lazy"></p>
+<p><strong>3. elasticsearch集群角色分类</strong></p>
+<p>EL中有三种常见角色，作用如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">角色</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">master</td>
+<td align="left">负责集群管理，比如节点上下线、分片分配、选举主节点</td>
+</tr>
+<tr>
+<td align="left">data</td>
+<td align="left">负责存储数据分片，处理写入、查询、聚合等数据操作</td>
+</tr>
+<tr>
+<td align="left">ingest</td>
+<td align="left">负责数据预处理，比如对数据进行解析、转换、 enrichment 等</td>
+</tr>
+</tbody></table>
+<p>实验的三台是管理节点，也是数据节点；但它不承担 ingest 数据预处理任务。我们修改配置文件里，EL的角色。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/10.png" loading="lazy"></p>
+<p>这样，我们的节点就部署好了。</p>
+<hr>
+<h2 id="二、Logstash"><a href="#二、Logstash" class="headerlink" title="二、Logstash"></a>二、Logstash</h2><h3 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>ELK中，L是指Logstash，一个日志管道处理工具，或者称之为日志中转站。它的工作过程是：接收原始日志 → 清洗、过滤、格式化、转换字段 → 转发给 ES。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/11.png" loading="lazy"></p>
+<p>我们刚刚在server1，server2，server3上搭好了集群，下面，我们再加上两台虚拟机server4和server5。</p>
+<p>我们在server5上安装Logstash 数据采集服务，server4上部署elasticsearch-head网页可视化工具（替代cerebro查看ES索引）。</p>
+<h3 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h3><p><strong>1. Logstash部署</strong><br>	进入server5，安装jdk和logstash安装包（Logstash 是 Java 开发程序，需要JDK环境）。可以用最简管道命令测试一下。</p>
+<p>进入logstash管道配置目录，新建管道配置文件 <code>test.conf</code>，写入采集规则，然后就可以加载配置文件启动Logstash啦。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/12.png" loading="lazy"></p>
+<p>在这里，我们 <code>test.conf</code> 文件的具体内容及含义如下。</p>
+<pre class="line-numbers language-ruby" data-language="ruby"><code class="language-ruby"><span class="token comment"># input 数据输入段：定义数据从哪里来</span>
+input <span class="token punctuation">&#123;</span>
+  stdin <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>  <span class="token comment"># 数据源：键盘手动输入文字</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment"># output 数据输出段：定义数据发送到哪，可以同时多个输出</span>
+output <span class="token punctuation">&#123;</span>
+  stdout <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>  <span class="token comment"># 输出1：打印到server4控制台，方便实时看采集效果</span>
+  elasticsearch <span class="token punctuation">&#123;</span>  <span class="token comment"># 输出2：把数据存入ES集群</span>
+    hosts <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"192.168.86.161:9200"</span></span>  <span class="token comment"># ES集群任意节点IP端口，三台ES写任意一台都能存入集群</span>
+    index <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"logstash-%&#123;+YYYY.MM.dd&#125;"</span></span>  <span class="token comment"># 自动按日期生成ES索引（数据表），每天一个索引</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>等待日志打印 <code>Successfully started</code>，就代表管道就绪，可以写入数据了（虽然我的没有，但它等着我的输入，也是配成功了的）。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/13.png" loading="lazy"></p>
+<p>Web上查看，也能发现有新的2个日志内容。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/14.png" loading="lazy"></p>
+<p><strong>2. elasticsearch-head插件</strong><br>	下面我们在server4上安装插件。需要先安装phantomjs依赖，这是head页面渲染的依赖。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/15.png" loading="lazy"></p>
+<pre><code>我们能够进入phantomjs程序交互界面了，说明依赖安装成功。
+</code></pre>
+<p>还要安装nodejs环境，因为head是前端Vue项目，需要node启动web服务。我么修改head源码配置，绑定ES集群的IP。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/16.png" loading="lazy"></p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/17.png" loading="lazy"></p>
+<pre><code>接着我们通过 `npm run start &amp;` 在后台启动head网页服务。
+</code></pre>
+<p>回到EL节点，在 <code>/etc/elasticsearch/elasticsearch.yml</code> 末尾加上“开启ES跨域访问功能”，和“允许所有IP、网页域名访问ES9200端口”，开启跨域允许。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/18.png" loading="lazy"></p>
+<p>重启服务后，我们就可以浏览器访问head页面了。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/19.png" loading="lazy"></p>
+<p><strong>3. File文件输入插件</strong></p>
+<p>回到server5，采集服务器系统日志 <code>/var/log/messages</code> 这里，修改 <code>test.conf</code> 文件，再次启动logstash。我们把文件修改为：</p>
+<pre class="line-numbers language-ruby" data-language="ruby"><code class="language-ruby"><span class="token comment"># input段：数据源改为服务器系统日志文件</span>
+input <span class="token punctuation">&#123;</span>
+  file <span class="token punctuation">&#123;</span>
+    path <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"/var/log/messages"</span></span>  <span class="token comment"># 采集目标：CentOS/Rocky系统全局系统日志文件，系统所有报错、服务日志都存在这里</span>
+    start_position <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"beginning"</span></span> <span class="token comment"># 启动logstash时，从文件最开头读取全部日志（仅首次生效）</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+output <span class="token punctuation">&#123;</span>
+  stdout <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  elasticsearch <span class="token punctuation">&#123;</span>
+    hosts <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"192.168.86.161:9200"</span></span>
+    index <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"syslog-%&#123;+YYYY.MM.dd&#125;"</span></span> <span class="token comment"># 系统日志单独日期索引，区分手动输入日志</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们在server后端这里，一直在打印着 <code>/var/log/messages</code> 内的系统日志，去Web里看了一下，ES生成了新的索引 <code>syslog-2026.8.12</code>，每条日志都有 <code>path:&quot;/var/log/messages&quot;</code>、<code>host:&quot;server5&quot;</code>。</p>
+<p>logstash用 <code>file</code> 插件读日志文件（比如 <code>/var/log/messages</code>）。下面，为了防重复，避免数据冗余读取，我们可以找到上次读取文件的偏移量，删去之前的文件。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/20.png" loading="lazy"></p>
+<p>我们看到 <code>/var/log/messages</code> 的文件，数字35143714是inode编号（日志文件的id），路径是对应sincedb文件内的记录。通过 <code>l.</code> 查看隐藏文件，我们可以把sincedb文件强制删除。这样，读取进度也就清空了。</p>
+<p>sincedb文件不会重复读取日志，它里面，有6个存储字段。</p>
+<ol>
+<li>inode 编号：日志文件唯一 id，日志文件删改重建 inode 会变</li>
+<li>设备主号、次号：区分磁盘分区</li>
+<li>当前读取字节偏移量：记录上次读到文件第多少字节，下次启动从该位置继续读，不会从头重复采集旧日志</li>
+<li>文件最后修改时间戳</li>
+<li>日志文件完整路径</li>
+</ol>
+<p><strong>4. syslog插件</strong></p>
+<p>Linux所有服务器的本地日志由 <code>rsyslog</code> 管理，logstash里面的 <code>syslog input</code> 会监听UDP 514 端口，于是我们产生了一个想法——把logstash伪装成日志服务器(虽然但是，好奇怪的想法，但也还好……不算非常奇怪，嗯)。</p>
+<p>我们修改一下其他主机的rsyslog配置，让它们把系统日志远程发给logstash，logstash会自动整理内容，将数据存入ES。</p>
+<p>那我们先重新修改管道配置，将文件修改为下面内容。</p>
+<pre class="line-numbers language-ruby" data-language="ruby"><code class="language-ruby">input <span class="token punctuation">&#123;</span>
+  <span class="token comment"># 开启syslog接收器，默认监听本机UDP 514端口</span>
+  syslog <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+output <span class="token punctuation">&#123;</span>
+  stdout <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token comment"># 控制台打印日志，方便实时看效果</span>
+  elasticsearch <span class="token punctuation">&#123;</span>
+    hosts <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"192.168.86.161:9200"</span></span>
+    index <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"syslog-%&#123;+YYYY.MM.dd&#125;"</span></span> <span class="token comment"># 系统日志单独索引</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>来到server1，我们修改rsyslog主配置文件，修改三处。加载imudp模块，开启UDP514监听，将所有日志文件转发给server5。重启服务后，就可以看到来自server1的信息了。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/21.png" loading="lazy"></p>
+<p>Server5已经收到数据了，我们也可以在Web上也可以过滤查看。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/22.png" loading="lazy"></p>
+<p><strong>5. multiline多行合并插件</strong></p>
+<pre><code>ES, Java的报错日志每行一条日志，内容太多，杂乱无章，怎么办？我们可以添加multiline插件，将一整段的报错合并为单条完整日志，存进ES中。
+</code></pre>
+<p>我们先从server1拷贝ES日志模板到server5上。然后在server5上修改配置文件。改成下面的内容 。</p>
+<pre class="line-numbers language-ruby" data-language="ruby"><code class="language-ruby">input <span class="token punctuation">&#123;</span>
+  file <span class="token punctuation">&#123;</span>
+    path <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"/var/log/my-es.log"</span></span>    <span class="token comment"># 采集刚才从server1拷贝过来的多行日志文件</span>
+    start_position <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"beginning"</span></span>  <span class="token comment"># 第一次启动从头读取全部日志</span>
+    codec <span class="token operator">=></span> multiline <span class="token punctuation">&#123;</span>           <span class="token comment"># 开启多行合并解码器，专门处理多行日志</span>
+      pattern <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"^\["</span></span>             <span class="token comment"># 正则匹配：以[ 开头的行，是新日志的起始行</span>
+      negate <span class="token operator">=></span> <span class="token boolean">true</span>               <span class="token comment"># 取反：不匹配上面正则的行，都属于上一条日志的附属多行</span>
+      what <span class="token operator">=></span> previous             <span class="token comment"># 附属行合并到【上一条】日志里</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+output <span class="token punctuation">&#123;</span>
+  stdout <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>                        <span class="token comment"># 控制台打印，方便实时看合并效果</span>
+  elasticsearch <span class="token punctuation">&#123;</span>
+    hosts <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"192.168.86.161:9200"</span></span>  <span class="token comment"># ES集群任意节点IP端口</span>
+    index <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"myeslog-%&#123;+YYYY.MM.dd&#125;"</span></span> <span class="token comment"># 新建独立索引存放合并后的ES报错日志</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最终的效果是，浏览数据的message字段里，很多报错类消息汇聚在一起。</p>
+<p><strong>6. grok日志拆分过滤插件</strong></p>
+<pre><code>apache 访问日志是一整行的文本乱乱的。比如像 `192.168.56.1 - - [25/Mar/2023:15:31:44 +0800] &quot;GET /index.html HTTP/1.0&quot; 200 15`，就乱乱的。
+</code></pre>
+<p>安装grok插件，就可以解决这个问题啦（每次说到这里，都隐隐觉得自己是在带货）。grok插件可以用正则模板，自动拆分整行日志，将它们拆成独立字段 <code>clientip、verb、status、bytes</code> 存入 ES，方便我们筛选查询。</p>
+<hr>
+<h2 id="三、Filebeat日志收集"><a href="#三、Filebeat日志收集" class="headerlink" title="三、Filebeat日志收集"></a>三、Filebeat日志收集</h2><h3 id="（1）理解-2"><a href="#（1）理解-2" class="headerlink" title="（1）理解"></a>（1）理解</h3><pre><code>Filebeat是一个轻量日志采集器，部署在业务服务器（客户端）。它能够轻量化采集日志，传给ES，也可以中转给Logstash/Kafka/Redis，替代Logstash直接采集（节省资源）。
+</code></pre>
+<p>它的内部，有下面四个部分。</p>
+<ol>
+<li><strong>Input 输入源</strong>：配置监控日志文件路径（支持通配符），多路径分开管理</li>
+<li><strong>Harvester 收割机</strong>：每匹配到一个日志文件，自动启动一个收割进程，逐行读取文件新增内容</li>
+<li><strong>Spooler 缓冲池</strong>：收割机采集的日志统一存入内存缓冲，批量聚合，减少网络请求</li>
+<li><strong>Output 输出端</strong>：聚合后的日志批量发送到目标服务（ES &#x2F; Logstash &#x2F; 消息队列）</li>
+</ol>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/23.png" loading="lazy"></p>
+<h3 id="（2）实验-2"><a href="#（2）实验-2" class="headerlink" title="（2）实验"></a>（2）实验</h3><p><strong>1. Filebeat采集Apache日志，直接输出Elasticsearch</strong></p>
+<p>我们在客户端安装httpd+Filebeat服务，来采集apache访问和错误日志。</p>
+<p>来到server1，安装apache网站，这是产生日志的来源。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/24.png" loading="lazy"></p>
+<p>安装Filebeat采集工具，启动apache日志的专用模块。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/25.png" loading="lazy"></p>
+<p>在 <code>apache.yml</code> 配置文件里，把内容修改为下面的样子。声明使用apache日志模块，开启访问日志采集，告诉Filebeat去哪里读取日志，并开启错误日志的采集（yaml文件蛮注重内容的排版和对齐的，要注意格式，可以用空格代替Tab缩进）。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">-</span> <span class="token key atrule">module</span><span class="token punctuation">:</span> apache
+  <span class="token key atrule">access</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">var.paths</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/var/log/httpd/access_log*"</span><span class="token punctuation">]</span>
+  <span class="token key atrule">error</span><span class="token punctuation">:</span>
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">var.paths</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"/var/log/httpd/error_log*"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在 <code>/etc/filebeat/filebeat.yml</code> 里，注释掉 <code>output.elasticsearch</code> 段，打开 <code>output.logstash</code> 端，修改filebeat输出，将output.logstash的地址指向 <code>server5的IP:5011</code>，然后重启服务。</p>
+<p>下面，我们转移阵地，来到server5创建beats管道配置文件 <code>beats.conf</code>，填入下面内容。</p>
+<pre class="line-numbers language-ruby" data-language="ruby"><code class="language-ruby"><span class="token comment"># input 输入：接收Filebeat发来的日志，监听5044端口</span>
+input <span class="token punctuation">&#123;</span>
+  beats <span class="token punctuation">&#123;</span>
+    port <span class="token operator">=></span> <span class="token number">5044</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment"># filter 过滤清洗层：解析apache杂乱日志，拆分IP、状态码、请求地址</span>
+filter <span class="token punctuation">&#123;</span>
+  grok <span class="token punctuation">&#123;</span>
+    match <span class="token operator">=></span> <span class="token punctuation">&#123;</span> <span class="token string-literal"><span class="token string">"message"</span></span> <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"%&#123;HTTPD_COMBINEDLOG&#125;"</span></span> <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment"># output 输出：清洗完的结构化日志发给server4的ES存储</span>
+output <span class="token punctuation">&#123;</span>
+  elasticsearch <span class="token punctuation">&#123;</span>
+    hosts <span class="token operator">=></span> <span class="token punctuation">[</span><span class="token string-literal"><span class="token string">"http://192.168.86.161:9200"</span></span><span class="token punctuation">]</span>
+    index <span class="token operator">=></span> <span class="token string-literal"><span class="token string">"apachelog-%&#123;+YYYY.MM.dd&#125;"</span></span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在beat管道配置文件里，<code>input{}</code> 为输入段（接收日志），<code>filter{}</code> 为过滤段（拆分日志），<code>output{}</code> 为输出端，输出到ES集群里，按日期分成索引。</p>
+<p>再次启动Logstash，我们回到server1上检查一下。校验yaml语法，测试与ES的连通性，发现没问题，就启动Filebeat服务了。</p>
+<p><img src="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/26.png" loading="lazy"></p>
+<hr>
+<h2 id="四、Kibana日志采集"><a href="#四、Kibana日志采集" class="headerlink" title="四、Kibana日志采集"></a>四、Kibana日志采集</h2><h3 id="（1）理解-3"><a href="#（1）理解-3" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>ELK中，K是Kibana，一个可视化的Web控制台。用来读取ES里的日志，做图表、仪表盘等，让工作人员查看日志页面更加方便。</p>
+<h3 id="（2）实验-3"><a href="#（2）实验-3" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>我真的生气了ono，这个电脑卡的很啊oooo。</p>
+<p>我们在server4上安装Kibana，修改配置 <code>elasticsearch.hosts</code>，将它指向ES集群。启动后，通过浏览器访问 <code>http://192.168.86.161:5601</code>。在 Management → Index Patterns 中创建索引模式（如 <code>syslog-*</code>、<code>myeslog-*</code>），随后在 Discover 页面即可按时间、主机、日志级别检索日志。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" rel="tag">ELK日志分析</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

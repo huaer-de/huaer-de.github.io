@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>高可用与负载均衡-2 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="高可用与负载均衡-2"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>高可用与负载均衡-2</h2>
+            <div class="post-meta">
+                <time class="date">2026.07.24</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="7-23-课程笔记：高可用与负载均衡-2"><a href="#7-23-课程笔记：高可用与负载均衡-2" class="headerlink" title="7.23 课程笔记：高可用与负载均衡-2"></a>7.23 课程笔记：高可用与负载均衡-2</h1><blockquote>
+<p>本次课继续讲解高可用与负载均衡，内容承接上一节，重点是 Pacemaker 集群管理、iSCSI 共享存储、Nginx 源码编译及七层负载均衡。</p>
+</blockquote>
+<hr>
+<h2 id="一、Pacemaker-集群管理与-Web-高可用"><a href="#一、Pacemaker-集群管理与-Web-高可用" class="headerlink" title="一、Pacemaker 集群管理与 Web 高可用"></a>一、Pacemaker 集群管理与 Web 高可用</h2><h3 id="1-知识点"><a href="#1-知识点" class="headerlink" title="1. 知识点"></a>1. 知识点</h3><p><strong>（1）Pacemaker 是什么</strong></p>
+<ul>
+<li>Pacemaker 是 Linux 上的<strong>集群资源高可用管理软件</strong>。</li>
+<li>多台服务器组成集群，某台故障时，自动把服务、虚拟 IP 迁移到其他正常节点，保证业务不间断。</li>
+<li>常和<strong>Corosync</strong>配合使用，实现心跳通信。</li>
+</ul>
+<p><strong>（2）Pacemaker 与 LVS&#x2F;Keepalived 的区别</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">维度</th>
+<th align="left">Pacemaker</th>
+<th align="left">Keepalived</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">定位</td>
+<td align="left">通用集群资源管理器</td>
+<td align="left">LVS 高可用 + VRRP</td>
+</tr>
+<tr>
+<td align="left">管理对象</td>
+<td align="left">任意资源（VIP、服务、存储）</td>
+<td align="left">主要是 VIP + LVS 规则</td>
+</tr>
+<tr>
+<td align="left">复杂度</td>
+<td align="left">高，适合多资源编排</td>
+<td align="left">轻量，适合纯负载均衡场景</td>
+</tr>
+<tr>
+<td align="left">故障粒度</td>
+<td align="left">资源级（可单独迁移 VIP）</td>
+<td align="left">节点级（VRRP 倒换）</td>
+</tr>
+</tbody></table>
+<p><strong>（3）高可用设计原则</strong></p>
+<ul>
+<li>无状态服务最适合做高可用（Web 静态页、Nginx 反向代理）。</li>
+<li>有状态服务（如数据库）必须配合**共享存储（iSCSI）**才能做高可用。</li>
+<li>资源必须<strong>可监控</strong>（monitor operation），否则集群不知道它是否存活。</li>
+<li><strong>生产环境必须开 STONITH</strong>，实验环境可关闭。</li>
+</ul>
+<h3 id="2-上机实验"><a href="#2-上机实验" class="headerlink" title="2. 上机实验"></a>2. 上机实验</h3><p><strong>（1）初始化集群</strong></p>
+<ul>
+<li>准备 server1 和 server4 两个节点，完成域名解析、免密登录、时间同步。</li>
+<li>安装集群套件和 Apache，防火墙放行集群及 HTTP 端口。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/1.png" alt="1.png" loading="lazy"></p>
+<ul>
+<li>启动 <code>pcsd</code> 管理服务，设置 <code>hacluster</code> 密码。</li>
+<li>在 server1 上进行节点认证，创建名为 <code>myha</code> 的集群，将所有节点启动集群并设置开机自启。</li>
+<li>用 <code>crm_verify</code> 验证配置，报错 <code>config not valid</code>。临时关闭 STONITH 机制跳过检验，使集群资源可以启动。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/2.png" alt="2.png" loading="lazy"></p>
+<ul>
+<li>创建浮动 VIP 资源 <code>192.168.63.100</code>，通过 <code>pcs resource</code> 查看启停状态。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/3.png" alt="3.png" loading="lazy"></p>
+<p><strong>（2）模拟故障测试</strong></p>
+<ul>
+<li>通过 <code>standby</code> 模拟故障，将 server1 设为待机，VIP 自动漂移到 server4；恢复后 VIP 暂时不会自动回来。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/4.png" alt="4.png" loading="lazy"></p>
+<ul>
+<li>可强制切换资源：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">pcs resource move vip server1      <span class="token comment"># 强制切回 server1</span>
+pcs resource <span class="token function">clear</span> vip             <span class="token comment"># 清除临时迁移标志（冻结资源，不再自动调度）</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre></li>
+</ul>
+<p><strong>（3）Web 资源与资源组</strong></p>
+<ul>
+<li>删掉原有 VIP，重建新资源，并将 <code>ClusterIP</code>（VIP）与 <code>WebSite</code>（httpd）绑定到同一个资源组。</li>
+<li>遇到问题：<code>ClusterIP</code> 一直 <code>stopped</code>，启动失败，原因是未指定网卡，VIP 找不到匹配网卡。</li>
+<li>解决方法：删除资源后重建，加上 <code>nic=ens33</code> 参数即可。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/5.png" alt="5.png" loading="lazy"></p>
+<hr>
+<h2 id="二、iSCSI-共享存储搭建"><a href="#二、iSCSI-共享存储搭建" class="headerlink" title="二、iSCSI 共享存储搭建"></a>二、iSCSI 共享存储搭建</h2><h3 id="1-知识点-1"><a href="#1-知识点-1" class="headerlink" title="1. 知识点"></a>1. 知识点</h3><ul>
+<li>现在需要引入共享存储，实现带外部存储的 MySQL 高可用集群，并整合进 HAProxy 负载均衡架构。</li>
+<li><strong>名词解释</strong>：<ul>
+<li><strong>target</strong>：iSCSI 服务端（提供磁盘）→ server2</li>
+<li><strong>initiator</strong>：iSCSI 客户端（取用磁盘）→ server1</li>
+<li><strong>IQN</strong>：iSCSI 设备唯一标识</li>
+<li><strong>LUN</strong>：服务端对外共享的磁盘单元</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-实验"><a href="#2-实验" class="headerlink" title="2. 实验"></a>2. 实验</h3><p><strong>（1）服务端（server2）搭建 target</strong></p>
+<ul>
+<li>为虚拟机新增一块硬盘 <code>/dev/sdb</code>。</li>
+<li>安装 <code>targetcli</code>（CentOS 7 上管理 iSCSI 服务端的命令行工具）。</li>
+<li>启动 target 服务，在交互界面创建后端存储（本地块设备 <code>/dev/sdb</code> 命名为 <code>my_disk</code>，交由 iSCSI 管理）。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/6.png" alt="6.png" loading="lazy"></p>
+<blockquote>
+<p><strong>避坑</strong>：<code>targetcli</code> 服务一开始搭建不好，后来发现是之前 <code>target.service</code> 配置文件写错，改回后正常。</p>
+</blockquote>
+<p><strong>（2）客户端挂载远程磁盘（server1、server4）</strong></p>
+<ul>
+<li>两台客户端都安装 iSCSI 工具，编辑客户端的 IQN，使其与 server2 的 ACL 允许名称一致。</li>
+<li>扫描 Target，登录远程 iSCSI 磁盘。</li>
+<li>在 server1 上对磁盘分区，创建 XFS 文件系统。</li>
+<li>安装 MariaDB 数据库，将共享磁盘分区挂载到 MySQL 数据目录，实现数据库数据存放在网络共享存储上。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/7.png" alt="7.png" loading="lazy"></p>
+<ul>
+<li>当前资源组 <code>dbgroup</code> 包含三个资源：<code>vip</code>（虚拟 IP）→ <code>iscsdb</code>（Filesystem 共享存储挂载）→ <code>mariadb</code>（数据库），均正常运行在 server1 上。</li>
+<li><strong>注意</strong>：server4 上没有登录 iSCSI，所以找不到 <code>/dev/sdb1</code>，集群资源无法漂移到 server4。</li>
+<li><strong>解决方案</strong>：创建一个 iSCSI 客户端登录资源，放进资源组最前面，使资源启动顺序变为：<br><code>iSCSI 登录资源 → vip → iscsdb(Filesystem) → mariadb</code><br>这样集群切换时会先自动登录存储，再挂载磁盘。<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">pcs resource create lun-login ocf:heartbeat:iSCSILogicalUnit <span class="token punctuation">\</span>
+    <span class="token assign-left variable">target_iqn</span><span class="token operator">=</span>iqn.2026-07.com.example:storage1 <span class="token assign-left variable">portal</span><span class="token operator">=</span><span class="token number">192.168</span>.63.128 <span class="token assign-left variable">lun</span><span class="token operator">=</span><span class="token number">0</span> <span class="token punctuation">\</span>
+    <span class="token function">op</span> monitor <span class="token assign-left variable">interval</span><span class="token operator">=</span>20s
+pcs resource group <span class="token function">add</span> dbgroup lun-login vip iscsdb mariadb<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre></li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/8.png" alt="8.png" loading="lazy"></p>
+<hr>
+<h2 id="三、Nginx-源码编译与负载均衡"><a href="#三、Nginx-源码编译与负载均衡" class="headerlink" title="三、Nginx 源码编译与负载均衡"></a>三、Nginx 源码编译与负载均衡</h2><h3 id="1-知识点-2"><a href="#1-知识点-2" class="headerlink" title="1. 知识点"></a>1. 知识点</h3><p><strong>（1）为什么需要源码安装</strong></p>
+<ul>
+<li>需要修改 Nginx 的部分功能，不能直接 <code>yum</code> 安装，必须用源码。</li>
+<li>大致流程：解压 → <code>./configure</code> 勾选所需模块（如 SSL、状态模块，不需要的剔除）→ <code>make</code> 编译 → <code>make install</code> 安装到指定目录。</li>
+</ul>
+<p><strong>（2）平滑升级（Hot Upgrade）</strong></p>
+<ul>
+<li>Nginx 版本升级时网站不中断，用户无感知。</li>
+<li>升级时不关闭旧 Nginx，直接启动新版 Nginx 主进程；等所有老连接结束，旧 Nginx 退出，升级完成。</li>
+</ul>
+<p><strong>（3）关键配置参数</strong></p>
+<ul>
+<li><code>worker_processes</code>：工作进程数，一般等于 CPU 核数。</li>
+<li><code>worker_connections</code>：单个 worker 能承载的连接数，受系统句柄限制。</li>
+<li><code>user nginx nginx;</code>：master 用 root 绑定端口，worker 降权运行，被攻击也无法提权到 root。</li>
+</ul>
+<h3 id="2-上机实验-1"><a href="#2-上机实验-1" class="headerlink" title="2. 上机实验"></a>2. 上机实验</h3><p><strong>（1）下载编译安装</strong></p>
+<ul>
+<li>暂时关闭 debug 调试功能：在 <code>nginx/auto/cc/gcc</code> 文件中，把 <code>CFLAGS=&quot;$CFLAGS -g&quot;</code> 前面的 debug 行注释掉。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/9.png" alt="9.png" loading="lazy"></p>
+<ul>
+<li>执行配置并编译安装：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">./configure <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/nginx --with-http_stub_status_module
+<span class="token function">make</span> <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token function">install</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre></li>
+<li>启动 Nginx 服务。</li>
+<li>创建软链接实现全局命令，编写 systemd 托管文件，测试启停和开机自启。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/10.png" alt="10.png" loading="lazy"></p>
+<ul>
+<li><strong>伪装 Nginx 名字</strong>：进入 <code>src/core/</code>，编辑 <code>auto/cc/gcc</code>，修改 <code>NGINX VERSION</code> 或 <code>NGINX_VER</code> 即可。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/11.png" alt="11.png" loading="lazy"></p>
+<ul>
+<li><strong>平滑升级</strong>：官网下载新版本 <code>nginx-1.30.4</code> 压缩包，解压后同样执行 <code>./configure ...</code>，但<strong>只执行 <code>make</code>，不执行 <code>make install</code></strong>（否则会覆盖原有程序），将新二进制文件直接替换到运行目录即可。</li>
+</ul>
+<p><strong>（2）Nginx 安全配置</strong></p>
+<ul>
+<li>编译时指定运行用户：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">./configure <span class="token parameter variable">--user</span><span class="token operator">=</span>nginx <span class="token parameter variable">--group</span><span class="token operator">=</span>nginx <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/nginx<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+<li>创建专属用户，将配置文件里的 <code>nobody</code> 改为专门用户；检查语法后重启服务。</li>
+<li>设置文件句柄限制：在 <code>/etc/security/limits.conf</code> 末尾追加：<pre class="line-numbers language-none"><code class="language-none">nginx soft nofile 65535
+nginx hard nofile 65535<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre></li>
+<li>切回 nginx 用户验证 <code>ulimit -n</code>，确认生效。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/12.png" alt="12.png" loading="lazy"></p>
+<p><strong>（3）内核 TCP 参数调优</strong></p>
+<ul>
+<li>进入 <code>/usr/local/nginx/conf/nginx.conf</code>，修改配置绑定 CPU 双核，优化 TCP&#x2F;内核传输性能参数。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/13.png" alt="13.png" loading="lazy"></p>
+<ul>
+<li>校验并重载 Nginx 服务。</li>
+</ul>
+<p><strong>（4）七层负载均衡配置</strong></p>
+<ul>
+<li>在 server1 上修改 Nginx 配置文件，添加 <code>http</code> 部分内容：<ul>
+<li>定义一个后端服务器池。</li>
+<li>配置监听和反向代理。</li>
+<li>访问 <code>www.westos.org</code> 时，请求被转发到后端两台服务器，默认轮询分发，实现负载均衡。</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/14.png" alt="14.png" loading="lazy"></p>
+<ul>
+<li>在 server4 上添加域名解析，访问该网址时，成功轮询到 server2 和 server3 的页面，试验成功。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/15.png" alt="15.png" loading="lazy"></p>
+<blockquote>
+<p>结束啦</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/">Lnmp架构与Nginx管理</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/">高可用与负载均衡-1</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a><a class="-none-link" href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" rel="tag">高可用与负载均衡</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

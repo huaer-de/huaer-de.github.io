@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>TiDB单点部署 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="TiDB单点部署"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>TiDB单点部署</h2>
+            <div class="post-meta">
+                <time class="date">2026.08.17</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="8-17-作业：通过-TiDB-搭建-zabbix-server"><a href="#8-17-作业：通过-TiDB-搭建-zabbix-server" class="headerlink" title="8.17 作业：通过 TiDB 搭建 zabbix-server"></a>8.17 作业：通过 TiDB 搭建 zabbix-server</h1><p>这是8.17的作业，我们的任务是通过TiDB搭建zabbix-server（好像是这样哒）。</p>
+<p>实验开始前，我们先了解一下TiDB，和为什么用TiDB。</p>
+<p>TiDB是一个分布式的数据库，就像 <strong>能多台机器一起干活的 MySQL</strong> 。它和 MySQL 的语言是兼容的（协议兼容），我们直接连到 MySQL 上，不用改代码就可以使用。用 TiDB 代替 MySQL 后，可以增加 MySQL 监控的数据量，相当于扩展了 MySQL 的机器数量。</p>
+<hr>
+<h2 id="一、搭建-TiDB-集群"><a href="#一、搭建-TiDB-集群" class="headerlink" title="一、搭建 TiDB 集群"></a>一、搭建 TiDB 集群</h2><h3 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>我们早上的实验，成功通过Ansible在server2上搭建了单点的MySQL，下午，新开三台Rocky9的虚拟机。server3是TiDB Server和PD，即MySQL直接连接的节点。server4和server5是TiKV节点，用来存储数据。</p>
+<h3 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>新开了三台Rocky9的虚拟机，我们解析域名，并与server1实现免密登录。修改server1中 <code>ansible/hosts</code> 文件，加上TiDB集群的信息。添加下面的内容：</p>
+<pre class="line-numbers language-none"><code class="language-none">[zabbix_server]
+192.168.86.169
+[tidb_servers]
+192.168.86.174
+[tikv_servers]
+192.168.86.175
+192.168.86.176<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>测试，发现能够成功连通。</p>
+<p><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/1.png" loading="lazy"></p>
+<p>那么就到了关键的一步，创建yaml文件。我们在server1上创建 <code>tidb.yml</code>，写入下面的内容。</p>
+<pre class="line-numbers language-none"><code class="language-none">---
+# &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;
+# Play 1：初始化所有 TiDB 节点
+# &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;
+- name: Prepare all TiDB nodes
+  # 在 inventory 中属于 tidb_servers 或 tikv_servers 的主机上都执行
+  hosts: tidb_servers:tikv_servers
+  tasks:
+
+    # 安装基础依赖软件
+    - name: Install basic dependencies
+      ansible.builtin.yum:
+        name:
+          - wget        # 下载工具
+          - curl        # URL 访问工具
+          - tar         # 解压工具
+          - git         # 版本管理工具
+          - epel-release # 扩展软件源
+        state: present   # 确保软件包已安装（幂等）
+
+    # 关闭 SELinux（TiDB 官方强烈建议）
+    - name: Disable SELinux
+      ansible.builtin.selinux:
+        state: disabled  # 禁用 SELinux（需重启完全生效）
+
+    # 关闭防火墙（学习环境，避免端口被拦）
+    - name: Stop firewalld
+      ansible.builtin.service:
+        name: firewalld  # 服务名
+        state: stopped   # 立即停止
+        enabled: no      # 禁止开机自启
+
+# &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;
+# Play 2：部署 TiDB Server + PD
+# &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;
+- name: Deploy TiDB Server + PD
+  # 只在 TiDB Server &#x2F; PD 节点上执行
+  hosts: tidb_servers
+  tasks:
+
+    # 从官网下载 TiDB 二进制包
+    - name: Download TiDB package
+      ansible.builtin.get_url:
+        url: https:&#x2F;&#x2F;download.pingcap.org&#x2F;tidb-v7.5.0-linux-amd64.tar.gz
+        dest: &#x2F;tmp&#x2F;tidb.tar.gz   # 保存到远程主机的路径
+
+    # 解压 TiDB 安装包
+    - name: Extract TiDB package
+      ansible.builtin.unarchive:
+        src: &#x2F;tmp&#x2F;tidb.tar.gz     # 源压缩包
+        dest: &#x2F;usr&#x2F;local&#x2F;         # 解压目标目录
+        remote_src: yes           # 压缩包在远程主机上（不是控制机）
+        creates: &#x2F;usr&#x2F;local&#x2F;tidb-v7.5.0-linux-amd64
+        # 目录存在则跳过，防止重复解压（幂等）
+
+    # 创建软链接，方便版本升级和路径统一
+    - name: Create symbolic link
+      ansible.builtin.file:
+        src: &#x2F;usr&#x2F;local&#x2F;tidb-v7.5.0-linux-amd64  # 真实目录
+        dest: &#x2F;usr&#x2F;local&#x2F;tidb                     # 软链接路径
+        state: link                                # 创建软链接
+
+    # 启动 PD（Placement Driver，TiDB 元数据管理组件）
+    - name: Start PD
+      ansible.builtin.shell:
+        cmd: |
+          nohup &#x2F;usr&#x2F;local&#x2F;tidb&#x2F;bin&#x2F;pd-server \   # 后台启动 PD
+            --data-dir&#x3D;&#x2F;tmp&#x2F;pd \                  # PD 数据存储目录
+            --log-file&#x3D;&#x2F;tmp&#x2F;pd.log \              # 日志文件
+            --client-urls&#x3D;http:&#x2F;&#x2F;0.0.0.0:2379 \   # 客户端访问地址
+            --peer-urls&#x3D;http:&#x2F;&#x2F;0.0.0.0:2380 \     # PD 集群内部通信地址
+            &gt; &#x2F;dev&#x2F;null 2&gt;&amp;1 &amp;                    # 输出重定向，后台运行
+        creates: &#x2F;tmp&#x2F;pd.log
+        # pd.log 存在则跳过，防止重复启动 PD（幂等）
+
+    # 等待 PD 端口监听，确保 PD 启动成功
+    - name: Wait for PD to start
+      ansible.builtin.wait_for:
+        port: 2379        # PD 客户端端口
+        timeout: 30       # 最长等待 30 秒
+
+    # 启动 TiDB Server（对外提供 MySQL 协议）
+    - name: Start TiDB Server
+      ansible.builtin.shell:
+        cmd: |
+          nohup &#x2F;usr&#x2F;local&#x2F;tidb&#x2F;bin&#x2F;tidb-server \ # 后台启动 TiDB
+            --store&#x3D;tikv \                        # 使用 TiKV 作为存储引擎
+            --path&#x3D;192.168.86.174:2379 \          # PD 地址（需改成你自己的 PD IP）
+            --log-file&#x3D;&#x2F;tmp&#x2F;tidb.log \            # 日志文件
+            &gt; &#x2F;dev&#x2F;null 2&gt;&amp;1 &amp;                    # 后台运行
+        creates: &#x2F;tmp&#x2F;tidb.log
+        # tidb.log 存在则跳过，防止重复启动（幂等）
+
+    # 等待 TiDB Server 端口监听
+    - name: Wait for TiDB Server to start
+      ansible.builtin.wait_for:
+        port: 4000        # TiDB 默认 MySQL 协议端口
+        timeout: 30
+
+# &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;
+# Play 3：部署 TiKV（存储节点）
+# &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;
+- name: Deploy TiKV
+  # 只在 TiKV 节点上执行
+  hosts: tikv_servers
+  tasks:
+
+    # 下载 TiDB 二进制包（TiKV 包含在同一个包中）
+    - name: Download TiDB package
+      ansible.builtin.get_url:
+        url: https:&#x2F;&#x2F;download.pingcap.org&#x2F;tidb-v7.5.0-linux-amd64.tar.gz
+        dest: &#x2F;tmp&#x2F;tidb.tar.gz
+
+    # 解压 TiDB 安装包
+    - name: Extract TiDB package
+      ansible.builtin.unarchive:
+        src: &#x2F;tmp&#x2F;tidb.tar.gz
+        dest: &#x2F;usr&#x2F;local&#x2F;
+        remote_src: yes
+        creates: &#x2F;usr&#x2F;local&#x2F;tidb-v7.5.0-linux-amd64
+
+    # 创建软链接
+    - name: Create symbolic link
+      ansible.builtin.file:
+        src: &#x2F;usr&#x2F;local&#x2F;tidb-v7.5.0-linux-amd64
+        dest: &#x2F;usr&#x2F;local&#x2F;tidb
+        state: link
+
+    # 启动 TiKV（真正存储数据的组件）
+    - name: Start TiKV
+      ansible.builtin.shell:
+        cmd: |
+          nohup &#x2F;usr&#x2F;local&#x2F;tidb&#x2F;bin&#x2F;tikv-server \ # 后台启动 TiKV
+            --pd-endpoints&#x3D;192.168.86.174:2379 \  # PD 地址（需改成你自己的 PD IP）
+            --data-dir&#x3D;&#x2F;tmp&#x2F;tikv \                # TiKV 数据存储目录
+            --log-file&#x3D;&#x2F;tmp&#x2F;tikv.log \            # 日志文件
+            &gt; &#x2F;dev&#x2F;null 2&gt;&amp;1 &amp;                    # 后台运行
+        creates: &#x2F;tmp&#x2F;tikv.log
+        # tikv.log 存在则跳过，防止重复启动（幂等）<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>执行自动化脚本后，遇到下载问题。</p>
+<p><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/2.png" loading="lazy"></p>
+<p>于是我们决定，先在本机下载好，再传给server1，让server1通过ansible命令传给server3，server4，server5。</p>
+<p><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/3.png" loading="lazy"></p>
+<p>将 <code>tidb.yml</code> 文件里的 <code>Download TiDB package</code> 部分，替换为下面的内容。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Check if TiDB package exists
+  <span class="token key atrule">ansible.builtin.stat</span><span class="token punctuation">:</span>
+    <span class="token key atrule">path</span><span class="token punctuation">:</span> /tmp/tidb.tar.gz
+  <span class="token key atrule">register</span><span class="token punctuation">:</span> tidb_pkg
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Fail if package not found
+  <span class="token key atrule">ansible.builtin.fail</span><span class="token punctuation">:</span>
+    <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token string">"Please copy tidb.tar.gz to /tmp/ first!"</span>
+  <span class="token key atrule">when</span><span class="token punctuation">:</span> not tidb_pkg.stat.exists<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>重新运行Playbook。</p>
+<p>遇到问题了，这次是解压时，出现了问题。我们逐条来修正。</p>
+<p>Two thousand years have passed…<br>修正失败了，找了很久，找不到PD组件的安装，找不到资源。</p>
+<p>我们先运行单机的TiDB（unistore模式）。</p>
+<hr>
+<h2 id="二、把-Zabbix-的数据库地址指向-TiDB"><a href="#二、把-Zabbix-的数据库地址指向-TiDB" class="headerlink" title="二、把 Zabbix 的数据库地址指向 TiDB"></a>二、把 Zabbix 的数据库地址指向 TiDB</h2><h3 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>我们之前的自动化创建失败了，但安装了一定的软件。现在变成单机了，我们重新创建了一个Playbook文件，叫 <code>deploy_zabbix_tidb.yml</code>。</p>
+<p>Zabbix Server的数据库地址本来是指向MySQL的（一般是localhost），我们需要将他改为TiDB的地址和端口。</p>
+<h3 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>创建 <code>deploy_zabbix_tidb.yml</code> 文件，写入下面的语句。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 重置并启动单机 TiDB
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> tidb_servers
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 停止现有 TiDB 进程
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        ps -ef | grep '[t]idb-server' | awk '&#123;print $2&#125;' | xargs -r kill</span>
+      <span class="token key atrule">ignore_errors</span><span class="token punctuation">:</span> yes
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 清理 TiDB 数据目录
+      <span class="token key atrule">file</span><span class="token punctuation">:</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /tmp/tidb_data
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> absent
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 清理 TiDB 日志文件
+      <span class="token key atrule">file</span><span class="token punctuation">:</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /tmp/tidb.log
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> absent
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建新的 TiDB 数据目录
+      <span class="token key atrule">file</span><span class="token punctuation">:</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /tmp/tidb_data
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> directory
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> root
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> root
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0755'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 启动 TiDB Server（单机模式）
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        nohup /usr/local/tidb/bin/tidb-server \
+          --store=unistore \
+          --path=/tmp/tidb_data \
+          --log-file=/tmp/tidb.log \
+          > /dev/null 2>&amp;1 &amp;</span>
+      <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 等待 TiDB 端口 4000 开放
+      <span class="token key atrule">wait_for</span><span class="token punctuation">:</span>
+        <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">4000</span>
+        <span class="token key atrule">timeout</span><span class="token punctuation">:</span> <span class="token number">30</span>
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 部署 Zabbix 并切换到 TiDB
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> zabbix_server
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">vars</span><span class="token punctuation">:</span>
+    <span class="token key atrule">tidb_host</span><span class="token punctuation">:</span> <span class="token string">"192.168.86.174"</span>
+    <span class="token key atrule">tidb_port</span><span class="token punctuation">:</span> <span class="token string">"4000"</span>
+    <span class="token key atrule">tidb_user</span><span class="token punctuation">:</span> <span class="token string">"zabbix"</span>
+    <span class="token key atrule">tidb_password</span><span class="token punctuation">:</span> <span class="token string">"zabbix"</span>
+    <span class="token key atrule">zabbix_db</span><span class="token punctuation">:</span> <span class="token string">"zabbix"</span>
+    <span class="token key atrule">sql_file</span><span class="token punctuation">:</span> <span class="token string">"/usr/share/zabbix-sql-scripts/mysql/server.sql.gz"</span>
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 确保 mysql 客户端可用
+      <span class="token key atrule">yum</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> mysql
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 重置 TiDB 中的 zabbix 数据库
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        mysql -h &#123;&#123; tidb_host &#125;&#125; -P &#123;&#123; tidb_port &#125;&#125; -uroot -e "DROP DATABASE IF EXISTS &#123;&#123; zabbix_db &#125;&#125;; CREATE DATABASE &#123;&#123; zabbix_db &#125;&#125; CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;"</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 解压官方 SQL 文件
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        zcat &#123;&#123; sql_file &#125;&#125; > /tmp/server_original.sql</span>
+      <span class="token key atrule">args</span><span class="token punctuation">:</span>
+        <span class="token key atrule">creates</span><span class="token punctuation">:</span> /tmp/server_original.sql
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 删除 TiDB 不支持的触发器定义
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        sed -i '/DELIMITER \$\$/,/DELIMITER ;/d' /tmp/server_original.sql</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 导入 SQL 到 TiDB（<span class="token punctuation">-</span><span class="token punctuation">-</span>force 跳过兼容性错误）
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        mysql -h &#123;&#123; tidb_host &#125;&#125; -P &#123;&#123; tidb_port &#125;&#125; -uroot &#123;&#123; zabbix_db &#125;&#125; --force &lt; /tmp/server_original.sql</span>
+      <span class="token key atrule">register</span><span class="token punctuation">:</span> import_result
+      <span class="token key atrule">failed_when</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建并授权 TiDB 中的 zabbix 用户
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        mysql -h &#123;&#123; tidb_host &#125;&#125; -P &#123;&#123; tidb_port &#125;&#125; -uroot -e "CREATE USER IF NOT EXISTS '&#123;&#123; tidb_user &#125;&#125;'@'%' IDENTIFIED BY '&#123;&#123; tidb_password &#125;&#125;'; GRANT ALL PRIVILEGES ON &#123;&#123; zabbix_db &#125;&#125;.* TO '&#123;&#123; tidb_user &#125;&#125;'@'%'; FLUSH PRIVILEGES;"</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 验证关键表和数据
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+        echo "--- dbversion ---"
+        mysql -h &#123;&#123; tidb_host &#125;&#125; -P &#123;&#123; tidb_port &#125;&#125; -uroot -e "SELECT * FROM &#123;&#123; zabbix_db &#125;&#125;.dbversion;"
+        echo "--- users 前 5 行 ---"
+        mysql -h &#123;&#123; tidb_host &#125;&#125; -P &#123;&#123; tidb_port &#125;&#125; -uroot -e "SELECT userid,username FROM &#123;&#123; zabbix_db &#125;&#125;.users LIMIT 5;"</span>
+      <span class="token key atrule">register</span><span class="token punctuation">:</span> verify_output
+      <span class="token key atrule">changed_when</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示验证结果
+      <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+        <span class="token key atrule">var</span><span class="token punctuation">:</span> verify_output.stdout_lines
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 修改 Zabbix Server 数据库配置
+      <span class="token key atrule">lineinfile</span><span class="token punctuation">:</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /etc/zabbix/zabbix_server.conf
+        <span class="token key atrule">regexp</span><span class="token punctuation">:</span> <span class="token string">"^&#123;&#123; item.key &#125;&#125;="</span>
+        <span class="token key atrule">line</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; item.key &#125;&#125;=&#123;&#123; item.value &#125;&#125;"</span>
+      <span class="token key atrule">loop</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">&#123;</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"DBHost"</span><span class="token punctuation">,</span> <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; tidb_host &#125;&#125;"</span> <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">&#123;</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"DBPort"</span><span class="token punctuation">,</span> <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; tidb_port &#125;&#125;"</span> <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">&#123;</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"DBName"</span><span class="token punctuation">,</span> <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; zabbix_db &#125;&#125;"</span> <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">&#123;</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"DBUser"</span><span class="token punctuation">,</span> <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; tidb_user &#125;&#125;"</span> <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">&#123;</span> <span class="token key atrule">key</span><span class="token punctuation">:</span> <span class="token string">"DBPassword"</span><span class="token punctuation">,</span> <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; tidb_password &#125;&#125;"</span> <span class="token punctuation">&#125;</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 更新 Zabbix Web 前端配置（/usr/share/zabbix/conf/zabbix.conf.php）
+      <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">dest</span><span class="token punctuation">:</span> /usr/share/zabbix/conf/zabbix.conf.php
+        <span class="token key atrule">content</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          &lt;?php
+          $DB['TYPE']     = 'MYSQL';
+          $DB['SERVER']   = '&#123;&#123; tidb_host &#125;&#125;';
+          $DB['PORT']     = '&#123;&#123; tidb_port &#125;&#125;';
+          $DB['DATABASE'] = '&#123;&#123; zabbix_db &#125;&#125;';
+          $DB['USER']     = '&#123;&#123; tidb_user &#125;&#125;';
+          $DB['PASSWORD'] = '&#123;&#123; tidb_password &#125;&#125;';
+          $DB['SCHEMA']   = '';
+          $DB['ENCRYPTION'] = false;
+          $DB['KEY_FILE']   = '';
+          $DB['CERT_FILE']  = '';
+          $DB['CA_FILE']    = '';
+          $DB['VERIFY_HOST'] = false;
+          $DB['VAULT_URL'] = '';
+          $DB['VAULT_DB_PATH'] = '';
+          $DB['VAULT_TOKEN'] = '';
+          $DB['DOUBLE_IEEE754'] = true;
+          ?></span>
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0640'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 同步更新 /etc/zabbix/web/zabbix.conf.php（保证一致性）
+      <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">src</span><span class="token punctuation">:</span> /usr/share/zabbix/conf/zabbix.conf.php
+        <span class="token key atrule">dest</span><span class="token punctuation">:</span> /etc/zabbix/web/zabbix.conf.php
+        <span class="token key atrule">remote_src</span><span class="token punctuation">:</span> yes
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0640'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 重启 Zabbix Server 和 Apache
+      <span class="token key atrule">systemd</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; item &#125;&#125;"</span>
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> restarted
+        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> yes
+      <span class="token key atrule">loop</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> zabbix<span class="token punctuation">-</span>server
+        <span class="token punctuation">-</span> httpd
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 等待 Zabbix Server 完全启动
+      <span class="token key atrule">wait_for</span><span class="token punctuation">:</span>
+        <span class="token key atrule">port</span><span class="token punctuation">:</span> <span class="token number">10051</span>
+        <span class="token key atrule">timeout</span><span class="token punctuation">:</span> <span class="token number">30</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示 Zabbix Server 最新日志
+      <span class="token key atrule">shell</span><span class="token punctuation">:</span> tail <span class="token punctuation">-</span>n 30 /var/log/zabbix/zabbix_server.log
+      <span class="token key atrule">register</span><span class="token punctuation">:</span> log_output
+      <span class="token key atrule">changed_when</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 输出日志
+      <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+        <span class="token key atrule">var</span><span class="token punctuation">:</span> log_output.stdout_lines<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>保存退出后，运行Playbook。（能看得出，是很详细的一个部署文件）</p>
+<p><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/4.png" loading="lazy"><br><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/5.png" loading="lazy"><br><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/6.png" loading="lazy"></p>
+<hr>
+<h2 id="三、验证-TiDB-中的-zabbix-数据库"><a href="#三、验证-TiDB-中的-zabbix-数据库" class="headerlink" title="三、验证 TiDB 中的 zabbix 数据库"></a>三、验证 TiDB 中的 zabbix 数据库</h2><p>其实在上一步，我们的Playbook已经将数据库部署过了，我们在这里验证一下就好。</p>
+<p><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/7.png" loading="lazy"></p>
+<p>我们看到TiDB（server3）里面是有zabbix库的，并且表结构和初始数据都没有什么问题。</p>
+<hr>
+<h2 id="四、测试-Zabbix-能否正常工作"><a href="#四、测试-Zabbix-能否正常工作" class="headerlink" title="四、测试 Zabbix 能否正常工作"></a>四、测试 Zabbix 能否正常工作</h2><p>我们在浏览器上打开server2上zabbix界面，是正常的。但浏览器不能直接显示出数据库的配置，我们来到命令行，来检查一下端口的指向和服务主机。</p>
+<p><img src="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/8.png" loading="lazy"></p>
+<blockquote>
+<p>今天先到这里啦，后面有PD组件后，再部署分布式吧😊</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" rel="tag">TiDB，作业</a><a class="-none-link" href="/tags/Zabbix/" rel="tag">Zabbix</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

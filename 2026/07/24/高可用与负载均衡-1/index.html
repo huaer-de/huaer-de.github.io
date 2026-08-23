@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>高可用与负载均衡-1 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="高可用与负载均衡-1"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>高可用与负载均衡-1</h2>
+            <div class="post-meta">
+                <time class="date">2026.07.24</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="7-22-课程笔记：高可用与负载均衡-1"><a href="#7-22-课程笔记：高可用与负载均衡-1" class="headerlink" title="7.22 课程笔记：高可用与负载均衡-1"></a>7.22 课程笔记：高可用与负载均衡-1</h1><blockquote>
+<p>7&#x2F;22 am </p>
+</blockquote>
+<p>本节进入了新的一个小专题，与服务器架构相关，老师给这节课取名为”高可用与负载均衡”。我们可以新开虚拟机的环境，让实验环境是干净清晰的。</p>
+<hr>
+<h2 id="一、服务器架构与核心概念"><a href="#一、服务器架构与核心概念" class="headerlink" title="一、服务器架构与核心概念"></a>一、服务器架构与核心概念</h2><h3 id="1-高可用（HA）与负载均衡（LB）"><a href="#1-高可用（HA）与负载均衡（LB）" class="headerlink" title="1. 高可用（HA）与负载均衡（LB）"></a>1. 高可用（HA）与负载均衡（LB）</h3><blockquote>
+<p>我们先了解一下这几个关键词吧</p>
+</blockquote>
+<ul>
+<li><p><strong>高可用</strong>：核心目标是<strong>消除单点故障</strong>，当系统某个组件（如服务器、调度器）发生故障时，能自动切换到备用组件，保证服务不中断。最典型的实现是双机热备，分为主备模式（仅主节点工作，备节点待命）和双活模式（双节点同时处理请求，需搭配分布式文件系统如 Ceph&#x2F;GFS，避免存储脑裂）。生产环境中还需配合电源控制器、直连心跳线（独立于业务网络的网卡直连，规避交换机故障风险）进一步提升可靠性。</p>
+</li>
+<li><p><strong>负载均衡</strong>：通过<strong>将客户端流量合理分发到多台后端服务器</strong>，解决单台服务器性能瓶颈，提升系统整体处理能力。负载均衡器本身也是单点，因此通常与高可用方案结合部署。常见调度算法包括轮询、加权轮询、最少连接、源地址哈希等。</p>
+</li>
+<li><p><strong>CDN（内容分发网络）</strong>：现代网站的标配组件，通过全球边缘节点缓存静态内容，将用户请求就近返回，既加速访问又减轻源站压力。其工作原理类似分级缓存：用户请求先查本地 CDN 节点，未命中则查询邻近节点，最终才回源站。需注意 CDN 失效时可能引发后端流量雪崩，需配合降级、限流等手段兜底。中小厂商通常采购云厂商 CDN 服务，自建 CDN 成本过高，仅适合超大型互联网企业。</p>
+</li>
+</ul>
+<h3 id="2-常见服务器架构对比"><a href="#2-常见服务器架构对比" class="headerlink" title="2. 常见服务器架构对比"></a>2. 常见服务器架构对比</h3><ul>
+<li><strong>CS 架构（客户端-服务器）</strong>：适合低并发场景，早期应用较多，客户端需安装专用软件。</li>
+<li><strong>BS 架构（浏览器-服务器）</strong>：当前主流架构，用户通过浏览器以 HTTP 协议访问 Web 服务器，后端对接数据库，更适配现代动态网页需求。云端环境通常直接提供封装好的高可用与负载均衡能力，自建架构则需手动实现相关技术栈。</li>
+</ul>
+<h3 id="3-负载均衡技术分层"><a href="#3-负载均衡技术分层" class="headerlink" title="3. 负载均衡技术分层"></a>3. 负载均衡技术分层</h3><ul>
+<li><strong>四层负载均衡</strong>：工作在传输层（OSI 第四层），代表方案为 LVS，基于 IP+端口转发流量，性能极高，但无法识别应用层内容。</li>
+<li><strong>七层负载均衡</strong>：工作在应用层（OSI 第七层），代表方案为 HAProxy、Nginx，可基于 HTTP URL、Header 等内容做精细化调度（如动静分离、会话保持），对后端服务透明，无需配置 VIP。</li>
+</ul>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/0.png" loading="lazy"></p>
+<blockquote>
+<p>📌 <strong>补充知识点</strong>：四层和七层不是替代关系，而是分层协作。生产环境常见架构：<strong>LVS（四层入口）→ HAProxy（七层分发）→ 后端集群</strong>，兼顾性能和灵活性。</p>
+</blockquote>
+<hr>
+<h2 id="二、LVS-DR-模式负载均衡"><a href="#二、LVS-DR-模式负载均衡" class="headerlink" title="二、LVS-DR 模式负载均衡"></a>二、LVS-DR 模式负载均衡</h2><h3 id="（1）ipvsadm-工具与基础命令"><a href="#（1）ipvsadm-工具与基础命令" class="headerlink" title="（1）ipvsadm 工具与基础命令"></a>（1）ipvsadm 工具与基础命令</h3><ol>
+<li><p><code>ipvsadm</code> 是 Linux 下用于管理 IPVS（IP Virtual Server，IP 虚拟服务器）的命令行工具，主要用于构建 LVS（Linux Virtual Server）负载均衡集群。它允许管理员配置和管理虚拟服务、真实服务器（后端节点）以及负载均衡策略。</p>
+</li>
+<li><p>一些相关命令</p>
+<p>1）基础的查看命令</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">ipvsadm <span class="token parameter variable">-Ln</span>           <span class="token comment"># 查看规则</span>
+ipvsadm <span class="token parameter variable">-Ln</span> <span class="token parameter variable">--stats</span>   <span class="token comment"># 查看流量统计</span>
+ipvsadm <span class="token parameter variable">-Ln</span> <span class="token parameter variable">--rate</span>    <span class="token comment"># 查看连接速率</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>2）添加 VIP 虚拟服务</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">ipvsadm <span class="token parameter variable">-A</span> <span class="token parameter variable">-t</span> VIP:端口 <span class="token parameter variable">-s</span> 算法
+<span class="token comment"># -A：新建虚拟服务  -t：TCP协议  -s：指定调度算法</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>3）添加后端 RS 节点</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">ipvsadm <span class="token parameter variable">-a</span> <span class="token parameter variable">-t</span> VIP:端口 <span class="token parameter variable">-r</span> RIP:端口 -g/-m/-i
+<span class="token comment"># -a：增加真实服务器  -r：后端服务器地址</span>
+<span class="token comment"># 转发模式三选一：</span>
+<span class="token comment"># -g DR 直接路由（本次实验，性能最高）</span>
+<span class="token comment"># -m NAT 模式</span>
+<span class="token comment"># -i IP 隧道 TUN</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>4）持久化保存</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">ipvsadm-save <span class="token operator">></span> /etc/sysconfig/ipvsadm
+ipvsadm-restore <span class="token operator">&lt;</span> /etc/sysconfig/ipvsadm<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+</li>
+<li><p>LVS 有三种转发工作模式：</p>
+<ul>
+<li><strong>DR（Direct Routing）模式</strong> <code>-g</code>：性能最优，调度器与后端服务器在同一网段，通过修改数据包的 MAC 地址实现转发，后端服务器需绑定 VIP。</li>
+<li><strong>NAT（Network Address Translation）模式</strong> <code>-m</code>：性能较差，调度器与后端服务器不在同一网段，调度器需进行地址转换（SNAT），后端服务器需配置网关指向调度器。</li>
+<li><strong>TUN（IP Tunneling，IP 隧道）模式</strong> <code>-i</code>：适用于跨网段场景（公网），通过 IP 隧道协议封装数据包，性能介于 DR 和 NAT 之间。</li>
+</ul>
+<blockquote>
+<p>📌 <strong>补充知识点：第四种模式 — FULLNAT</strong><br>除了 DR&#x2F;NAT&#x2F;TUN 三种经典模式外，还有 <strong>FULLNAT 模式</strong>（由阿里开源贡献）。它将请求和响应的源 IP、目标 IP 都做转换，使 RS 看不到客户端真实 IP，但部署更灵活（RS 可跨 VLAN），常用于大型云厂商内部。</p>
+</blockquote>
+</li>
+<li><p>常用的调度算法有四个：</p>
+<ul>
+<li><code>rr</code> 轮询：请求依次轮流分配，不考虑负载</li>
+<li><code>wrr</code> 加权轮询：根据权重分配请求</li>
+<li><code>lc</code> 最少连接；<code>wlc</code> 加权最少连接</li>
+<li><code>sh</code> 源地址哈希，实现会话保持</li>
+</ul>
+</li>
+</ol>
+<h3 id="（2）具体的实验"><a href="#（2）具体的实验" class="headerlink" title="（2）具体的实验"></a>（2）具体的实验</h3><p>这次实验需要四台机子，他们的功能如下：</p>
+<table>
+<thead>
+<tr>
+<th>主机名</th>
+<th>IP (RIP)</th>
+<th>VIP</th>
+<th>角色</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>server1</td>
+<td>192.168.63.131</td>
+<td>192.168.63.100</td>
+<td>调度器（VS）</td>
+<td>负载调度器，接收客户端请求，分发流量</td>
+</tr>
+<tr>
+<td>server2</td>
+<td>192.168.63.128</td>
+<td>192.168.63.100</td>
+<td>真实服务器（RS）</td>
+<td>真实业务服务器，处理请求并返回响应</td>
+</tr>
+<tr>
+<td>server3</td>
+<td>192.168.63.129</td>
+<td>192.168.63.100</td>
+<td>真实服务器（RS）</td>
+<td>真实业务服务器，处理请求并返回响应</td>
+</tr>
+<tr>
+<td>server4</td>
+<td>192.168.63.130</td>
+<td>—</td>
+<td>测试机</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Ps: vip 长得和会员 VIP 用户的 VIP 好像（VIP：虚拟 IP，客户端访问的入口）</p>
+</blockquote>
+<p><strong>1. 在实验开始之前，我们需要了解一下这是在干什么。</strong></p>
+<p>我们想要搭建四层的负载均衡集群，让调度器 server1 分发流量给后端 server2、server3。由于 DR 模式性能最高，我们选用 DR 模式。</p>
+<p>好的，实验开始了。</p>
+<p>我们先给所有主机配置静态 IP（防止 DHCP 自动分配改变 IP，LVS 规则和关系失控），这样也方便 PC 互相 ssh。</p>
+<blockquote>
+<p>Ps: 我之前实验时，把网关配置成 10 网段的了（如 10.0.0.132），但是老师用的是 192.168. 的，想改回去。这要求我们关闭虚拟机，打开”编辑”里面的”虚拟网络编辑器”，使它恢复默认。</p>
+</blockquote>
+<p>打开 <code>/etc/sysconfig/network-scripts/ifcfg-ens33</code>（网卡配置文件），添加 <code>IPADDR=192.168.63.131</code>、<code>NETMASK=255.255.255.0</code>、<code>GATEWAY=192.168.63.2</code>、<code>DNS1=192.168.63.2</code>。保存退出后，重启网络。之后，重新配置主机名。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/1.png" loading="lazy"></p>
+<p><strong>2. 在调度器 server1 上配置 LVS</strong></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/2.png" loading="lazy"></p>
+<p>我们安装好 ipvsadm 后，找到物理网卡（ens33），绑定 VIP（对外的接口 &#x2F;24）；</p>
+<p>清空旧规则（虽然我没搞这个，命令是 <code>ipvsadm -C</code>）；</p>
+<p>创建虚拟服务，用 rr 轮询算法（rr 轮询算法，是请求依次轮流分给后端服务器，一人一次，循环往复，不考虑服务器的负载和性能，即使故障也会发过去）；</p>
+<p>添加两台后端 RS，指定 DR 模式 <code>-g</code>（-g 是 DR 模式，直接路由）；</p>
+<p>最后可以通过 <code>ipvsadm -Ln</code> 核对规则；</p>
+<p><strong>3. 在后端服务器 server2、server3（RS）上的服务器配置</strong></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/3.png" loading="lazy"> server3 和 server2 类似</p>
+<p><strong>4. 在客户端（测试机）上验证一下</strong></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/4.png" loading="lazy"><br>成功啦好的</p>
+<p>但其实第一次实验时，实验失败了。分两种情况：</p>
+<p>1）<code>curl 192.168.63.100</code> 行不通，返回超时。这时候我们可以通过抓包（<code>tcpdump -i ens32 host 192.168.63.100 and port 80</code>），检查一下 TCP 三次握手是否成功，如果没有回 SYN+ACK 应答包，应该是 server2 和 server3 的 ARP 内核参数有问题；</p>
+<p>2）响应时只返回 server3，不返回 server2，检查调度器 server1。最开始操作时，把 VIP <code>192.168.63.100/24</code> 绑定在物理网卡 ens33，而非 lo 回环网卡、掩码 &#x2F;32。虽然后续清理修正，但局域网内 ARP 缓存会持续生效，短时干扰网络。</p>
+<blockquote>
+<p>📌 <strong>补充知识点：排错时可用工具</strong></p>
+<ul>
+<li><code>tcpdump -i ens33 host 192.168.63.100 and port 80</code> → 抓包看三次握手</li>
+<li><code>arp -a</code> → 查看 ARP 缓存，确认 VIP 对应的 MAC 是调度器的</li>
+<li><code>arp -d 192.168.63.100</code> → 清除指定 ARP 缓存条目</li>
+<li><code>ipvsadm -Ln --stats</code> → 查看流量统计，确认请求是否到达 RS</li>
+</ul>
+</blockquote>
+<p><strong>5. 一些疑问</strong></p>
+<p>1）我们什么时候用 &#x2F;24, ens33，什么时候用 &#x2F;32, lo 取决于我们的使用角色。</p>
+<p>Director 调度器使用 ens33，ens33 时对外的物理网卡，需要让全网用户访问到 VIP。而 RealServer 后端服务器使用 <code>VIP/32 dev lo</code>，绑定在 lo 回环网卡，只让本机内部程序识别 VIP，禁止对外响应 VIP 的 ARP 请求，防止冲突。</p>
+<p>2）<code>arp_ignore</code> 和 <code>arp_announce</code> 是什么</p>
+<ul>
+<li><code>arp_ignore</code>（收到别人 ARP 请求时，怎么应答）<ul>
+<li>外部 ARP 询问 192.168.63.100 的 MAC 地址。请求包从 ens33 进来，但是 VIP 绑在 lo 上。此时 <code>arp_ignore=1</code> → 拒绝回复 ARP，防止 RS 对外宣称 VIP。</li>
+</ul>
+</li>
+<li><code>arp_announce</code>（本机对外发送 ARP 包时，源 IP 怎么选）<ul>
+<li><code>arp_announce=2</code> 尽量使用和出接口网段匹配的 IP 作为 ARP 源地址。不会拿 lo 上的 VIP 当做源 IP 向外发送 ARP。能够防止 RS 主动向外广播【源 IP&#x3D;VIP】的 ARP 报文。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>📌 <strong>补充知识点：arp_ignore &#x2F; arp_announce 取值含义</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>取值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>arp_ignore</td>
+<td>0</td>
+<td>只要本机有这个 IP，任何网卡都应答</td>
+</tr>
+<tr>
+<td>arp_ignore</td>
+<td>1</td>
+<td>只在接收请求的网卡上有该 IP 时才应答</td>
+</tr>
+<tr>
+<td>arp_ignore</td>
+<td>2</td>
+<td>只应答本机所有网卡上配置的 IP（更严格）</td>
+</tr>
+<tr>
+<td>arp_announce</td>
+<td>0</td>
+<td>允许使用任意 IP 作为 ARP 源地址</td>
+</tr>
+<tr>
+<td>arp_announce</td>
+<td>1</td>
+<td>优先选择与目标 IP 同网段的地址</td>
+</tr>
+<tr>
+<td>arp_announce</td>
+<td>2</td>
+<td>始终选择最匹配的地址（最严格，DR 模式推荐）</td>
+</tr>
+</tbody></table>
+</blockquote>
+<hr>
+<h2 id="三、LVS-NAT-模式负载均衡（双网卡拓扑）"><a href="#三、LVS-NAT-模式负载均衡（双网卡拓扑）" class="headerlink" title="三、LVS-NAT 模式负载均衡（双网卡拓扑）"></a>三、LVS-NAT 模式负载均衡（双网卡拓扑）</h2><h3 id="（1）原理"><a href="#（1）原理" class="headerlink" title="（1）原理"></a>（1）原理</h3><ol>
+<li><p>VS&#x2F;NAT 的优点是服务器可以运行任何支持 TCP&#x2F;IP 的操作系统，它只需要一个 IP 地址配置在调度器上，服务器组可以用私有的 IP 地址。</p>
+</li>
+<li><p>缺点是它的伸缩能力有限，当服务器结点数目升到 20 时，调度器本身有可能成为系统的新瓶颈，因为在 VS&#x2F;NAT 中请求和响应报文都需要通过负载调度器。</p>
+</li>
+<li><p>在这次实验里，调度器 VS 有双网卡：</p>
+<ul>
+<li><strong>ens32（外网）</strong>：192.168.10.100 【VIP，客户端访问入口】</li>
+<li><strong>ens33（内网）</strong>：192.168.63.131 【连接后端 RS，同时作为 RS 的默认网关】</li>
+</ul>
+<p>后端 RS 的网关仍在 192.168.63.x；测试的客户端在 192.168.10.x（与调度器外网同网段）</p>
+</li>
+<li><p>工作原理是：</p>
+<p>客户端访问虚拟 VIP，请求报文到达调度器；调度器将目标 IP 修改为后端真实服务器 RIP 并转发（<strong>DNAT</strong>）。后端服务器收到请求后，响应报文必须经由调度器回包，调度器再把源 IP 改回 VIP（<strong>SNAT</strong>）返回客户端。入站、出站所有流量都经过调度器完成地址转换，从而实现四层负载均衡。</p>
+</li>
+</ol>
+<blockquote>
+<p>📌 <strong>补充知识点：iptables 优先级 &gt; IPVS</strong><br>如果调度器上 iptables 的 INPUT 链拦截了 80 端口，请求到不了 LVS，负载均衡就会失效。排查时先 <code>iptables -L -n</code> 确认没有 DROP 规则，或干脆 <code>systemctl stop firewalld</code> 关闭防火墙再测试。</p>
+</blockquote>
+<h3 id="（2）具体的上机实验"><a href="#（2）具体的上机实验" class="headerlink" title="（2）具体的上机实验"></a>（2）具体的上机实验</h3><ol>
+<li><p>这个实验是 LVS 的另一种转发方式，用到了双网卡，调度器做网关。与 DR 模式不同，它不用处理 ARP，性能会弱一点。我们可以对比着来看。因为 NAT 和 DR 不能混用，我们要先清理上一轮 DR 实验的配置。</p>
+</li>
+<li><p>在 server1 调度器上，我们要配置双网卡。于是我们关机后，返回 VMware，在设置里添加网络适配器，选择和现有网卡一致的网络连接模式连接（此处截图省略）。</p>
+<p>开机后，重新配置环境。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/5.png" loading="lazy"></p>
+<p>我们开启 IP 转发并让它生效，加载 net 模块，清空旧规则后，写入新的 LVS NAT 规则。</p>
+<blockquote>
+<p>📌 <strong>关键命令补充</strong>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 开启内核路由转发（NAT 必须！否则 RS 回包过不来）</span>
+<span class="token builtin class-name">echo</span> <span class="token string">"net.ipv4.ip_forward = 1"</span> <span class="token operator">></span> /etc/sysctl.d/lvs.conf
+<span class="token function">sysctl</span> <span class="token parameter variable">-p</span> /etc/sysctl.d/lvs.conf
+
+<span class="token comment"># 加载 NAT 内核模块</span>
+modprobe iptable_nat
+lsmod <span class="token operator">|</span> <span class="token function">grep</span> nat
+
+<span class="token comment"># 写入 NAT 规则（-m = Masquerade 伪装模式）</span>
+ipvsadm <span class="token parameter variable">-A</span> <span class="token parameter variable">-t</span> <span class="token number">192.168</span>.10.100:80 <span class="token parameter variable">-s</span> rr
+ipvsadm <span class="token parameter variable">-a</span> <span class="token parameter variable">-t</span> <span class="token number">192.168</span>.10.100:80 <span class="token parameter variable">-r</span> <span class="token number">192.168</span>.63.128:80 <span class="token parameter variable">-m</span>
+ipvsadm <span class="token parameter variable">-a</span> <span class="token parameter variable">-t</span> <span class="token number">192.168</span>.10.100:80 <span class="token parameter variable">-r</span> <span class="token number">192.168</span>.63.129:80 <span class="token parameter variable">-m</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>验证：<code>ipvsadm -Ln</code> 看到 Forward 列显示 <strong>Masq</strong> 就说明 NAT 模式配置正确。</p>
+</blockquote>
+</li>
+<li><p>在 server2 和 server3 上设置新的网关，指向调度器的内网 IP。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/6.png" loading="lazy"></p>
+<blockquote>
+<p>补充完整命令：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 清理 DR 实验残留</span>
+<span class="token function">ip</span> addr del <span class="token number">192.168</span>.63.100/32 dev lo
+<span class="token builtin class-name">echo</span> <span class="token number">0</span> <span class="token operator">></span> /proc/sys/net/ipv4/conf/lo/arp_ignore
+<span class="token builtin class-name">echo</span> <span class="token number">0</span> <span class="token operator">></span> /proc/sys/net/ipv4/conf/lo/arp_announce
+<span class="token builtin class-name">echo</span> <span class="token number">0</span> <span class="token operator">></span> /proc/sys/net/ipv4/conf/ens33/arp_ignore
+<span class="token builtin class-name">echo</span> <span class="token number">0</span> <span class="token operator">></span> /proc/sys/net/ipv4/conf/ens33/arp_announce
+arptables <span class="token parameter variable">-F</span>
+
+<span class="token comment"># 修改网关指向调度器</span>
+<span class="token function">ip</span> route del default via <span class="token number">192.168</span>.63.2
+<span class="token function">ip</span> route <span class="token function">add</span> default via <span class="token number">192.168</span>.63.131
+
+<span class="token comment"># 关闭防火墙和 SELinux</span>
+systemctl stop firewalld
+setenforce <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></blockquote>
+</li>
+<li><p>测试一下</p>
+<p>我们去 VMware 上，把 server4 的 IP 设置为静态的 192.168.10. 网段（才能 ping 通外网卡），然后通过 <code>curl 192.168.10.100</code> 测试一下。成功了。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/7.png" loading="lazy"></p>
+<blockquote>
+<p>📌 <strong>补充验证</strong>：NAT 模式下客户端 <code>arp -a</code> 看到的 VIP MAC 是调度器外网网卡 ens32 的 MAC，和 DR 模式一样，流量确实经过调度器。</p>
+</blockquote>
+</li>
+</ol>
+<hr>
+<h2 id="四、Keepalived-LVS-DR-高可用集群（主备调度器，解决调度器单点故障）"><a href="#四、Keepalived-LVS-DR-高可用集群（主备调度器，解决调度器单点故障）" class="headerlink" title="四、Keepalived + LVS-DR 高可用集群（主备调度器，解决调度器单点故障）"></a>四、Keepalived + LVS-DR 高可用集群（主备调度器，解决调度器单点故障）</h2><h3 id="（1）原理-1"><a href="#（1）原理-1" class="headerlink" title="（1）原理"></a>（1）原理</h3><ol>
+<li><p>只用 ipvsadm 部署 LVS-DR 存在两大缺陷：一个是调度器单点故障（只有一台 server1 做调度器，一旦宕机，整个集群全部断网）；另一个是无后端健康检查（后端 server2&#x2F;server3 的 httpd 宕机，LVS 依旧分发流量，用户访问报错）。</p>
+</li>
+<li><p>Keepalived 是为 LVS 设计的高可用软件，基于 VRRP 虚拟路由冗余协议。</p>
+</li>
+<li><p>核心原理是：VRRP 协议与 VIP 漂移</p>
+<p>Keepalived 的高可用能力依赖 VRRP 协议，本质是让多台节点（主、备）共享一个”虚拟 IP（VIP）”，对外呈现为一个统一的服务入口，核心逻辑如下：</p>
+<p>1）<strong>角色划分</strong>：集群包含 1 个主节点（Master）和 1 个&#x2F;多个备节点（Backup）。<br>2）<strong>心跳检测</strong>：主节点定期向备节点发送 VRRP 通告报文（默认每 1 秒），证明自己”存活”。<br>3）<strong>VIP 持有</strong>：正常情况下，主节点绑定 VIP 并对外提供服务，备节点仅监听心跳，不持有 VIP。<br>4）<strong>故障切换</strong>：若备节点超过指定时间（默认 3 秒）未收到主节点心跳，判定主节点故障，备节点立即升级为新主节点，绑定 VIP 并接管服务，整个过程无需人工干预。</p>
+</li>
+<li><p>配置文件（以双节点为例）</p>
+<p>Keepalived 主配置文件默认路径为 <code>/etc/keepalived/keepalived.conf</code>，主、备节点配置差异主要在 <code>state</code>（角色）和 <code>priority</code>（优先级，数值越高越优先成为主节点）。</p>
+</li>
+</ol>
+<h3 id="（2）具体的实验如下"><a href="#（2）具体的实验如下" class="headerlink" title="（2）具体的实验如下"></a>（2）具体的实验如下</h3><ol>
+<li>实验拓扑（我的在 63 网段）</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>主机</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>server1</td>
+<td>Master LVS 调度器（192.168.63.131）</td>
+</tr>
+<tr>
+<td>server4</td>
+<td>Backup LVS 调度器（192.168.63.130）</td>
+</tr>
+<tr>
+<td>server2</td>
+<td>RS1（192.168.63.128）httpd 服务</td>
+</tr>
+<tr>
+<td>server3</td>
+<td>RS2（192.168.63.129）httpd 服务</td>
+</tr>
+<tr>
+<td>server4</td>
+<td>同时作为备调度器 + 测试客户端</td>
+</tr>
+</tbody></table>
+<ol start="2">
+<li><p>Master 调度器 server1（192.168.63.131）</p>
+<p>我们关闭全部的防火墙，保持 DR 环境，即在 server2、server3 上如下；</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/8.png" loading="lazy"></p>
+<p>然后就回到 server1，清理旧的手动 LVS 规则、旧 VIP，安装 keepalived，编辑配置文件 <code>vim /etc/keepalived/keepalived.conf</code>，再启动服务；</p>
+<p>验证状态发现，ens33 上存在 192.168.63.100，也自动生成两条 RS 规则，Forward 为 Route（DR 模式）</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/9.png" loading="lazy"></p>
+<p>具体的文件内容如下（server4 上也差不多）：</p>
+<pre class="line-numbers language-keepalived" data-language="keepalived"><code class="language-keepalived"><span class="token comment">! Configuration File for keepalived</span>
+
+<span class="token property">global_defs</span> <span class="token punctuation">&#123;</span>
+    <span class="token property">notification_email</span> <span class="token punctuation">&#123;</span>
+        root<span class="token conditional-configuration variable">@localhost</span>        <span class="token comment"># 接收警报的 email 地址,可以添加多个</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token property">notification_email_from</span> keepalived<span class="token conditional-configuration variable">@localhost</span>  <span class="token comment"># 设置邮件的发送地址</span>
+    <span class="token property">smtp_server</span> <span class="token ip number">127.0.0.1</span>    <span class="token comment"># 设置 smtp server 地址</span>
+    <span class="token property">smtp_connect_timeout</span> <span class="token number">30</span>   <span class="token comment"># 设置连接 smtp 服务器超时时间</span>
+    <span class="token property">router_id</span> LVS_DEVEL       <span class="token comment"># load balancer 的标识 ID,用于 email 警报</span>
+    <span class="token property">vrrp_skip_check_adv_addr</span>  <span class="token comment"># 跳过对 VRRP 通告报文中 adv_addr 字段的检查</span>
+    <span class="token comment">#vrrp_strict              # 关闭"严格模式"</span>
+    <span class="token property">vrrp_garp_interval</span> <span class="token number">0</span>      <span class="token comment"># 设置发送 GARP 报文的间隔时间，0 表示禁用</span>
+    <span class="token property">vrrp_gna_interval</span> <span class="token number">0</span>       <span class="token comment"># 设置发送邻居通告报文的间隔时间，0 表示禁用</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token property">vrrp_instance</span> VI_1 <span class="token punctuation">&#123;</span>
+    <span class="token property">state</span> <span class="token constant">MASTER</span>              <span class="token comment"># 备机改为 BACKUP,此状态是由 priority 的值来决定的</span>
+    <span class="token property">interface</span> ens33           <span class="token comment"># HA 监测网络接口，根据实际网络接口填写</span>
+    <span class="token property">virtual_router_id</span> <span class="token number">51</span>      <span class="token comment"># 主、备机的 virtual_router_id 必须相同,取值 0-255</span>
+    <span class="token property">priority</span> <span class="token number">100</span>              <span class="token comment"># 主机的优先级,主机优先级一定要大于备机</span>
+    <span class="token property">advert_int</span> <span class="token number">1</span>              <span class="token comment"># 主备之间的通告间隔秒数</span>
+
+    <span class="token property">authentication</span> <span class="token punctuation">&#123;</span>          <span class="token comment"># 主备切换时的验证</span>
+        <span class="token property">auth_type</span> <span class="token constant">PASS</span>         <span class="token comment"># 设置验证类型，主要有 PASS 和 AH 两种</span>
+        <span class="token property">auth_pass</span> <span class="token number">1111</span>         <span class="token comment"># 设置验证密码，8 个字符以内</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token property">virtual_ipaddress</span> <span class="token punctuation">&#123;</span>
+        <span class="token ip number">192.168.63.100</span>        <span class="token comment"># 设置虚拟 IP 地址，每行一个</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token property">virtual_server</span> <span class="token ip number">192.168.63.100</span> <span class="token number">80</span> <span class="token punctuation">&#123;</span>  <span class="token comment"># 定义虚拟服务器</span>
+    <span class="token property">delay_loop</span> <span class="token number">3</span>              <span class="token comment"># 每隔 3 秒查询 realserver 状态</span>
+    lb_algo <span class="token constant">rr</span>                <span class="token comment"># lvs 调度算法,这里使用轮询</span>
+    lb_kind <span class="token constant">DR</span>                <span class="token comment"># LVS 使用 DR 模式，需要大写</span>
+    <span class="token comment">#persistence_timeout 50   # 会话保持时间（秒），无状态服务注释掉</span>
+    <span class="token property">protocol</span> <span class="token constant">TCP</span>              <span class="token comment"># 指定转发协议类型</span>
+
+    <span class="token property">real_server</span> <span class="token ip number">192.168.63.128</span> <span class="token number">80</span> <span class="token punctuation">&#123;</span>  <span class="token comment"># 配置服务节点</span>
+        <span class="token property">weight</span> <span class="token number">1</span>              <span class="token comment"># 权值</span>
+        <span class="token property">TCP_CHECK</span> <span class="token punctuation">&#123;</span>           <span class="token comment"># realserver 状态检测</span>
+            <span class="token property">connect_timeout</span> <span class="token number">3</span> <span class="token comment"># 连接超时</span>
+            <span class="token property">retry</span> <span class="token number">3</span>           <span class="token comment"># 重试次数</span>
+            <span class="token property">delay_before_retry</span> <span class="token number">3</span> <span class="token comment"># 重试间隔</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token property">real_server</span> <span class="token ip number">192.168.63.129</span> <span class="token number">80</span> <span class="token punctuation">&#123;</span>
+        <span class="token property">weight</span> <span class="token number">1</span>
+        <span class="token property">TCP_CHECK</span> <span class="token punctuation">&#123;</span>
+            <span class="token property">connect_timeout</span> <span class="token number">3</span>
+            <span class="token property">retry</span> <span class="token number">3</span>
+            <span class="token property">delay_before_retry</span> <span class="token number">3</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<blockquote>
+<p>📌 <strong>补充知识点：几个容易踩的坑</strong></p>
+<ul>
+<li><code>vrrp_strict</code> 必须注释掉！否则 Keepalived 会自动添加 iptables 规则拦截流量，导致 curl 超时。</li>
+<li><code>persistence_timeout</code> 无状态服务要注释掉，否则同一个客户端始终被分到同一台 RS，看不出轮询效果。</li>
+<li><code>advert_int 1</code> 表示每秒发一次心跳，3 秒收不到就切换。</li>
+<li><code>virtual_router_id</code> 主备必须相同，否则 VRRP 不通。</li>
+</ul>
+</blockquote>
+</li>
+<li><p>后端 RS 健康检测（Keepalived 内置功能）</p>
+<p>我们通过 <code>systemctl stop httpd</code> 在 server2 模拟 web 服务故障，发现调度器上 server2 消失了，server2 恢复服务后，server2 自动重新加入集群，恢复负载分发。</p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/10.png" loading="lazy"></p>
+<p><img src="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-1/11.png" loading="lazy"></p>
+<blockquote>
+<p>📌 <strong>补充知识点：LVS 原生没有健康检测能力</strong><br>只用 <code>ipvsadm</code> 时，后端 RS 宕机了 LVS 照样分发流量，用户会访问报错。Keepalived 的 <code>TCP_CHECK</code> 解决了这个问题——它每隔 <code>delay_loop</code> 秒去探测 RS 的 80 端口，连不上就自动摘除，恢复后自动加回。</p>
+</blockquote>
+</li>
+</ol>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/07/24/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1-2/">高可用与负载均衡-2</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/07/23/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a><a class="-none-link" href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" rel="tag">高可用与负载均衡</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

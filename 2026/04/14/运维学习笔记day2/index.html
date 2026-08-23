@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>运维学习笔记Day2 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="运维学习笔记Day2"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>运维学习笔记Day2</h2>
+            <div class="post-meta">
+                <time class="date">2026.04.14</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h2 id="前置环境"><a href="#前置环境" class="headerlink" title="前置环境"></a>前置环境</h2><p>已通过远程连接工具（MobaXterm）进入虚拟机。</p>
+<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image1.png" alt="进入效果" loading="lazy"></p>
+<hr>
+<h2 id="一、个人遇到的问题：虚拟机-ip-a-无法显示-IP-地址"><a href="#一、个人遇到的问题：虚拟机-ip-a-无法显示-IP-地址" class="headerlink" title="一、个人遇到的问题：虚拟机 ip a 无法显示 IP 地址"></a>一、个人遇到的问题：虚拟机 <code>ip a</code> 无法显示 IP 地址</h2><h3 id="1-现象"><a href="#1-现象" class="headerlink" title="1. 现象"></a>1. 现象</h3><p>执行 <code>ip a</code> 后，<code>ens33</code> 网卡信息如下：</p>
+<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image2.png" alt="遇到问题" loading="lazy"></p>
+<pre class="line-numbers language-none"><code class="language-none">2: ens33: &lt;BROADCAST,MULTICAST&gt; mtu 1500 qdisc noop state DOWN group default qlen 1000<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>没有显示 <code>inet</code> 地址。</p>
+<h3 id="2-原因"><a href="#2-原因" class="headerlink" title="2. 原因"></a>2. 原因</h3><ul>
+<li><strong>网卡默认未启动</strong>：CentOS 7 部分镜像将 <code>ifcfg-ens33</code> 中的 <code>ONBOOT</code> 设为 <code>no</code>，开机不自动启动网卡。</li>
+<li><strong>DHCP 未触发</strong>：网卡未启动，无法向 DHCP 服务器（VMware NAT 服务）申请 IP。</li>
+</ul>
+<h3 id="3-解决方法：临时启动网卡并获取-IP"><a href="#3-解决方法：临时启动网卡并获取-IP" class="headerlink" title="3. 解决方法：临时启动网卡并获取 IP"></a>3. 解决方法：临时启动网卡并获取 IP</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 1. 启动 ens33 网卡（物理链路激活）</span>
+<span class="token function">ip</span> <span class="token function">link</span> <span class="token builtin class-name">set</span> ens33 up
+<span class="token comment"># 2. 手动向 DHCP 服务器申请 IP（关键步骤）</span>
+dhclient ens33
+<span class="token comment"># 3. 验证 IP 是否获取成功</span>
+<span class="token function">ip</span> a<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>此时应能看到 <code>ens33</code> 的 <code>inet</code> 地址（我的是在 <code>10.0.0.134</code>）。</p>
+<hr>
+<h2 id="二、系统配置与管理"><a href="#二、系统配置与管理" class="headerlink" title="二、系统配置与管理"></a>二、系统配置与管理</h2><h3 id="1-基础配置"><a href="#1-基础配置" class="headerlink" title="1. 基础配置"></a>1. 基础配置</h3><h4 id="①-主机名"><a href="#①-主机名" class="headerlink" title="① 主机名"></a>① 主机名</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">hostname</span>   <span class="token comment"># 显示当前主机名，默认为 localhost</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image3.png" alt="hostname查看" loading="lazy"></p>
+<p>我们通过 <code>hostnamectl set-hostname server1</code>将主机名修改为server 1。观察发现，本来前边是[root@localhost ~]，变成[root@server1 ~]了</p>
+<h4 id="②-hosts-文件"><a href="#②-hosts-文件" class="headerlink" title="② hosts 文件"></a>② hosts 文件</h4><ul>
+<li><strong>作用</strong>：本地域名解析，优先级高于 DNS。</li>
+<li><strong>格式</strong>：<code>IP地址 主机名</code>（如10.0.0.134 server1）</li>
+<li><strong>位置</strong>：<code>/etc/hosts</code></li>
+<li><strong>注意</strong>：不要修改开头的 <code>127.0.0.1</code> 和 <code>::1</code> 两行。</li>
+</ul>
+<p>也就是说，我们通过 <code>ip a</code> 得到本机 IP 后，使用 <code>vim /etc/hosts</code> 编辑配置文件：<br>在文件末尾添加一行（其实还没有编辑完，没有写主机名qwq）：</p>
+<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image4.png" alt="编辑界面" loading="lazy"></p>
+<pre class="line-numbers language-none"><code class="language-none">10.0.0.134  server1<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>修改完成后，重新登录终端使解析生效。最后可用 <code>cat /etc/hosts</code> 查看内容，并通过 <code>ping 主机名</code> 验证网络是否连通。</p>
+<h3 id="2-密码重置（紧急情况）"><a href="#2-密码重置（紧急情况）" class="headerlink" title="2. 密码重置（紧急情况）"></a>2. 密码重置（紧急情况）</h3><p><strong>前提</strong>：需物理接触服务器（能够实际接触到运行该Linux系统的服务器硬件），不能远程操作。因为重置过程需要重启系统，在系统启动完成之前，网络服务没有启动，所有远程连接将中断。</p>
+<ol>
+<li>重启系统（<code>reboot</code> 或虚拟机强制重启），在 GRUB 引导界面按上下键中断启动。</li>
+<li>选中启动项，按 <strong><code>e</code></strong> 进入编辑模式。</li>
+<li>找到 <code>linux16</code> 开头的行，在行末添加 <strong><code>rd.break</code></strong>（注意前面有空格）。<br><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image5.png" alt="修改" loading="lazy"></li>
+<li>按 <strong><code>Ctrl+X</code></strong> 启动。</li>
+<li>进入紧急 shell 后，重新挂载根文件系统为可写：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mount</span> <span class="token parameter variable">-o</span> remount,rw /sysroot<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+<li>切换根环境：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">chroot</span> /sysroot<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+<li>修改 root 密码：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">passwd</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+或非交互式修改：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">echo</span> <span class="token string">"新密码"</span> <span class="token operator">|</span> <span class="token function">passwd</span> <span class="token parameter variable">--stdin</span> root<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+<li>连续输入两次 <code>exit</code> 或按两次 <code>Ctrl+D</code> 退出并重启。</li>
+</ol>
+<p>至此，我们通过硬件方式成功重置了虚拟机 root 密码😊。</p>
+<h3 id="3-Windows-与-Linux-文件交互"><a href="#3-Windows-与-Linux-文件交互" class="headerlink" title="3. Windows 与 Linux 文件交互"></a>3. Windows 与 Linux 文件交互</h3><p>在一些远程工具（如 MobaXterm ）中，可直接将文件从 Windows 拖拽到终端窗口（或从终端拖拽到 Windows ），实现主机与虚拟机之间的文件传输。</p>
+<hr>
+<h2 id="三、Linux-中执行命令"><a href="#三、Linux-中执行命令" class="headerlink" title="三、Linux 中执行命令"></a>三、Linux 中执行命令</h2><h3 id="1-命令帮助"><a href="#1-命令帮助" class="headerlink" title="1. 命令帮助"></a>1. 命令帮助</h3><ul>
+<li><p><code>命令 --help</code>：查看命令简要帮助（如 <code>cat --help</code>）。</p>
+</li>
+<li><p><code>man 命令</code>：查看详细在线手册（如 <code>man ls</code>），按 <strong><code>q</code></strong> 退出。<br><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image6.png" alt="man手册" loading="lazy"></p>
+<p>常用区段：</p>
+<ul>
+<li>区段 1：用户指令（查看命令帮助）</li>
+<li>区段 5：文件格式（查看配置文件帮助）</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-日期时间命令"><a href="#2-日期时间命令" class="headerlink" title="2. 日期时间命令"></a>2. 日期时间命令</h3><h4 id="①-date-命令"><a href="#①-date-命令" class="headerlink" title="① date 命令"></a>① <code>date</code> 命令</h4><p>查看或设置系统时间。常用格式化输出：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">date</span> +%Y%m%d        <span class="token comment"># 生成形如 20260414 的时间戳，可用于脚本文件命名</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image7.png" alt="data" loading="lazy"></p>
+<h4 id="②-timedatectl-命令"><a href="#②-timedatectl-命令" class="headerlink" title="② timedatectl 命令"></a>② <code>timedatectl</code> 命令</h4><p>管理系统时区和时间。</p>
+<table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>status</code></td>
+<td align="left">显示当前状态信息</td>
+</tr>
+<tr>
+<td align="left"><code>list-timezones</code></td>
+<td align="left">列出所有已知时区</td>
+</tr>
+<tr>
+<td align="left"><code>set-timezone</code></td>
+<td align="left">设置生效时区</td>
+</tr>
+<tr>
+<td align="left"><code>set-time</code></td>
+<td align="left">设置系统时间</td>
+</tr>
+</tbody></table>
+<h3 id="3-查看目录内容：ls"><a href="#3-查看目录内容：ls" class="headerlink" title="3. 查看目录内容：ls"></a>3. 查看目录内容：<code>ls</code></h3><table>
+<thead>
+<tr>
+<th align="left">参数</th>
+<th align="left">功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-l</code></td>
+<td align="left">长格式显示详细信息（命令 <code>ll</code> 等价于 <code>ls -l</code>）</td>
+</tr>
+<tr>
+<td align="left"><code>-a</code></td>
+<td align="left">显示所有文件，包括隐藏文件（以 <code>.</code> 开头）</td>
+</tr>
+<tr>
+<td align="left"><code>-d</code></td>
+<td align="left">显示目录本身信息，而非目录下的内容</td>
+</tr>
+<tr>
+<td align="left"><code>-h</code></td>
+<td align="left">人性化显示文件大小（需与 <code>-l</code> 配合）</td>
+</tr>
+<tr>
+<td align="left"><code>-S</code></td>
+<td align="left">按文件大小排序</td>
+</tr>
+<tr>
+<td align="left"><code>-R</code></td>
+<td align="left">递归显示子目录内容</td>
+</tr>
+<tr>
+<td align="left"><code>-i</code></td>
+<td align="left">显示文件 inode 号</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="四、Linux-系统的目录结构"><a href="#四、Linux-系统的目录结构" class="headerlink" title="四、Linux 系统的目录结构"></a>四、Linux 系统的目录结构</h2><h3 id="1-倒树状结构与路径"><a href="#1-倒树状结构与路径" class="headerlink" title="1. 倒树状结构与路径"></a>1. 倒树状结构与路径</h3><p>Linux 采用以根目录 <code>/</code> 为起点的倒树状结构。</p>
+<ul>
+<li><strong>绝对路径</strong>：从 <code>/</code> 开始，如 <code>/home/user/file</code>。<strong>（建议我们用这个）</strong></li>
+<li><strong>相对路径</strong>：从当前目录开始，如 <code>../doc</code>。</li>
+</ul>
+<h3 id="2-目录切换命令-cd"><a href="#2-目录切换命令-cd" class="headerlink" title="2. 目录切换命令 cd"></a>2. 目录切换命令 <code>cd</code></h3><table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>cd ~</code> 或 <code>cd</code></td>
+<td align="left">返回当前用户家目录</td>
+</tr>
+<tr>
+<td align="left"><code>cd -</code></td>
+<td align="left">返回上一次访问的目录</td>
+</tr>
+<tr>
+<td align="left"><code>cd ..</code></td>
+<td align="left">返回上一级目录</td>
+</tr>
+<tr>
+<td align="left"><code>cd .</code></td>
+<td align="left">停留在当前目录</td>
+</tr>
+<tr>
+<td align="left"><img src="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/image8.png" alt="cd" loading="lazy"></td>
+<td align="left"></td>
+</tr>
+</tbody></table>
+<h3 id="3-查看当前工作目录：pwd"><a href="#3-查看当前工作目录：pwd" class="headerlink" title="3. 查看当前工作目录：pwd"></a>3. 查看当前工作目录：<code>pwd</code></h3><h3 id="4-关键一级目录速查表"><a href="#4-关键一级目录速查表" class="headerlink" title="4. 关键一级目录速查表"></a>4. 关键一级目录速查表</h3><table>
+<thead>
+<tr>
+<th align="left">目录</th>
+<th align="left">主要用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>/</code></td>
+<td align="left">根目录，所有目录的起点</td>
+</tr>
+<tr>
+<td align="left"><code>/bin</code></td>
+<td align="left">普通用户可用的二进制命令（如 <code>ls</code>, <code>cat</code>）</td>
+</tr>
+<tr>
+<td align="left"><code>/sbin</code></td>
+<td align="left">系统管理员使用的管理命令</td>
+</tr>
+<tr>
+<td align="left"><code>/dev</code></td>
+<td align="left">设备文件（如 <code>/dev/sda</code> 代表硬盘）</td>
+</tr>
+<tr>
+<td align="left"><code>/etc</code></td>
+<td align="left">系统配置文件</td>
+</tr>
+<tr>
+<td align="left"><code>/home</code></td>
+<td align="left">普通用户的家目录</td>
+</tr>
+<tr>
+<td align="left"><code>/root</code></td>
+<td align="left">root 管理员的家目录</td>
+</tr>
+<tr>
+<td align="left"><code>/lib</code>, <code>/lib64</code></td>
+<td align="left">系统库文件（32位&#x2F;64位）</td>
+</tr>
+<tr>
+<td align="left"><code>/media</code></td>
+<td align="left">可移动介质挂载点（U盘、光盘）</td>
+</tr>
+<tr>
+<td align="left"><code>/mnt</code></td>
+<td align="left">临时文件系统挂载点</td>
+</tr>
+<tr>
+<td align="left"><code>/opt</code></td>
+<td align="left">第三方大型软件安装目录（如 Oracle）</td>
+</tr>
+<tr>
+<td align="left"><code>/proc</code></td>
+<td align="left">虚拟文件系统，存放内核和进程信息（重启消失）</td>
+</tr>
+<tr>
+<td align="left"><code>/run</code></td>
+<td align="left">系统运行时数据（PID 文件、套接字）</td>
+</tr>
+<tr>
+<td align="left"><code>/sys</code></td>
+<td align="left">内核信息虚拟文件系统</td>
+</tr>
+<tr>
+<td align="left"><code>/tmp</code></td>
+<td align="left">所有用户可写的临时目录（用户只能删除自己的文件）</td>
+</tr>
+<tr>
+<td align="left"><code>/usr</code></td>
+<td align="left">用户程序和数据（通常只读）</td>
+</tr>
+<tr>
+<td align="left"><code>/var</code></td>
+<td align="left">可变数据（日志 <code>/var/log/</code>、邮件、缓存）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="五、从命令行管理文件"><a href="#五、从命令行管理文件" class="headerlink" title="五、从命令行管理文件"></a>五、从命令行管理文件</h2><h3 id="1-文件命名规则"><a href="#1-文件命名规则" class="headerlink" title="1. 文件命名规则"></a>1. 文件命名规则</h3><ul>
+<li>不能使用 <code>/</code> 作为文件名（<code>/</code> 是路径分隔符）。</li>
+<li>文件名长度不超过 255 个字符。</li>
+<li>严格区分大小写（<code>File</code>、<code>file</code>、<code>FILE</code> 是不同文件）。</li>
+<li>同一目录下，不同类型文件也不能同名。</li>
+</ul>
+<h3 id="2-链接文件"><a href="#2-链接文件" class="headerlink" title="2. 链接文件"></a>2. 链接文件</h3><h4 id="①-硬链接（Hard-Link）"><a href="#①-硬链接（Hard-Link）" class="headerlink" title="① 硬链接（Hard Link）"></a>① 硬链接（Hard Link）</h4><ul>
+<li>创建：<code>ln 源文件 目标链接</code></li>
+<li>特点：<ul>
+<li>多个文件名指向同一个 inode 和数据块。</li>
+<li>删除一个链接，数据不受影响（链接计数减 1）。</li>
+<li>不能跨分区&#x2F;文件系统，不能用于目录。</li>
+</ul>
+</li>
+</ul>
+<h4 id="②-软链接（符号链接，Symbolic-Link）"><a href="#②-软链接（符号链接，Symbolic-Link）" class="headerlink" title="② 软链接（符号链接，Symbolic Link）"></a>② 软链接（符号链接，Symbolic Link）</h4><ul>
+<li>创建：<code>ln -s 源文件/目录 目标链接</code></li>
+<li>特点：<ul>
+<li>类似 Windows 快捷方式，拥有独立的 inode。</li>
+<li>可以跨分区，也可以用于目录。</li>
+<li>源文件被删除后，链接失效（终端中显示为闪烁红色）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="六、注意事项"><a href="#六、注意事项" class="headerlink" title="六、注意事项"></a>六、注意事项</h2><ul>
+<li><strong>操作安全</strong>：在克隆的虚拟机中练习，避免损坏母镜像。</li>
+<li><strong>路径大小写</strong>：Linux 严格区分大小写。</li>
+<li><strong>命令空格</strong>：命令、参数、操作对象之间必须有空格。</li>
+<li><strong>管道符</strong>：竖杠 <code>|</code>，位于回车键上方，用于连接多个命令。</li>
+<li><strong>文件删除与恢复</strong>：<code>rm</code> 删除文件时仅释放 inode，数据仍存于磁盘，直到被覆盖。误删后应立即停止写入，有可能恢复。</li>
+</ul>
+<hr>
+<blockquote>
+<p>今日笔记完毕qwq</p>
+</blockquote>
+<pre><code>
+</code></pre>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/">运维学习笔记Day3</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/13/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day1/">运维学习笔记Day1</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>Zabbix监控-2 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Zabbix监控-2"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Zabbix监控-2</h2>
+            <div class="post-meta">
+                <time class="date">2026.08.15</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <!-- # 8.6 笔记：Zabbix 监控应用初步 -->
+
+<h1 id="Zabbix-监控应用初步"><a href="#Zabbix-监控应用初步" class="headerlink" title="Zabbix 监控应用初步"></a>Zabbix 监控应用初步</h1><!-- 这是8/6的笔记，我们开始学习了解Zabbix监控的应用。 -->
+<p>这篇笔记，我们开始具体学习 <strong>Zabbix监控的应用</strong>。</p>
+<hr>
+<h2 id="一、添加监控主机"><a href="#一、添加监控主机" class="headerlink" title="一、添加监控主机"></a>一、添加监控主机</h2><p>添加Agent，需要我们去Zabbix官网找对应的安装包，并安装对应的服务包，安装好后修改配置文件。将服务指向Server端，修改自己的名字。然后启动服务，设置开机自启。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/1.png" loading="lazy"></p>
+<p>在Agent端启动服务后，来到前端界面。在配置，主机里，添加server3的信息（这里我们使用了Linux Zabbix agent的模板，和Linux servers群组，根据实际情况来就好）。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/2.png" loading="lazy"></p>
+<p>实际操作的时候，不知为何（可能是乱改过……嘛？），我的路径和老师的有一定区别（但我是按照老师的操作一步步来的……吧），我的agent读的文件在 <code>/etc/zabbix_agentd.conf</code></p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/3.png" loading="lazy"></p>
+<p>我们在进程里看到，<code>zabbix_agentd</code> 读取的文件，实际路径在 <code>/etc/zabbix_agentd.conf</code>，这是二进制程序写死的路径。我们在这里配好内容，就可以和server连接啦。</p>
+<hr>
+<h2 id="二、快速入门"><a href="#二、快速入门" class="headerlink" title="二、快速入门"></a>二、快速入门</h2><p>我们来到官方文档 <a target="_blank" rel="noopener" href="https://www.zabbix.com/documentation/6.0/zh/manual/quickstart">zabbix入门使用指南</a> 里，看到它提供了6个模块，我们一起来看一看。</p>
+<p>因为这里图片很多，我上传博客的话，要一个个建文件，比较麻烦（），就暂时不在这儿记录啦（但考虑在B站上录个教学的小视频）。</p>
+<p>快进，我们到下一节。</p>
+<hr>
+<h2 id="三、服务监控"><a href="#三、服务监控" class="headerlink" title="三、服务监控"></a>三、服务监控</h2><p>下面我们要学习Zabbix的三大服务监控，分别是Nginx Web服务监控，MySQL数据库监控和Java&#x2F;Tomcat应用监控（当然还有别的，但我们先学这几个）。</p>
+<h3 id="1-Nginx-Web-服务监控"><a href="#1-Nginx-Web-服务监控" class="headerlink" title="1. Nginx Web 服务监控"></a>1. Nginx Web 服务监控</h3><h4 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h4><p>Zabbix的Nginx Web服务监控，是通过Zabbix采集Nginx的运行状态，监控Web服务是否正常，负载情况。我们在被监控服务器上，安装内置的，带 <code>ngx_http_stub_status_module</code> 状态模块的Nginx源。这个状态模块是输出监控数据的核心。Nginx 对外输出运行状态数据后，可以让Zabbix读取数据。</p>
+<p>在Nginx配置里，我们在被监控机器 <code>/etc/nginx/nginx.conf</code> 或站点conf里添加status专用location，让Agent主动拉取数据，在server端主机关联Web server模块，添加模板 <code>Template Web server Nginx</code>。</p>
+<p>模板内置预定义了很多监控项，这样，我们就能实现监控。</p>
+<h4 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h4><blockquote>
+<p>很像机器人一样的，我们还是在…安装软件，修改配置，重启服务。</p>
+</blockquote>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/4.png" loading="lazy"></p>
+<p>我们添加的内容如下：</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/5.png" loading="lazy"></p>
+<p>再次再次进入Web的主机界面，我们加上 <code>Nginx by Zabbix agent</code> 的模板。</p>
+<h3 id="2-MySQL-数据库监控"><a href="#2-MySQL-数据库监控" class="headerlink" title="2. MySQL 数据库监控"></a>2. MySQL 数据库监控</h3><h4 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h4><p>MySQL 数据库监控能够监控 MySQL的运行状态，我们还是用的Zabbix的内置模板。是 <code>MySQL by Zabbix agent</code>。进入模板详细界面，根据它的描述，进行实验。</p>
+<p>同样地，我们在Agent端安装mysql服务，创建专用监控账号，然后就可以用模板了。如果想用其他的模板，也可以在网上下载xml文件后，导入Zabbix里。</p>
+<h4 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h4><p>在Web找到模板的描述。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/6.png" loading="lazy"></p>
+<p>安装mysql客户端的软件（mysql-server），根据模板提示，创建数据库专用的监控用户。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/7.png" loading="lazy"></p>
+<p>拷贝模板，重启服务后，创建mysql客户端配置。这里配置文件的内容就是Web上，介绍页里的内容。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/8.png" loading="lazy"></p>
+<p>再次进入Web里，主机界面。我们添加MySQL官方模板。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/9.png" loading="lazy"></p>
+<h3 id="3-Java-Tomcat-应用监控"><a href="#3-Java-Tomcat-应用监控" class="headerlink" title="3. Java&#x2F;Tomcat 应用监控"></a>3. Java&#x2F;Tomcat 应用监控</h3><h4 id="（1）理解-2"><a href="#（1）理解-2" class="headerlink" title="（1）理解"></a>（1）理解</h4><p>这小节的监控模板，不是官方自带的，是我们从别的地方拷的哦。Java是应用里蛮常用的编程语言，它有自己独有JMX协议。我们监控它要用Server+Java Gateway中转采集。我们新建一个CentOS7的server3。</p>
+<p>感觉这小节比前两节难一点。可能是之前安装过，再安装的时候总会有奇怪报错，乱糟糟的冲突。但之前初学，步骤并没有记住，也不知道在干嘛。</p>
+<h4 id="（3）实验"><a href="#（3）实验" class="headerlink" title="（3）实验"></a>（3）实验</h4><p>我们来到Web上，把老师发的文件模板拷进去。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/10.png" loading="lazy"></p>
+<p>新建一个CentOS7的server3，来监控它的Tomcat Percona情况。装一下percona-zabbix-templates，把userpar…那个模板拷到 <code>/etc/zabbix/zabbix_agentd.d</code> 里，然后重启zabbix服务。安装mariadb-servre(好像是mysqld的平替)和php, php-mysql。我们激活mariadb服务，新建一个有所有权限的管理员。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/11.png" loading="lazy"></p>
+<p>我们进入php的配置目录，在 <code>/var/lib/zabbix/percona/scripts/</code> 低下，我们修改 <code>ss_get_mysql_stats.php</code> 里的用户和密码的信息。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/12.png" loading="lazy"></p>
+<p>然后执行 <code>su -s /bin/sh -c &quot;/var/lib/zabbix/percona/scripts/get_mysql_stats_wrapper.sh gg&quot; zabbix</code> 的脚本。发现有返回值后，我们的客户端就算配置好了。我们去服务端再操作一下。</p>
+<p>先安装好jmx服务，设置zabbix-java的开机自启。看到10050端口已经正常访问后，我们修改zabbix_server的配置。</p>
+<pre class="line-numbers language-none"><code class="language-none">JavaGateway&#x3D;192.168.86.151 #jmx服务所在主机地址
+JavaGatewayPort&#x3D;10052
+StartJavaPollers&#x3D;5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>再重启服务，tomcat服务就生效了OvO</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/13.png" loading="lazy"></p>
+<p>来到server2上，解压一下apache-tomcat，修改一下 <code>bin/cataline.sh</code> 的配置。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/14.png" loading="lazy"></p>
+<p>版本不同，配置改的是有区别的。对于tomcat8.5（我在用的这个），我们找到 <code>CATALINA_OPTS=</code>，填入</p>
+<pre class="line-numbers language-none"><code class="language-none">CATALINA_OPTS&#x3D;&#39;-Dcom.sun.management.jmxremote.port&#x3D;8888
+-Dcom.sun.management.jmxremote.ssl&#x3D;false
+-Dcom.sun.management.jmxremote.authenticate&#x3D;false&#39;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>对于tomcat9，我们要添加换行符，内容如下。</p>
+<pre class="line-numbers language-none"><code class="language-none">CATALINA_OPTS&#x3D;&#39;-Dcom.sun.management.jmxremote.port&#x3D;8888 \
+-Dcom.sun.management.jmxremote.rmi.port&#x3D;8889 \
+-Dcom.sun.management.jmxremote.ssl&#x3D;false \
+-Dcom.sun.management.jmxremote.authenticate&#x3D;false&#39;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>重启Tomcat服务（先用 <code>/usr/local/tomcat/bin/shutdown.sh</code> 关闭，又用 <code>/usr/local/tomcat/bin/startup.sh</code> 开启），这时候，我们的JMX端口8888已经开始监听了。</p>
+<p>来到Web界面，添加jmx接口，更新一下。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/15.png" loading="lazy"></p>
+<p>这里需要注意，JMX如果想和代理proxy一起打开，<br>我还是觉得Zabbix监控的成功与否，与运气紧密相关。运气好的时候顺顺的，不太好的时候总有奇怪报错，但似乎也不止是Zabbix，生活很戏剧性，这里我就不加以赘述了。</p>
+<hr>
+<h2 id="四、集成外部告警"><a href="#四、集成外部告警" class="headerlink" title="四、集成外部告警"></a>四、集成外部告警</h2><h3 id="（1）理解-3"><a href="#（1）理解-3" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>Zabbix原生的告警比较少，我们可以把Zabbix和其他的第三方AI平台结合起来，产生告警。比如我们可以用Zabbix对接Alops云告警平台，实现更丰富的告警效果。</p>
+<h3 id="（2）实验-2"><a href="#（2）实验-2" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>在浏览器注册aiops账号，进来关联一下Zabbix的监控工具。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/16.png" loading="lazy"></p>
+<p>进入详细页，我们看到右面有一个配置步骤。我们跟着它做，配置探针。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/17.png" loading="lazy"></p>
+<p>跟着他的步骤来，安装探针。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/18.png" loading="lazy"></p>
+<p>当我们再去Web上查看时，会发现脚本已经安装成功了。这时候我们就可以去睿象云绑定账号信息了。去“配置”里改一下通知策略，可以去个人用户中心中绑定一些通知的方式。比如我绑定了一下微信小程序OvO。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/19.png" loading="lazy"></p>
+<hr>
+<h2 id="五、Zabbix-API-自动化管理"><a href="#五、Zabbix-API-自动化管理" class="headerlink" title="五、Zabbix API 自动化管理"></a>五、Zabbix API 自动化管理</h2><h3 id="（1）理解-4"><a href="#（1）理解-4" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>我们为什么想用API添加主机呢？因为它比较方便。如果我们想大批量地上线服务器，可以写一个脚本，循环调用 <code>host.create</code>，这样就不需要人工登录网页，去点点点，实现自动化运维。</p>
+<p>基本的步骤是：<code>user.login</code>：拿 token（通行证）–&gt; <code>host.get</code>：查现有主机，获取 hostid –&gt; <code>host.delete</code>：传入 hostid 删除旧主机（可选） –&gt; <code>host.create</code>：创建新监控主机，填 IP、分组、模板。</p>
+<h3 id="（2）实验-3"><a href="#（2）实验-3" class="headerlink" title="（2）实验"></a>（2）实验</h3><p><strong>1. 获取token</strong></p>
+<p>下面的result就是我们想要的token啦。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/20.png" loading="lazy"></p>
+<p><strong>2. 获取主机列表</strong></p>
+<p>auth是tocken，后面操作都是。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/21.png" loading="lazy"></p>
+<p><strong>3. 删除主机</strong></p>
+<p>记得吧params的id替换为刚刚看到的hostid哦。</p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/22.png" loading="lazy"></p>
+<p><strong>4. 添加主机</strong></p>
+<p><img src="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/23.png" loading="lazy"></p>
+<blockquote>
+<p>我们的内容就到这里结束啦，拜拜。</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/Rocky9/" rel="tag">Rocky9</a><a class="-none-link" href="/tags/Zabbix/" rel="tag">Zabbix</a><a class="-none-link" href="/tags/%E7%9B%91%E6%8E%A7/" rel="tag">监控</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

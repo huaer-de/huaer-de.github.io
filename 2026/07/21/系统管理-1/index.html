@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>系统管理-1 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="系统管理-1"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>系统管理-1</h2>
+            <div class="post-meta">
+                <time class="date">2026.07.21</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="7-19-课程笔记：系统管理-1"><a href="#7-19-课程笔记：系统管理-1" class="headerlink" title="7.19 课程笔记：系统管理-1"></a>7.19 课程笔记：系统管理-1</h1><p><strong>前情提要</strong>：<br>    大二暑假集训开始啦～<br>    日程是从 7&#x2F;19 起，上两天整理一天，休息一天。今天整理的是 7&#x2F;19内容部分，19号和20号的两节课是第二次上了，学习和整理起来方便一些 (●’◡’●)。</p>
+<hr>
+<h3 id="早上：远程管理、日志与任务调度"><a href="#早上：远程管理、日志与任务调度" class="headerlink" title="早上：远程管理、日志与任务调度"></a>早上：远程管理、日志与任务调度</h3><p>这小节课的主题是：<strong>SSH 服务、远程文件同步、系统日志及定时任务的配置与应用</strong>。</p>
+<h4 id="一、SSH-服务：安全的远程管理基石"><a href="#一、SSH-服务：安全的远程管理基石" class="headerlink" title="一、SSH 服务：安全的远程管理基石"></a>一、SSH 服务：安全的远程管理基石</h4><p>SSH (Secure Shell) 是管理 Linux 服务器最核心、最可靠的方式，通过非对称加密保证通信安全。</p>
+<p><strong>（一）核心知识点梳理</strong></p>
+<ol>
+<li><p><strong>基础连接</strong>：</p>
+<ul>
+<li><strong>登录格式</strong>：<code>ssh 用户名@IP</code> 或 <code>ssh -l 用户名 IP</code>。</li>
+<li><strong>默认用户</strong>：不指定用户名，会以当前本地用户身份尝试登录。</li>
+<li><strong>主机名连接</strong>：想直接用主机名（如 <code>ssh server2</code>），需先在本地 <code>/etc/hosts</code> 文件中做好解析。</li>
+<li><strong>初次认证</strong>：首次连接需输入<strong>远端主机上对应用户的密码</strong>。</li>
+<li><strong>退出会话</strong>：使用 <code>logout</code> 命令或按 <code>Ctrl+D</code>。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/0.png" loading="lazy"></li>
+</ul>
+</li>
+<li><p><strong>管理方式</strong>：</p>
+<ul>
+<li>学习重心是 <code>systemd</code> 的管理方式，其采用并行启动机制，与传统 <code>init</code> 不同，效率更高。</li>
+<li><strong>服务管理命令</strong>：<code>systemctl {start|stop|restart|status} sshd</code>。</li>
+</ul>
+</li>
+</ol>
+<p><strong>（二）上机操作与安全加固</strong></p>
+<ol>
+<li><p><strong>SSH 单向免密登录（密钥认证）</strong><br><strong>原理</strong>：客户端生成一对密钥（公钥和私钥），将公钥上传到服务端的授权文件中。登录时，服务端用公钥加密挑战信息，只有持有对应私钥的客户端才能解密并正确回应。<br><strong>操作</strong>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 在 server2 (服务端) 生成密钥对</span>
+ssh-keygen  <span class="token comment"># 一路回车，会在 /root/.ssh/ 下生成 id_rsa (私钥) 和 id_rsa.pub (公钥)</span>
+<span class="token comment"># 在 server1 (客户端) 将公钥上传至 server2</span>
+ssh-copy-id root@server2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/1.png" loading="lazy"><br><strong>小插曲</strong>：<code>known_hosts</code> 文件会缓存首次连接的服务端公钥。若服务器 IP 变更（如从 164 变为 174），再次连接时会因公钥不匹配而报错，需在 <code>known_hosts</code> 文件中删除旧条目。</p>
+</li>
+<li><p><strong>多主机双向免密互联</strong><br><strong>场景</strong>：多台服务器之间需要频繁互传文件或执行命令。<br><strong>最佳实践</strong>：让它们共用一套密钥对。<br><strong>操作</strong>：</p>
+<ul>
+<li>在 server1 生成密钥对。</li>
+<li>将 server1 的 <code>.ssh</code> 目录完整同步到 server2。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/2.png" loading="lazy"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/3.png" loading="lazy"><br><strong>关键</strong>：多客户端的公钥可以累加写入服务端的 <code>~/.ssh/authorized_keys</code> 白名单文件，实现“一对多”或“多对多”免密。</li>
+</ul>
+</li>
+<li><p><strong>SSH 安全加固（修改配置文件）</strong><br>编辑主配置文件 <code>/etc/ssh/sshd_config</code>，修改后需 <code>systemctl restart sshd</code> 生效。<strong>测试完务必改回，否则可能断连！</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 修改默认端口，降低被自动扫描的风险</span>
+Port <span class="token number">2222</span>
+<span class="token comment"># 禁止 root 用户直接远程登录，提高安全性</span>
+PermitRootLogin no<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>安全配置常用选项</strong>：</p>
+<ul>
+<li><code>Port</code>：监听端口号（默认 22）。</li>
+<li><code>PermitRootLogin no</code>：禁用 root 登录。</li>
+<li><code>AllowUsers user1 user2</code>：白名单，仅允许指定用户登录。</li>
+<li><code>DenyUsers user3</code>：黑名单，禁止指定用户登录。</li>
+</ul>
+</li>
+</ol>
+<h4 id="二、远程文件传输：SCP-与-rsync"><a href="#二、远程文件传输：SCP-与-rsync" class="headerlink" title="二、远程文件传输：SCP 与 rsync"></a>二、远程文件传输：SCP 与 rsync</h4><p>两者都依赖 SSH 协议，使用前必须确保 SSH 服务正常。</p>
+<ol>
+<li><p><strong>SCP (Secure Copy)：全覆盖拷贝</strong></p>
+<ul>
+<li><strong>特性</strong>：支持双向、目录传输，是完整的拷贝。</li>
+<li><strong>注意</strong>：普通用户创建的文件，用 <code>scp</code> 传输到远端后，默认会变成远端操作用户的文件。</li>
+<li><strong>示例</strong>：<code>scp server2:/mnt/paas ./</code> （双向免密后无需输密码）。</li>
+</ul>
+</li>
+<li><p><strong>rsync：灵活的增量同步利器</strong></p>
+<ul>
+<li><strong>核心优势</strong>：<ul>
+<li><strong>增量同步</strong>：仅传输有变动的部分，效率高。</li>
+<li><strong>属性保留</strong>：<code>-a</code> 参数可同步文件权限、所有者等属性。</li>
+<li><strong>灵活性</strong>：支持排除、删除等复杂同步规则。</li>
+</ul>
+</li>
+<li><strong>安装</strong>：源端和目标端都需安装 <code>yum install -y rsync</code>（若遇 yum 源问题，可清理旧缓存：<code>yum clean all &amp;&amp; yum makecache</code>）。</li>
+</ul>
+</li>
+</ol>
+<h4 id="三、系统任务调度"><a href="#三、系统任务调度" class="headerlink" title="三、系统任务调度"></a>三、系统任务调度</h4><ol>
+<li><p><strong>延时任务 <code>at</code>：一次性定时执行</strong></p>
+<ul>
+<li><strong>依赖</strong>：需 <code>atd</code> 服务保持运行。</li>
+<li><strong>时间格式</strong>：灵活，如 <code>now +10min</code>, <code>16:30</code>, <code>10:00 tomorrow</code>。</li>
+<li><strong>管理</strong>：<code>atq</code> 查看任务队列，<code>atrm &lt;任务号&gt;</code> 删除任务。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/8.png" loading="lazy"></li>
+<li><strong>排错经验</strong>：<ul>
+<li><code>at</code> 命令找不到：检查 yum 源，安装 <code>at</code> 包。</li>
+<li>任务执行后查看邮箱 <code>You have mail in /var/spool/mail/root</code>，说明输出已邮寄。</li>
+<li>任务是一次性的，执行完会自动消失。</li>
+<li>执行时间不准：可能是时区&#x2F;时间不同步。解决：  <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">timedatectl set-timezone Asia/Shanghai
+chronyc <span class="token parameter variable">-a</span> makestep
+<span class="token function">date</span>  <span class="token comment"># 验证时间</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>周期任务 <code>crontab</code>：重复性定时执行</strong></p>
+<ul>
+<li><strong>语法</strong>：<code>* * * * * 执行命令</code> (分 时 日 月 周)</li>
+<li><strong>权限控制</strong>：黑白名单，<code>cron.allow</code> 优先级高于 <code>cron.deny</code>。</li>
+<li><strong>任务存放</strong>：<ul>
+<li>系统级：<code>/etc/crontab</code></li>
+<li>用户级：<code>/var/spool/cron/&lt;用户名&gt;</code><br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/9.png" loading="lazy"></li>
+</ul>
+</li>
+<li><strong>技巧</strong>：<code>crontab</code> 最小粒度是分钟，实现秒级任务需结合 <code>sleep</code> 命令。例如，每30秒执行一次：<code>* * * * * /path/to/script; sleep 30; /path/to/script</code>。</li>
+</ul>
+</li>
+</ol>
+<h4 id="四、系统日志管理：从本地到远程集中收集"><a href="#四、系统日志管理：从本地到远程集中收集" class="headerlink" title="四、系统日志管理：从本地到远程集中收集"></a>四、系统日志管理：从本地到远程集中收集</h4><ol>
+<li><p><strong><code>systemd-journald</code> 日志持久化</strong></p>
+<ul>
+<li><strong>默认</strong>：日志存于内存 <code>/run/log/journal</code>，重启丢失。</li>
+<li><strong>持久化</strong>：配置后存于磁盘 <code>/var/log/journal</code>，重启保留。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/4.png" loading="lazy"></li>
+</ul>
+</li>
+<li><p><strong><code>rsyslog</code> 远程日志集中收集</strong></p>
+<ul>
+<li><strong>架构</strong>：server1 (日志接收端)，server2 (日志发送端)。</li>
+<li><strong>协议</strong>：默认端口 <code>514</code>，支持 UDP (<code>@IP</code>) 和 TCP (<code>@@IP</code>)。</li>
+<li><strong>防火墙</strong>：服务端务必放行对应端口。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/5.png" loading="lazy"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/6.png" loading="lazy"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/7.png" loading="lazy"></li>
+<li><strong>排错经历</strong>：客户端 <code>nc</code> 测试连接不上服务端 514 端口，但 <code>ping</code> 正常。最终发现是服务端防火墙 <code>firewall-cmd --reload</code> 命令拼写错误，未生效。<strong>重启或重载防火墙后才能生效</strong>是铁律。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h3 id="下午：网络共享存储：NFS-与-iSCSI"><a href="#下午：网络共享存储：NFS-与-iSCSI" class="headerlink" title="下午：网络共享存储：NFS 与 iSCSI"></a>下午：网络共享存储：NFS 与 iSCSI</h3><p>这小节主题是：<strong>NFS 文件共享与 iSCSI 块存储的应用与区别</strong>。</p>
+<h4 id="一、NFS-网络文件系统-NAS-思想"><a href="#一、NFS-网络文件系统-NAS-思想" class="headerlink" title="一、NFS 网络文件系统 (NAS 思想)"></a>一、NFS 网络文件系统 (NAS 思想)</h4><p>NFS 允许客户端通过 TCP&#x2F;IP 网络挂载服务端共享的目录，像使用本地文件系统一样。</p>
+<p><strong>架构</strong>：server1 &#x3D; NFS 服务端，server2 &#x3D; NFS 客户端。</p>
+<p><strong>（一）核心参数与三层权限控制</strong></p>
+<ol>
+<li><p><strong><code>/etc/exports</code> 核心参数</strong>：</p>
+<ul>
+<li><code>ro</code> &#x2F; <code>rw</code>：只读&#x2F;读写权限。</li>
+<li><code>root_squash</code>：<strong>默认</strong>，客户端 root 映射为匿名用户 (nfsnobody)，权限受限。</li>
+<li><code>no_root_squash</code>：不压缩客户端 root 权限，保留 root 身份，生产环境慎用。</li>
+</ul>
+</li>
+<li><p><strong>NFS 权限三层控制</strong>：</p>
+<ul>
+<li><strong>第一层</strong>：服务端 <code>/etc/exports</code> 中的共享权限（ro&#x2F;rw）。</li>
+<li><strong>第二层</strong>：服务端本地目录的文件系统 rwx 权限。</li>
+<li><strong>第三层</strong>：客户端挂载时的参数（ro&#x2F;rw）。</li>
+</ul>
+</li>
+</ol>
+<p><strong>（二）上机操作与排错</strong></p>
+<ol>
+<li><p><strong>服务端配置</strong>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># server1: 安装、创建共享目录、配置导出、启动服务</span>
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> nfs-utils
+<span class="token function">mkdir</span> /nfsshare
+<span class="token builtin class-name">echo</span> <span class="token string">"/nfsshare *(rw,no_root_squash)"</span> <span class="token operator">>></span> /etc/exports
+systemctl start nfs-server <span class="token operator">&amp;&amp;</span> systemctl <span class="token builtin class-name">enable</span> nfs-server
+exportfs <span class="token parameter variable">-r</span>  <span class="token comment"># 重读配置文件，使改动生效</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/10.png" loading="lazy"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/11.png" loading="lazy"></p>
+</li>
+<li><p><strong>客户端挂载</strong>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># server2: 安装客户端工具、查看、手动挂载、开机挂载</span>
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> nfs-utils
+showmount <span class="token parameter variable">-e</span> server1
+<span class="token function">mkdir</span> /mnt/nfs
+<span class="token function">mount</span> <span class="token parameter variable">-t</span> nfs server1:/nfsshare /mnt/nfs
+<span class="token comment"># 写入 /etc/fstab 实现开机自动挂载</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/12.png" loading="lazy"><br><strong><code>/etc/fstab</code> 示例</strong>：<code>server1:/nfsshare /mnt/nfs nfs defaults 0 0</code></p>
+</li>
+<li><p><strong><code>autofs</code> 自动挂载：按需挂载，防止卡死</strong></p>
+<ul>
+<li><strong>区别</strong>：<ul>
+<li><code>fstab</code>：<strong>开机永久挂载</strong>，但若网络或 NFS 服务断连，可能导致 <code>df</code> 等磁盘命令卡死。</li>
+<li><code>autofs</code>：<strong>按需挂载</strong>，访问时自动挂载，闲置一段时间后自动卸载，节省资源，避免卡死。</li>
+</ul>
+</li>
+<li><strong>排错</strong>：<code>df</code> 命令卡死，往往是有僵死的 NFS 挂载。应使用 <code>umount -l /挂载点</code> 或 <code>fuser -km /挂载点</code> 来强制清理。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/13.png" loading="lazy"></li>
+<li><strong>注意</strong>：<code>autofs</code> 管理的挂载点根目录（如 <code>/autofs</code>）是由 <code>automount</code> 内核进程动态维护的，<strong>我们不能手动 <code>mkdir</code> 创建</strong>。</li>
+<li><strong>原则</strong>：NFS 文件系统在服务端创建，客户端通过网络挂载即可直接使用。</li>
+</ul>
+</li>
+</ol>
+<h4 id="二、iSCSI-存储：网络上的“本地磁盘”"><a href="#二、iSCSI-存储：网络上的“本地磁盘”" class="headerlink" title="二、iSCSI 存储：网络上的“本地磁盘”"></a>二、iSCSI 存储：网络上的“本地磁盘”</h4><p>iSCSI 是基于 TCP&#x2F;IP 的 <strong>SAN (块存储)</strong> 协议，默认端口 <code>3260</code>。它通过网络共享的是<strong>裸设备</strong>，而非文件系统。</p>
+<p><strong>架构</strong>：</p>
+<ul>
+<li><strong>服务端 (Target)</strong>：提供磁盘块设备。</li>
+<li><strong>客户端 (Initiator)</strong>：发起连接，将远程磁盘识别为本地硬盘（如 <code>/dev/sdb</code>）。</li>
+</ul>
+<p><strong>（一）核心区别：iSCSI (SAN) vs NFS (NAS)</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">特性</th>
+<th align="left"><strong>NFS (文件共享)</strong></th>
+<th align="left"><strong>iSCSI (块存储)</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>提供层</strong></td>
+<td align="left"><strong>文件系统</strong></td>
+<td align="left"><strong>裸块设备</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>管理方</strong></td>
+<td align="left">服务端管理文件系统</td>
+<td align="left"><strong>客户端</strong>管理文件系统</td>
+</tr>
+<tr>
+<td align="left"><strong>使用步骤</strong></td>
+<td align="left">挂载后直接使用</td>
+<td align="left">连接 → 分区 → 格式化 → 挂载</td>
+</tr>
+<tr>
+<td align="left"><strong>类比</strong></td>
+<td align="left">直接给你一个共享文件夹</td>
+<td align="left">给你一块全新硬盘，你自己分区</td>
+</tr>
+</tbody></table>
+<p><strong>（二）上机操作与效果</strong></p>
+<ol>
+<li><p><strong>服务端 (Target) 配置</strong>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># server1: 安装工具，进入 targetcli 交互环境</span>
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> targetcli
+targetcli
+<span class="token comment"># 在交互环境中，创建后端存储和共享</span>
+/<span class="token operator">></span>
+/<span class="token operator">></span> <span class="token builtin class-name">cd</span> /backstores/block
+/<span class="token operator">></span> create disk01 /dev/sdb  <span class="token comment"># 将 /dev/sdb 设为共享的后端存储</span>
+/<span class="token operator">></span> <span class="token builtin class-name">cd</span> /iscsi
+/<span class="token operator">></span> create iqn.2026-07.com.test:server1  <span class="token comment"># 创建 target IQN</span>
+/<span class="token operator">></span> <span class="token builtin class-name">cd</span> iqn.2026-07.com.test:server1/tpg1/luns
+/<span class="token operator">></span> create /backstores/block/disk01
+/<span class="token operator">></span> <span class="token builtin class-name">cd</span> <span class="token punctuation">..</span>/acls
+/<span class="token operator">></span> create iqn.2026-07.com.test:client1 <span class="token comment"># 创建 ACL，允许此IQN的客户端连接</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/14.png" loading="lazy"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/15.png" loading="lazy"></p>
+</li>
+<li><p><strong>客户端 (Initiator) 配置</strong>：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># server2: 安装工具，修改 initiatorname，发现并连接</span>
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> iscsi-initiator-utils
+<span class="token builtin class-name">echo</span> <span class="token string">"InitiatorName=iqn.2026-07.com.test:client1"</span> <span class="token operator">></span> /etc/iscsi/initiatorname.iscsi
+systemctl restart iscsid
+iscsiadm <span class="token parameter variable">--mode</span> discovery <span class="token parameter variable">--type</span> sendtargets <span class="token parameter variable">--portal</span> server1
+iscsiadm <span class="token parameter variable">--mode</span> <span class="token function">node</span> <span class="token parameter variable">--targetname</span> iqn.2026-07.com.test:server1 <span class="token parameter variable">--portal</span> server1:3260 <span class="token parameter variable">--login</span>
+lsblk  <span class="token comment"># 此时就能看到一块新磁盘，如 /dev/sdc</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/16.png" loading="lazy"><br><strong>后续步骤</strong>：对新磁盘 <code>fdisk /dev/sdc</code> 分区，<code>mkfs.xfs /dev/sdc1</code> 格式化，再 <code>mount</code> 挂载到某个目录即可像本地盘一样使用。<br><img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/17.png" loading="lazy"> <img src="/2026/07/21/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-1/18.png" loading="lazy"></p>
+</li>
+</ol>
+<blockquote>
+<p>笔记整理完毕。</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/07/23/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86-2/">系统管理-2</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">运维学习笔记Day5</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" rel="tag">系统管理</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

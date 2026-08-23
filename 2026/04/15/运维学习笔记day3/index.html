@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>运维学习笔记Day3 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="运维学习笔记Day3"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>运维学习笔记Day3</h2>
+            <div class="post-meta">
+                <time class="date">2026.04.15</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本篇笔记用于记录 Linux 运维学习第三天的内容，课上我们主要是在熟悉常用的命令，核心知识点包括：</p>
+<ul>
+<li>数据流重定向与管道</li>
+<li>Vim 编辑器常用操作</li>
+<li>文件内容查看与过滤</li>
+<li>文件的复制、移动与查找</li>
+</ul>
+<p>简单进行总结后，下面的笔记内容与上课讲的顺序并不完全一致</p>
+<hr>
+<h2 id="一、数据流重定向与管道"><a href="#一、数据流重定向与管道" class="headerlink" title="一、数据流重定向与管道"></a>一、数据流重定向与管道</h2><h3 id="1-1-标准流"><a href="#1-1-标准流" class="headerlink" title="1.1 标准流"></a>1.1 标准流</h3><p>Linux 系统中每个进程启动时，都会自动打开 3 个标准文件描述符（数据流），这三个数据流是 Linux 进程输入输出的「标准通道」，通过重定向可以灵活控制数据的来源和去向，是 Linux 命令行的核心基础。</p>
+<table>
+<thead>
+<tr>
+<th align="left">流名称</th>
+<th align="left">代码</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">标准输入 (stdin)</td>
+<td align="left">0</td>
+<td align="left">程序读取数据的来源，默认是键盘</td>
+</tr>
+<tr>
+<td align="left">标准输出 (stdout)</td>
+<td align="left">1</td>
+<td align="left">程序正常输出的目的地，默认是终端屏幕</td>
+</tr>
+<tr>
+<td align="left">标准错误 (stderr)</td>
+<td align="left">2</td>
+<td align="left">程序错误或警告信息的输出地，默认也是终端屏幕</td>
+</tr>
+</tbody></table>
+<h3 id="1-2-输出重定向"><a href="#1-2-输出重定向" class="headerlink" title="1.2 输出重定向"></a>1.2 输出重定向</h3><table>
+<thead>
+<tr>
+<th align="left">操作符</th>
+<th align="left">作用</th>
+<th align="left">示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>&gt;</code> 或 <code>1&gt;</code></td>
+<td align="left">覆盖写入正确输出</td>
+<td align="left"><code>echo &quot;hello&quot; &gt; file.txt</code></td>
+</tr>
+<tr>
+<td align="left"><code>&gt;&gt;</code></td>
+<td align="left">追加写入正确输出</td>
+<td align="left"><code>echo &quot;world&quot; &gt;&gt; file.txt</code></td>
+</tr>
+<tr>
+<td align="left"><code>2&gt;</code></td>
+<td align="left">覆盖写入错误输出</td>
+<td align="left"><code>ls /notexist 2&gt; error.log</code></td>
+</tr>
+<tr>
+<td align="left"><code>2&gt;&gt;</code></td>
+<td align="left">追加写入错误输出</td>
+<td align="left"><code>ls /notexist 2&gt;&gt; error.log</code></td>
+</tr>
+<tr>
+<td align="left"><code>&amp;&gt;</code> 或 <code>&gt;&amp;</code></td>
+<td align="left">正确 + 错误一起覆盖写入</td>
+<td align="left"><code>ls /tmp &amp;&gt; all.log</code></td>
+</tr>
+<tr>
+<td align="left"><code>2&gt;&amp;1</code></td>
+<td align="left">将错误输出合并到正确输出流</td>
+<td align="left"><code>ls /tmp &gt; out.log 2&gt;&amp;1</code></td>
+</tr>
+<tr>
+<td align="left"><code>/dev/null</code></td>
+<td align="left">Linux 黑洞，丢弃所有写入的数据</td>
+<td align="left"><code>ls /tmp &gt; /dev/null 2&gt;&amp;1</code></td>
+</tr>
+</tbody></table>
+<h3 id="1-3-输入重定向"><a href="#1-3-输入重定向" class="headerlink" title="1.3 输入重定向"></a>1.3 输入重定向</h3><table>
+<thead>
+<tr>
+<th align="left">操作符</th>
+<th align="left">作用</th>
+<th align="left">示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>&lt;</code></td>
+<td align="left">从文件读取输入</td>
+<td align="left"><code>cat &lt; file.txt</code></td>
+</tr>
+<tr>
+<td align="left"><code>&lt;&lt; 结束标记</code></td>
+<td align="left">Here Document，读取多行输入直到标记结束</td>
+<td align="left"><code>cat &gt; file &lt;&lt; EOF</code></td>
+</tr>
+</tbody></table>
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image2.png" loading="lazy"></p>
+<p><strong>非交互式创建文件示例：</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 单行写入</span>
+<span class="token builtin class-name">echo</span> <span class="token string">"hello world"</span> <span class="token operator">></span> test.txt
+
+<span class="token comment"># 多行写入（以 EOF,end,dd 等任意词做结尾标志）</span>
+<span class="token function">cat</span> <span class="token operator">></span> test.txt <span class="token operator">&lt;&lt;</span> <span class="token string">EOF
+第一行
+第二行
+第三行
+EOF</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image1.png" loading="lazy"></p>
+<p>汇总一下，是下面的表格</p>
+<table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">输出结果</th>
+<th align="left">说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>echo &quot;hello world&quot;</code></td>
+<td align="left">hello world</td>
+<td align="left">原样输出字符串</td>
+</tr>
+<tr>
+<td align="left"><code>echo $SHELL</code></td>
+<td align="left">&#x2F;bin&#x2F;bash</td>
+<td align="left"><code>$变量名</code> 会解析变量值</td>
+</tr>
+<tr>
+<td align="left"><code>echo SHELL</code></td>
+<td align="left">SHELL</td>
+<td align="left">不加 <code>$</code> 原样输出</td>
+</tr>
+<tr>
+<td align="left"><code>a=156; echo $a</code></td>
+<td align="left">156</td>
+<td align="left">自定义变量（等号左右不能有空格）</td>
+</tr>
+</tbody></table>
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image3.png" loading="lazy"></p>
+<hr>
+<h3 id="1-4-管道（-）"><a href="#1-4-管道（-）" class="headerlink" title="1.4 管道（|）"></a>1.4 管道（<code>|</code>）</h3><ul>
+<li>将前一个命令的<strong>标准输出</strong>作为后一个命令的<strong>标准输入</strong>。</li>
+<li>管道<strong>默认不传递标准错误</strong>，若需传递错误流，需先使用 <code>2&gt;&amp;1</code> 合并。</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 示例：查看所有用户并按 UID 排序</span>
+<span class="token function">cat</span> /etc/passwd <span class="token operator">|</span> <span class="token function">sort</span> -t: <span class="token parameter variable">-k3</span> <span class="token parameter variable">-n</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h3 id="1-5-tee-命令（分流器）"><a href="#1-5-tee-命令（分流器）" class="headerlink" title="1.5 tee 命令（分流器）"></a>1.5 tee 命令（分流器）</h3><p>从标准输入读取数据，<strong>同时</strong>写入标准输出和指定文件，常用于调试管道中间结果。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 将 ls 输出同时写入 screen 和 file.log</span>
+<span class="token function">ls</span> <span class="token parameter variable">-l</span> <span class="token operator">|</span> <span class="token function">tee</span> file.log <span class="token operator">|</span> <span class="token function">grep</span> <span class="token string">".txt"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h3 id="1-6-后台运行"><a href="#1-6-后台运行" class="headerlink" title="1.6 后台运行"></a>1.6 后台运行</h3><ul>
+<li>命令末尾加 <code>&amp;</code>：将命令放入后台运行（仅适用于非交互式程序）。</li>
+<li><code>jobs</code>：查看当前终端下的后台任务。</li>
+<li><code>Ctrl + C</code>：终止前台进程。</li>
+</ul>
+<hr>
+<h2 id="二、Vim-编辑器常用操作"><a href="#二、Vim-编辑器常用操作" class="headerlink" title="二、Vim 编辑器常用操作"></a>二、Vim 编辑器常用操作</h2><p>我们先把知识点汇总整理一下<code>ovo</code></p>
+<h3 id="2-1-模式切换"><a href="#2-1-模式切换" class="headerlink" title="2.1 模式切换"></a>2.1 模式切换</h3><ul>
+<li><strong>命令模式</strong>：默认模式，按 <code>Esc</code> 返回。</li>
+<li><strong>输入模式</strong>：按 <code>i</code>, <code>a</code>, <code>o</code> 等进入。</li>
+<li><strong>末行模式</strong>：命令模式下按 <code>:</code> 进入。</li>
+</ul>
+<h3 id="2-2-光标跳转"><a href="#2-2-光标跳转" class="headerlink" title="2.2 光标跳转"></a>2.2 光标跳转</h3><table>
+<thead>
+<tr>
+<th align="left">快捷键</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>gg</code></td>
+<td align="left">跳到文件第一行</td>
+</tr>
+<tr>
+<td align="left"><code>G</code></td>
+<td align="left">跳到文件最后一行</td>
+</tr>
+<tr>
+<td align="left"><code>^</code> 或 <code>0</code></td>
+<td align="left">跳到行首</td>
+</tr>
+<tr>
+<td align="left"><code>$</code></td>
+<td align="left">跳到行尾</td>
+</tr>
+<tr>
+<td align="left"><code>w</code></td>
+<td align="left">跳到下一个单词开头</td>
+</tr>
+<tr>
+<td align="left"><code>b</code></td>
+<td align="left">跳到上一个单词开头</td>
+</tr>
+<tr>
+<td align="left"><code>数字gg</code> 或 <code>数字G</code></td>
+<td align="left">跳转到指定行</td>
+</tr>
+</tbody></table>
+<h3 id="2-3-删除、复制与粘贴"><a href="#2-3-删除、复制与粘贴" class="headerlink" title="2.3 删除、复制与粘贴"></a>2.3 删除、复制与粘贴</h3><table>
+<thead>
+<tr>
+<th align="left">快捷键</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>dd</code></td>
+<td align="left">删除（剪切）当前行</td>
+</tr>
+<tr>
+<td align="left"><code>数字dd</code></td>
+<td align="left">删除多行</td>
+</tr>
+<tr>
+<td align="left"><code>d^</code> &#x2F; <code>d$</code></td>
+<td align="left">删除到行首 &#x2F; 行尾</td>
+</tr>
+<tr>
+<td align="left"><code>yy</code></td>
+<td align="left">复制当前行</td>
+</tr>
+<tr>
+<td align="left"><code>数字yy</code></td>
+<td align="left">复制多行</td>
+</tr>
+<tr>
+<td align="left"><code>p</code></td>
+<td align="left">粘贴到下一行</td>
+</tr>
+<tr>
+<td align="left"><code>P</code></td>
+<td align="left">粘贴到上一行</td>
+</tr>
+<tr>
+<td align="left"><code>u</code></td>
+<td align="left">撤销</td>
+</tr>
+<tr>
+<td align="left"><code>Ctrl + r</code></td>
+<td align="left">恢复撤销</td>
+</tr>
+</tbody></table>
+<h3 id="2-4-进入输入模式"><a href="#2-4-进入输入模式" class="headerlink" title="2.4 进入输入模式"></a>2.4 进入输入模式</h3><table>
+<thead>
+<tr>
+<th align="left">快捷键</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>i</code></td>
+<td align="left">在光标前插入</td>
+</tr>
+<tr>
+<td align="left"><code>I</code></td>
+<td align="left">在行首插入</td>
+</tr>
+<tr>
+<td align="left"><code>a</code></td>
+<td align="left">在光标后插入</td>
+</tr>
+<tr>
+<td align="left"><code>A</code></td>
+<td align="left">在行尾插入</td>
+</tr>
+<tr>
+<td align="left"><code>o</code></td>
+<td align="left">在下一行新开一行插入</td>
+</tr>
+<tr>
+<td align="left"><code>O</code></td>
+<td align="left">在上一行新开一行插入</td>
+</tr>
+<tr>
+<td align="left"><code>s</code></td>
+<td align="left">删除当前字符并插入</td>
+</tr>
+<tr>
+<td align="left"><code>S</code></td>
+<td align="left">删除整行并插入</td>
+</tr>
+</tbody></table>
+<h3 id="2-5-末行模式常用命令"><a href="#2-5-末行模式常用命令" class="headerlink" title="2.5 末行模式常用命令"></a>2.5 末行模式常用命令</h3><p><strong>保存与退出</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>:q</code></td>
+<td align="left">退出（未修改时）</td>
+</tr>
+<tr>
+<td align="left"><code>:q!</code></td>
+<td align="left">强制退出，不保存</td>
+</tr>
+<tr>
+<td align="left"><code>:w</code></td>
+<td align="left">保存</td>
+</tr>
+<tr>
+<td align="left"><code>:wq</code> 或 <code>ZZ</code></td>
+<td align="left">保存并退出</td>
+</tr>
+<tr>
+<td align="left"><code>:wq!</code></td>
+<td align="left">强制保存退出</td>
+</tr>
+</tbody></table>
+<p><strong>显示行号</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>:set nu</code></td>
+<td align="left">显示行号</td>
+</tr>
+<tr>
+<td align="left"><code>:set nonu</code></td>
+<td align="left">取消行号</td>
+</tr>
+</tbody></table>
+<p><strong>查找与替换</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>/关键字</code></td>
+<td align="left">向下查找，<code>n</code> 下一个，<code>N</code> 上一个</td>
+</tr>
+<tr>
+<td align="left"><code>:s/old/new</code></td>
+<td align="left">替换当前行第一个</td>
+</tr>
+<tr>
+<td align="left"><code>:s/old/new/g</code></td>
+<td align="left">替换当前行全部</td>
+</tr>
+<tr>
+<td align="left"><code>:%s/old/new/g</code></td>
+<td align="left">全文替换</td>
+</tr>
+<tr>
+<td align="left"><code>:n1,n2s/old/new/g</code></td>
+<td align="left">指定行范围替换</td>
+</tr>
+</tbody></table>
+<p><strong>其他实用命令</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>:r 文件名</code></td>
+<td align="left">将指定文件内容读入当前光标处</td>
+</tr>
+<tr>
+<td align="left"><code>:g/关键字/d</code></td>
+<td align="left">删除所有包含关键字的行</td>
+</tr>
+<tr>
+<td align="left"><code>:n1,n2 d</code></td>
+<td align="left">删除指定范围的行</td>
+</tr>
+</tbody></table>
+<h3 id="2-6-实践案例"><a href="#2-6-实践案例" class="headerlink" title="2.6 实践案例"></a>2.6 实践案例</h3><p>下面是具体的操作了，用三个例子进行实操一下</p>
+<p><strong>修改主机名</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">vim</span> /etc/hostname
+<span class="token comment"># 只保留第一行，写入主机名如 server1</span>
+<span class="token function">reboot</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image8.png" loading="lazy"></p>
+<p>然后我们通过命令 <code>reboot</code> 重启一下虚拟机。<br>嗯……主机名没有改好，变成 <code>localhost</code> 了，是因为系统读取这个文件时，只读第一行，我们再改一下，改回去，改成 <code>server1</code> ，成功又把主机名变回 <code>server1</code> 了 <code>ovo</code></p>
+<p><strong>设置登录提示语</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">vim</span> /etc/motd
+<span class="token comment"># 写入想要显示的欢迎语</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image9.png" loading="lazy"></p>
+<p>写入内容后保存，下次登录就可以看到提示语了。</p>
+<p><strong>编译 C++ 文件</strong></p>
+<p><strong>步骤：</strong></p>
+<ol>
+<li>创建 C++ 源文件：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">vim</span> test.cpp<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre></li>
+<li>写入代码后保存退出。</li>
+<li>编译运行：<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 最小化安装，我们需先安装编译器</span>
+yum <span class="token function">install</span> <span class="token parameter variable">-y</span> gcc gcc-c++
+
+<span class="token comment"># 编译（默认输出 a.out）</span>
+g++ test.cpp
+
+<span class="token comment"># 自定义输出文件名</span>
+g++ test.cpp <span class="token parameter variable">-o</span> test.out
+
+<span class="token comment"># 运行</span>
+./test.out<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+</ol>
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image6.png" loading="lazy"></p>
+<p>如果我们想生成自定义输出文件名，就需要用 <code>-o</code> 参数指定输出文件名，具体命令为 <code>g++ text.cpp -o text.out</code>，效果如下：</p>
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image7.png" loading="lazy"></p>
+<hr>
+<h2 id="三、文件内容查看与过滤"><a href="#三、文件内容查看与过滤" class="headerlink" title="三、文件内容查看与过滤"></a>三、文件内容查看与过滤</h2><h3 id="3-1-查看命令"><a href="#3-1-查看命令" class="headerlink" title="3.1 查看命令"></a>3.1 查看命令</h3><table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+<th align="left">常用参数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>cat</code></td>
+<td align="left">查看小文件、合并文件</td>
+<td align="left"><code>-n</code> 显示行号，<code>-b</code> 只给非空行加行号</td>
+</tr>
+<tr>
+<td align="left"><code>tac</code></td>
+<td align="left">逆序显示</td>
+<td align="left">—</td>
+</tr>
+<tr>
+<td align="left"><code>more</code></td>
+<td align="left">分页查看（只能向下）</td>
+<td align="left">空格翻页，<code>q</code> 退出</td>
+</tr>
+<tr>
+<td align="left"><code>less</code></td>
+<td align="left">分页查看（可上下翻）</td>
+<td align="left"><code>/</code> 搜索，<code>q</code> 退出</td>
+</tr>
+<tr>
+<td align="left"><code>head</code></td>
+<td align="left">查看文件头部</td>
+<td align="left"><code>-n 数字</code> 指定行数</td>
+</tr>
+<tr>
+<td align="left"><code>tail</code></td>
+<td align="left">查看文件尾部</td>
+<td align="left"><code>-n 数字</code> 指定行数，<code>-f</code> 实时追踪（监控日志）</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-grep-过滤"><a href="#3-2-grep-过滤" class="headerlink" title="3.2 grep 过滤"></a>3.2 grep 过滤</h3><p><code>grep</code> 是强大的文本搜索工具，能在文件中查找包含指定字符串的行，可结合管道命令，具体命令为  <code>grep [选项] &quot;查找内容&quot; 文件名</code>。</p>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">作用</th>
+<th align="left">示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-n</code></td>
+<td align="left">显示行号</td>
+<td align="left"><code>grep -n root /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>-v</code></td>
+<td align="left">反向匹配（排除）</td>
+<td align="left"><code>grep -v nologin /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>-i</code></td>
+<td align="left">忽略大小写</td>
+<td align="left"><code>grep -i d /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>-A 数字</code></td>
+<td align="left">显示匹配行及后 N 行</td>
+<td align="left"><code>grep -A2 halt /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>-B 数字</code></td>
+<td align="left">显示匹配行及前 N 行</td>
+<td align="left"><code>grep -B2 sshd /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>-C 数字</code></td>
+<td align="left">显示匹配行及前后 N 行</td>
+<td align="left"><code>grep -C2 ftp /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>-c</code></td>
+<td align="left">统计匹配行数</td>
+<td align="left"><code>grep -c nologin /etc/passwd</code></td>
+</tr>
+</tbody></table>
+<p><strong>正则表达式示例：</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">表达式</th>
+<th align="left">含义</th>
+<th align="left">示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>^root</code></td>
+<td align="left">以 root 开头</td>
+<td align="left"><code>grep &quot;^root&quot; /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>sh$</code></td>
+<td align="left">以 sh 结尾</td>
+<td align="left"><code>grep &quot;sh$&quot; /etc/passwd</code></td>
+</tr>
+<tr>
+<td align="left"><code>^[0-9]</code></td>
+<td align="left">以数字开头</td>
+<td align="left"><code>grep &quot;^[0-9]&quot; file</code></td>
+</tr>
+<tr>
+<td align="left"><code>^$</code></td>
+<td align="left">空行</td>
+<td align="left"><code>grep -v &quot;^$&quot; file</code>（显示非空行）</td>
+</tr>
+</tbody></table>
+<h3 id="3-3-文本处理工具"><a href="#3-3-文本处理工具" class="headerlink" title="3.3 文本处理工具"></a>3.3 文本处理工具</h3><p><strong>cut：按列提取</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">cut</span> <span class="token parameter variable">-d</span> <span class="token string">"分隔符"</span><span class="token punctuation">(</span>默认是制表符<span class="token punctuation">)</span> <span class="token parameter variable">-f</span> 列号<span class="token punctuation">(</span>如 <span class="token parameter variable">-f</span> <span class="token number">1,3</span>,7<span class="token punctuation">)</span> 文件<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>示例：提取所有用户名</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">cat</span> /etc/passwd <span class="token operator">|</span> <span class="token function">cut</span> -d: <span class="token parameter variable">-f1</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>原本完整的文件内容如下：<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image10.png" loading="lazy"><br>通过 <code>cut</code> 提取出用户名，得到内容只剩下用户名了，方便很多：<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image11.png" loading="lazy"></p>
+<p><strong>sort：排序</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">选项</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-n</code></td>
+<td align="left">按数值排序</td>
+</tr>
+<tr>
+<td align="left"><code>-nr</code></td>
+<td align="left">按数值降序</td>
+</tr>
+<tr>
+<td align="left"><code>-u</code></td>
+<td align="left">去重</td>
+</tr>
+<tr>
+<td align="left"><code>-t</code></td>
+<td align="left">指定分隔符</td>
+</tr>
+<tr>
+<td align="left"><code>-k</code></td>
+<td align="left">指定列号</td>
+</tr>
+</tbody></table>
+<p>示例：按 UID 排序</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sort</span> -t: <span class="token parameter variable">-k3</span> <span class="token parameter variable">-n</span> /etc/passwd<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>对字母排序<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image12.png" loading="lazy"><br>对数字排序<br><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image13.png" loading="lazy"></p>
+<p><strong>uniq：去重（仅去除连续重复行）</strong></p>
+<p>不可以使用 <code>-n</code> ,与 sort 结合的组合命令是 <code>cat /etc/passwd | cut -d: -f1 | sort</code></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sort</span> <span class="token function">file</span> <span class="token operator">|</span> <span class="token function">uniq</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image14.png" loading="lazy"></p>
+<p><strong>tr：字符替换&#x2F;删除</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>tr a-z A-Z</code></td>
+<td align="left">小写转大写</td>
+</tr>
+<tr>
+<td align="left"><code>tr -d &#39; &#39;</code></td>
+<td align="left">删除空格</td>
+</tr>
+<tr>
+<td align="left"><code>tr -s &#39; &#39;</code></td>
+<td align="left">压缩连续空格为一个</td>
+</tr>
+</tbody></table>
+<p>示例：提取 IP 地址</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">ip</span> a <span class="token operator">|</span> <span class="token function">grep</span> inet <span class="token operator">|</span> <span class="token function">tr</span> <span class="token parameter variable">-s</span> <span class="token string">' '</span> <span class="token operator">|</span> <span class="token function">cut</span> -d<span class="token string">' '</span> <span class="token parameter variable">-f3</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><img src="/2026/04/15/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day3/image15.png" loading="lazy"></p>
+<hr>
+<h2 id="四、文件的复制、移动与查找"><a href="#四、文件的复制、移动与查找" class="headerlink" title="四、文件的复制、移动与查找"></a>四、文件的复制、移动与查找</h2><h3 id="4-1-复制与移动"><a href="#4-1-复制与移动" class="headerlink" title="4.1 复制与移动"></a>4.1 复制与移动</h3><table>
+<thead>
+<tr>
+<th align="left">命令</th>
+<th align="left">作用</th>
+<th align="left">常用参数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>cp</code></td>
+<td align="left">复制文件或目录</td>
+<td align="left"><code>-a</code> 归档复制（保留属性），<code>-r</code> 递归复制目录</td>
+</tr>
+<tr>
+<td align="left"><code>mv</code></td>
+<td align="left">移动或重命名</td>
+<td align="left">同分区移动本质是重命名，跨分区是拷贝+删除</td>
+</tr>
+</tbody></table>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">cp</span> <span class="token parameter variable">-r</span> /source/dir /target/dir
+<span class="token function">mv</span> oldname.txt newname.txt<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h3 id="4-2-创建目录"><a href="#4-2-创建目录" class="headerlink" title="4.2 创建目录"></a>4.2 创建目录</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mkdir</span> 目录名<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h3 id="4-3-find-文件查找"><a href="#4-3-find-文件查找" class="headerlink" title="4.3 find 文件查找"></a>4.3 find 文件查找</h3><p><code>find</code> 是强大的实时文件查找工具。</p>
+<p><strong>基本格式：</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">find</span> <span class="token punctuation">[</span>路径<span class="token punctuation">]</span> <span class="token punctuation">[</span>条件<span class="token punctuation">]</span> <span class="token punctuation">[</span>操作<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><strong>常用查找条件：</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">条件</th>
+<th align="left">说明</th>
+<th align="left">示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>-name</code></td>
+<td align="left">按文件名（支持通配符）</td>
+<td align="left"><code>find /etc -name &quot;host*&quot;</code></td>
+</tr>
+<tr>
+<td align="left"><code>-type f/d</code></td>
+<td align="left">按类型（文件&#x2F;目录）</td>
+<td align="left"><code>find / -type f -name &quot;*.conf&quot;</code></td>
+</tr>
+<tr>
+<td align="left"><code>-size</code></td>
+<td align="left">按大小</td>
+<td align="left"><code>find / -size +100M</code></td>
+</tr>
+<tr>
+<td align="left"><code>-mtime</code></td>
+<td align="left">按修改时间</td>
+<td align="left"><code>find / -mtime -5</code>（5天内修改过）</td>
+</tr>
+<tr>
+<td align="left"><code>-user</code></td>
+<td align="left">按所属用户</td>
+<td align="left"><code>find /home -user root</code></td>
+</tr>
+<tr>
+<td align="left"><code>-perm</code></td>
+<td align="left">按权限</td>
+<td align="left"><code>find / -perm 644</code></td>
+</tr>
+<tr>
+<td align="left"><code>-empty</code></td>
+<td align="left">查找空文件&#x2F;目录</td>
+<td align="left"><code>find /tmp -empty</code></td>
+</tr>
+</tbody></table>
+<p><strong>逻辑组合：</strong></p>
+<ul>
+<li>与：<code>find / -name &quot;*.txt&quot; -size +1M</code></li>
+<li>或：<code>find / -name &quot;*.txt&quot; -o -name &quot;*.log&quot;</code></li>
+<li>非：<code>find / ! -name &quot;*.txt&quot;</code></li>
+</ul>
+<p><strong>对查找结果执行操作：</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 删除所有 .tmp 文件</span>
+<span class="token function">find</span> /tmp <span class="token parameter variable">-name</span> <span class="token string">"*.tmp"</span> <span class="token parameter variable">-exec</span> <span class="token function">rm</span> <span class="token parameter variable">-f</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token punctuation">\</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<hr>
+<h2 id="五、今日命令速查表"><a href="#五、今日命令速查表" class="headerlink" title="五、今日命令速查表"></a>五、今日命令速查表</h2><table>
+<thead>
+<tr>
+<th align="left">场景</th>
+<th align="left">命令</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">后台运行命令</td>
+<td align="left"><code>command &amp;</code></td>
+</tr>
+<tr>
+<td align="left">查看后台任务</td>
+<td align="left"><code>jobs</code></td>
+</tr>
+<tr>
+<td align="left">标准输出覆盖写入</td>
+<td align="left"><code>command &gt; file</code></td>
+</tr>
+<tr>
+<td align="left">错误输出覆盖写入</td>
+<td align="left"><code>command 2&gt; file</code></td>
+</tr>
+<tr>
+<td align="left">正确+错误一起覆盖</td>
+<td align="left"><code>command &amp;&gt; file</code></td>
+</tr>
+<tr>
+<td align="left">管道传参</td>
+<td align="left"><code>command1 | command2</code></td>
+</tr>
+<tr>
+<td align="left">分流输出</td>
+<td align="left"><code>command | tee file</code></td>
+</tr>
+<tr>
+<td align="left">Vim 跳至行首&#x2F;行尾</td>
+<td align="left"><code>^</code> &#x2F; <code>$</code></td>
+</tr>
+<tr>
+<td align="left">Vim 删除整行</td>
+<td align="left"><code>dd</code></td>
+</tr>
+<tr>
+<td align="left">Vim 保存退出</td>
+<td align="left"><code>:wq</code> 或 <code>ZZ</code></td>
+</tr>
+<tr>
+<td align="left">Vim 全文替换</td>
+<td align="left"><code>:%s/old/new/g</code></td>
+</tr>
+<tr>
+<td align="left">查看文件尾部实时更新</td>
+<td align="left"><code>tail -f log.txt</code></td>
+</tr>
+<tr>
+<td align="left">查找包含关键字的行</td>
+<td align="left"><code>grep &quot;keyword&quot; file</code></td>
+</tr>
+<tr>
+<td align="left">按列提取</td>
+<td align="left"><code>cut -d: -f1 file</code></td>
+</tr>
+<tr>
+<td align="left">排序去重</td>
+<td align="left"><code>sort | uniq</code></td>
+</tr>
+<tr>
+<td align="left">查找大于100M的文件</td>
+<td align="left"><code>find / -size +100M</code></td>
+</tr>
+<tr>
+<td align="left">删除查找到的文件</td>
+<td align="left"><code>find . -name &quot;*.tmp&quot; -exec rm {} \;</code></td>
+</tr>
+</tbody></table>
+<hr>
+<blockquote>
+<p>本次笔记结束ovo</p>
+</blockquote>
+<pre><code>
+</code></pre>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/04/16/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day4/">运维学习笔记Day4</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/14/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day2/">运维学习笔记Day2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/%E5%AE%9E%E8%AE%AD/" rel="tag">实训</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

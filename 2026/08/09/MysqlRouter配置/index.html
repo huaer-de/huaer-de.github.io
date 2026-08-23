@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>MysqlRouter配置 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="MysqlRouter配置"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>MysqlRouter配置</h2>
+            <div class="post-meta">
+                <time class="date">2026.08.09</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="8-2-笔记：MysqlRouter配置"><a href="#8-2-笔记：MysqlRouter配置" class="headerlink" title="8.2 笔记：MysqlRouter配置"></a>8.2 笔记：MysqlRouter配置</h1><p>这篇笔记是8.2的内容，我们给虚拟机分配了路由。</p>
+<hr>
+<h2 id="一、InnoDB-Cluster-单主模式"><a href="#一、InnoDB-Cluster-单主模式" class="headerlink" title="一、InnoDB Cluster 单主模式"></a>一、InnoDB Cluster 单主模式</h2><h3 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>在上一次实验，我们搭建了多组模式的MGR组复制集群，使三台server机都可读可写。但是多组的时候，几台机子同时工作，容易出现写冲突，也容易出错。</p>
+<p>大部分情况下，我们采用单主模式。在master（1台）出现问题时，系统会自动从slave里选择一个新的master做primary，如果原先的master再回来，会变成secondary，可能丢失数据。</p>
+<p>具体地，已提交的数据是不丢失的，但我们强制bootstrap&#x2F;清GTID&#x2F;脑裂都会丢数据。于是我们可以设置，不允许存在没有secondary的master，即作为master的最小从库的个数不为0。</p>
+<h3 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>单主模式中，<code>my.cnf</code> 的核心参照是 <code>group_replication_single_primary_mode=ON</code> 和 <code>group_replication_enforce_update_everywhere_checks=OFF</code>，表示开启单主模式了。我们在三个节点都要修改。改后，配置文件如下：</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">mysqld</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">basedir</span><span class="token punctuation">=</span><span class="token value attr-value">/usr/local/mysql</span>
+<span class="token key attr-name">datadir</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql</span>
+<span class="token key attr-name">socket</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql.sock</span>
+<span class="token key attr-name">port</span><span class="token punctuation">=</span><span class="token value attr-value">3306</span>
+<span class="token key attr-name">user</span><span class="token punctuation">=</span><span class="token value attr-value">mysql</span>
+<span class="token key attr-name">pid-file</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql.pid</span>
+<span class="token key attr-name">character-set-server</span><span class="token punctuation">=</span><span class="token value attr-value">utf8mb4</span>
+<span class="token key attr-name">collation-server</span><span class="token punctuation">=</span><span class="token value attr-value">utf8mb4_unicode_ci</span>
+<span class="token key attr-name">log-error</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql-error.log</span>
+<span class="token key attr-name">innodb_buffer_pool_size</span><span class="token punctuation">=</span><span class="token value attr-value">1G</span>
+<span class="token key attr-name">max_connections</span><span class="token punctuation">=</span><span class="token value attr-value">1000</span>
+<span class="token key attr-name">default_authentication_plugin</span><span class="token punctuation">=</span><span class="token value attr-value">mysql_native_password</span>
+
+<span class="token key attr-name">disabled_storage_engines</span><span class="token punctuation">=</span><span class="token value attr-value">"<span class="token inner-value">MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY</span>"</span>
+<span class="token key attr-name">server_id</span><span class="token punctuation">=</span><span class="token value attr-value">1 # 2, 3</span>
+<span class="token key attr-name">gtid_mode</span><span class="token punctuation">=</span><span class="token value attr-value">ON</span>
+<span class="token key attr-name">enforce_gtid_consistency</span><span class="token punctuation">=</span><span class="token value attr-value">ON</span>
+<span class="token key attr-name">binlog_checksum</span><span class="token punctuation">=</span><span class="token value attr-value">NONE</span>
+<span class="token key attr-name">log_bin</span><span class="token punctuation">=</span><span class="token value attr-value">binlog</span>
+<span class="token key attr-name">log_replica_updates</span><span class="token punctuation">=</span><span class="token value attr-value">ON</span>
+
+<span class="token key attr-name">plugin_load_add</span><span class="token punctuation">=</span><span class="token value attr-value">'<span class="token inner-value">group_replication.so</span>'</span>
+<span class="token key attr-name">group_replication_group_name</span><span class="token punctuation">=</span><span class="token value attr-value">"<span class="token inner-value">aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa</span>"</span>
+<span class="token key attr-name">group_replication_start_on_boot</span><span class="token punctuation">=</span><span class="token value attr-value">off</span>
+<span class="token key attr-name">group_replication_local_address</span><span class="token punctuation">=</span> <span class="token value attr-value">"192.168.86.135:33061" # 134, 133</span>
+<span class="token key attr-name">group_replication_group_seeds</span><span class="token punctuation">=</span> <span class="token value attr-value">"<span class="token inner-value">192.168.86.135:33061,192.168.86.134:33061,192.168.86.133:33061</span>"</span>
+<span class="token key attr-name">group_replication_bootstrap_group</span><span class="token punctuation">=</span><span class="token value attr-value">off</span>
+<span class="token key attr-name">group_replication_ip_whitelist</span><span class="token punctuation">=</span><span class="token value attr-value">"<span class="token inner-value">192.168.86.0/24,127.0.0.1/8</span>"</span>
+<span class="token key attr-name">group_replication_single_primary_mode</span><span class="token punctuation">=</span><span class="token value attr-value">ON</span>
+<span class="token key attr-name">group_replication_enforce_update_everywhere_checks</span><span class="token punctuation">=</span><span class="token value attr-value">OFF</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">client</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">socket</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql.sock</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>改后我们重启一下mysqld服务，进入MySQL开始启动集群。在server1上初始化引导节点，（唯一）执行bootstrap。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/1.png" loading="lazy"></p>
+<p>在server2和server3上执行 <code>START GROUP_REPLICATION;</code> 加入集群，并查看一下状态 <code>SELECT * FROM performance_schema.replication_group_members;</code> ，发现集群搭建好啦。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/2.png" loading="lazy"></p>
+<p>单组模式启动后，如果server1有故障（比如server1的mysqld服务终止了），Primary会自动切换到server2或server3。<br>下面我们开始配置MySQL Router了。</p>
+<hr>
+<h2 id="二、MySQL路由器静态配置"><a href="#二、MySQL路由器静态配置" class="headerlink" title="二、MySQL路由器静态配置"></a>二、MySQL路由器静态配置</h2><h3 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>在前几节内容中，我们在底层成功搭建了组复制（三节点的集群）。但是，我们在应用的时候是很难记住这3个节点IP访问的（应用层）。<br>我们可以在高层架设一台“MySQL路由器”，让程序只需连接好路由器，路由器会自动把请求转发给后端的3台数据库。</p>
+<p>对于路由器（MySQL Router），它的上层是应用程序，下层是MGR组复制。<br>在这个实验里，我们通过MySQL Shell管理MGR，开设7001只读端口和7002读写端口。</p>
+<h3 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>新的server4做我们的路由器。我们先在server4上安装MySQL Router工具，修改对应的配置文件，将7001和7002两个端口的后端地址连接至集群节点。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/3.png" loading="lazy"></p>
+<p>具体的，端口文件内容为：</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">routing:ro</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">bind_address</span><span class="token punctuation">=</span><span class="token value attr-value">0.0.0.0</span>
+<span class="token key attr-name">bind_port</span><span class="token punctuation">=</span><span class="token value attr-value">7001</span>
+<span class="token key attr-name">destinations</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.135:3306,192.168.86.134:3306,192.168.86.133:3306</span>
+<span class="token key attr-name">routing_strategy</span><span class="token punctuation">=</span><span class="token value attr-value">round-robin</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">routing:rw</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">bind_address</span><span class="token punctuation">=</span><span class="token value attr-value">0.0.0.0</span>
+<span class="token key attr-name">bind_port</span><span class="token punctuation">=</span><span class="token value attr-value">7002</span>
+<span class="token key attr-name">destinations</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.135:3306</span>
+<span class="token key attr-name">routing_strategy</span><span class="token punctuation">=</span><span class="token value attr-value">first-available</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中，<code>bind_port</code> 是对外监听端口，<code>destinations</code> 是后端数据库节点的地址，<code>routing_strategy</code> 是访问的策略，在ro端口中，我们采用rr轮询，在rw端口中，采用首选可用。我们把 <code>[routing:ro]</code> 和 <code>[routing:rw]</code> 添加在配置文件最后面。</p>
+<p>接着，我们启动路由服务，安装mysql客户端工具mariadb（可以测试连接的路由），在MGR内部创建测试账号，就可以开始测试连接了。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/4.png" loading="lazy"></p>
+<p>在server4上登录只读端7001端口连接MySQL，发现成功进入。这里我跑去server1新建了一个新的test数据库，加了user_tb组，写了三组数据信息。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/5.png" loading="lazy"></p>
+<p>可以通过lsof工具，通过命令 <code>lsof -i :3306</code> 查看，连接到的服务器后端。显然的，如果是只读端，会被连接在server2或server3上，读写端只能去server1。<br>实时查看需要在 <code>lsof -i :3306</code> 前加上 <code>watch</code>。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/6.png" loading="lazy"></p>
+<hr>
+<h2 id="三、动态配置"><a href="#三、动态配置" class="headerlink" title="三、动态配置"></a>三、动态配置</h2><h3 id="（1）理解-2"><a href="#（1）理解-2" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>添加路由器有静态和动态，两种方式。<br>静态虽然在教学时，配置简单一点，容易理解一点，但生产几乎不用。静态的IP是被写死的，这样，主库换了，Router是不会感知到的，分配会出错。<br>动态Router不看IP，看的是连 InnoDB Cluster 的元数据。它能实时知道主库和从库，并自动分配读写权限给数据库。</p>
+<p>我们这个实验使用InnoDB Cluster元数据模式（像一个调度器），通过MySQL Shell自，动生成配置。</p>
+<h3 id="（2）实验-2"><a href="#（2）实验-2" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>来到server1，在primary节点创建集群管理员。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/7.png" loading="lazy"></p>
+<p>整理笔记的时候，可能是断网或者什么奇怪原因，单主模式又坏了。可恶啊。。。排错需要我们重启MySQL，清空之前的信息，重新将三个节点建立连接。</p>
+<p>回到server4，通过icadmin用户连接主节点的3306端口。让server4接管现有的MGR集群，并验证集群的状态。<br>第一次连接时，会让输入密码，我们设置的是westos。后面再连接时，就不用输啦。<br>在这里，我们要注意提前进行好server1和server4的域名解析。否则连接不上哒。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/8.png" loading="lazy"></p>
+<p>让它自动生成配置，重启服务，我们发现配置文件已经自动变化了。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/9.png" loading="lazy"></p>
+<p>这里的6446端口，是Primary读写端，6447是Secondary只读端。6448和6449是X Protocol忽略端口。<br>我们输入 <code>mysql -h192.168.86.154 -P6446 -ulkh -pwestos</code> 会自动分配到server1的读写端，可以进行写操作。连接6447端口，会分配到只读端。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/10.png" loading="lazy"></p>
+<p>恭喜你，已经掌握了两种路由部署的方法。下面升级，我们去看看生产上，MySQL Router高可用部署怎么搭建。</p>
+<hr>
+<h2 id="四、MySQL-Router-高可用与横向扩容"><a href="#四、MySQL-Router-高可用与横向扩容" class="headerlink" title="四、MySQL Router 高可用与横向扩容"></a>四、MySQL Router 高可用与横向扩容</h2><h3 id="（1）理解-3"><a href="#（1）理解-3" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>单个Router可能产生单点故障。我们再添加server5，并部署一个Router来避免单点故障。<br>我们想搭建一个DR模式的四层高可用负载均衡集群，于是又添加了三台机子，server6（LVS Master主调度器），server7（LVS Master备调度器）和server8。</p>
+<h3 id="（2）实验-3"><a href="#（2）实验-3" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>将域名解析在几台server上都配置好，server5上开始安装并引导第二个Router。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/11.png" loading="lazy"></p>
+<p>我们还用不到MySQL X protocol，可以先把配置文件中，相关参数删去。这里要保证我们的单组模式集群是好好开着的。<br>初始化完成，我们重启服务（可以将其设为开机自启）。</p>
+<p>来server6，从server1拷 <code>/usr/local/mysql/bin/mysql</code> 给 <code>server6:/usr/local/bin/</code>，下载mariasb，ipvsadm，keepalived。我们连接到server4（第一个Router）的6446和6447端口，发现都能访问成功。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/12.png" loading="lazy"></p>
+<p>将keepalived的配置文件修改为下面内容：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token operator">!</span> Configuration File <span class="token keyword">for</span> keepalived
+
+global_defs <span class="token punctuation">&#123;</span>
+   notification_email <span class="token punctuation">&#123;</span>
+        root@localhost
+   <span class="token punctuation">&#125;</span>
+   notification_email_from Keepalived@localhost
+   smtp_server <span class="token number">127.0</span>.0.1
+   smtp_connect_timeout <span class="token number">30</span>
+   router_id LVS_DEVEL
+   vrrp_skip_check_adv_addr
+   <span class="token comment">#vrrp_strict</span>
+   vrrp_garp_interval <span class="token number">0</span>
+   vrrp_gna_interval <span class="token number">0</span>
+<span class="token punctuation">&#125;</span>
+
+vrrp_instance VI_1 <span class="token punctuation">&#123;</span>
+    state MASTER
+    interface ens32
+    virtual_router_id <span class="token number">51</span>
+    priority <span class="token number">100</span>
+    advert_int <span class="token number">1</span>
+    authentication <span class="token punctuation">&#123;</span>
+        auth_type PASS
+        auth_pass <span class="token number">1111</span>
+    <span class="token punctuation">&#125;</span>
+    virtual_ipaddress <span class="token punctuation">&#123;</span>
+        <span class="token number">192.168</span>.86.100
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+virtual_server <span class="token number">192.168</span>.86.100 <span class="token number">6446</span> <span class="token punctuation">&#123;</span>
+    delay_loop <span class="token number">3</span>
+    lb_algo rr
+    lb_kind DR
+    persistence_timeout <span class="token number">300</span>
+    protocol TCP
+
+    real_server <span class="token number">192.168</span>.86.154 <span class="token number">6446</span> <span class="token punctuation">&#123;</span>
+        weight <span class="token number">1</span>
+        TCP_CHECK <span class="token punctuation">&#123;</span>
+            connect_timeout <span class="token number">3</span>
+            connect_port <span class="token number">6446</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    real_server <span class="token number">192.168</span>.86.155 <span class="token number">6446</span> <span class="token punctuation">&#123;</span>
+        weight <span class="token number">1</span>
+        TCP_CHECK <span class="token punctuation">&#123;</span>
+            connect_timeout <span class="token number">3</span>
+            connect_port <span class="token number">6446</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span>
+
+virtual_server <span class="token number">192.168</span>.86.100 <span class="token number">6447</span> <span class="token punctuation">&#123;</span>
+    delay_loop <span class="token number">3</span>
+    lb_algo rr
+    lb_kind DR
+    persistence_timeout <span class="token number">300</span>
+    protocol TCP
+
+    real_server <span class="token number">192.168</span>.86.154 <span class="token number">6447</span> <span class="token punctuation">&#123;</span>
+        weight <span class="token number">1</span>
+        TCP_CHECK <span class="token punctuation">&#123;</span>
+            connect_timeout <span class="token number">3</span>
+            connect_port <span class="token number">6447</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    real_server <span class="token number">192.168</span>.86.155 <span class="token number">6447</span> <span class="token punctuation">&#123;</span>
+        weight <span class="token number">1</span>
+        TCP_CHECK <span class="token punctuation">&#123;</span>
+            connect_timeout <span class="token number">3</span>
+            connect_port <span class="token number">6447</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>来到server7和server8，我们先下载软件ipvsadm，keepalived。将server6的配置文件拷贝过来。<br>在server7上，修改虚拟机为备用机，降低优先级。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/13.png" loading="lazy"></p>
+<p>下面我们在两个Router上配置后端服务器。为解决在LVS DR模式，经典的ARP冲突问题，我们要绑定集群的VIP并屏蔽ARP广播，保证负载均衡正常工作。<br>简单了解一下ARP冲突问题。一般地，调度器（server7&#x2F;server8）和所有后端 RS 都使绑定在同一个 VIP上的，若不做 ARP 屏蔽（不修改配置），客户端发 ARP 查 VIP，所有服务器都会争抢回复 ARP，流量会直接绕过 LVS 调度器，使负载均衡失效。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/14.png" loading="lazy"></p>
+<p>其实ARP抑制，主要是四个参数。</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token key attr-name">net.ipv4.conf.lo.arp_ignore</span> <span class="token punctuation">=</span> <span class="token value attr-value">1</span>
+<span class="token key attr-name">net.ipv4.conf.lo.arp_announce</span> <span class="token punctuation">=</span> <span class="token value attr-value">2</span>
+<span class="token key attr-name">net.ipv4.conf.all.arp_ignore</span> <span class="token punctuation">=</span> <span class="token value attr-value">1</span>
+<span class="token key attr-name">net.ipv4.conf.all.arp_announce</span> <span class="token punctuation">=</span> <span class="token value attr-value">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>给网卡ens32额外绑定到VIP 192.168.86.100（<code>ip addr add 192.168.86.100/24 dev ens32</code>），屏蔽入站针对 VIP 的 ARP 请求（不对外应答 VIP 的 ARP），并修改出站 ARP 包。将arptables规则保存到配置文件，使开机自动生效，重启后 ARP 屏蔽配置不会丢失。<br>这样，我们在调度器上用VIP就可以访问到后端了。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/15.png" loading="lazy"></p>
+<p>我们可以去server6里，通过 <code>ipvsadm -Ln</code> 和 <code>ipvsadm -Lnc</code> 查看调度的情况。</p>
+<p><img src="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/16.png" loading="lazy"></p>
+<p>停掉server6，VIP会自动漂移到server7，业务不会中断。</p>
+<blockquote>
+<p>Over</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/MySQL/" rel="tag">MySQL</a><a class="-none-link" href="/tags/mysqlrouter/" rel="tag">mysqlrouter</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>

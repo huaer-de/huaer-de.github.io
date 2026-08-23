@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>Lump架构-MySQL主从同步 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Lump架构-MySQL主从同步"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Lump架构-MySQL主从同步</h2>
+            <div class="post-meta">
+                <time class="date">2026.07.31</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="7-29-笔记：MySQL-源码编译与主从复制"><a href="#7-29-笔记：MySQL-源码编译与主从复制" class="headerlink" title="7.29 笔记：MySQL 源码编译与主从复制"></a>7.29 笔记：MySQL 源码编译与主从复制</h1><p>这次笔记整理的是7&#x2F;29内容，我们主要在一台源码编译的MySQL上，搭建单主单从的级联数据库架构。</p>
+<hr>
+<h2 id="一、MySQL-8-0-36-源码编译"><a href="#一、MySQL-8-0-36-源码编译" class="headerlink" title="一、MySQL 8.0.36 源码编译"></a>一、MySQL 8.0.36 源码编译</h2><h3 id="（1）能做什么"><a href="#（1）能做什么" class="headerlink" title="（1）能做什么"></a>（1）能做什么</h3><p>MySQL是一个关系型数据库管理系统（RDBMS），是我们通过SQL语言来查、存、改、删这些数据，方便我们管理数据信息。很多中小企业会有类似的基础的数据库架构。</p>
+<p>与内存Redis不同，缓存里的数据重启是容易丢失的。但MySQL会将数据存储在磁盘中，使数据被永久保存，给数据做持久化存储。</p>
+<p>搭建LAMP&#x2F;LNMP架构的核心是MySQL，我们安装好后可以通过phpMyAdmin验证环境是否跑通。</p>
+<h3 id="（2）上机实验"><a href="#（2）上机实验" class="headerlink" title="（2）上机实验"></a>（2）上机实验</h3><p><strong>1. 前期准备</strong></p>
+<p>我们前期需要去官网（<a target="_blank" rel="noopener" href="https://downloads.mysql.com/archives/community/%EF%BC%89">https://downloads.mysql.com/archives/community/）</a> 获取源码包，选择带<code>boost</code>集成版本的 <code>mysql-8.0.36-src.tar.gz</code>，版本为8.0.36，操作系统选择 <code>Source Code</code> 源代码，操作系统版本选择 <code>All</code> 全部。</p>
+<p>将压缩包上传到终端（直接拖到目录 <code>/root</code> 里）并解压，进入mysql目录，新建一个  <code>build</code> 文件夹是用来外部编译的。</p>
+<p>我们把源代码 <code>/root/mysql-8.0.36/</code>编译产生的所有中间文件，目标程序等，都放在 <code>build/</code> 里。使执行 <code>cmake...</code> 后，所有编译产生的垃圾文件不散落在源码文件，集合起来，方便管理。如果我们需要重新编译，需要清理残留的文件，只需要 <code>rm -f build/*</code> 一条命令。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/1.png" loading="lazy"></p>
+<p><strong>2. 安装依赖</strong></p>
+<p>为了让依赖下载的速度更快，我们可以更换yum源为阿里云。接着就要安装全部的依赖了，主要是 <code>cmake</code> 和 <code>gcc</code>。<code>cmake</code> 作为编译配置工具，相当于搭建编译框架，是一定要安装好的。</p>
+<p>我们把系统上之前cmake3旧版本删去，下载好新版本，并配置环境变量（把 <code>cmake</code> 命令加入系统，使终端能直接识别cmake指令）。最后可以通过 <code>cmake --version</code> 校验一下版本。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/2.png" loading="lazy"></p>
+<p>MySQL8.0的源代码，是用C++17写的，<code>gcc</code> 作为C&#x2F;C++的编译器，也必须要安装。CentOS7出厂的确自带着gcc4.8.5，但版本太低，最高只支持C++11，我们需要升级gcc。</p>
+<p>升级gcc之前，我们要安装软件源 <code>yum install -y centos-release-scl</code>。<code>centos-release-scl</code> 是一个Yum源配置包，安装好，系统会新增一套官方软件仓库地址（<code>CentOS-SCLo-scl.repo</code>），我们后面装的 <code>devtoolset-9-gcc</code> 和 <code>devtoolset-9-gcc-c++</code> 都来自SCL源（Software Collections，软件集合源）。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/3.png" loading="lazy"></p>
+<p>其余还需要安装 <code>make</code>（调用cmake生成文件，执行编译），<code>ncurses-devel</code>（终端交互库），<code>openssl-devel</code>（提供SSL加密，mysql登录、传输），<code>bison</code>（语法解析工具），<code>libtirpc-devel</code>（远程调用库，可选）。用到的命令是 <code>yum install -y cmake gcc gcc-c++ make ncurses-devel openssl-devel bison libtirpc-devel</code>，最后可以通过 <code>gcc -v</code> 和 <code>g++ -v</code> 检查一下版本。</p>
+<p><strong>3. cmake配置，编译安装</strong></p>
+<p>到这里，我们就可以CMake编译安装mysql了。进入创建的 <code>build</code> 目录，cmake编译配置（这条命令好长），编译（<code>make -j$(nproc)</code>，<code>make -j4</code>），安装（<code>make install</code>）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">cmake <span class="token punctuation">..</span> <span class="token punctuation">\</span>
+<span class="token parameter variable">-DCMAKE_C_COMPILER</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span><span class="token function">which</span> gcc<span class="token variable">)</span></span> <span class="token punctuation">\</span>
+<span class="token parameter variable">-DCMAKE_CXX_COMPILER</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span><span class="token function">which</span> g++<span class="token variable">)</span></span> <span class="token punctuation">\</span>
+<span class="token parameter variable">-DCMAKE_INSTALL_PREFIX</span><span class="token operator">=</span>/usr/local/mysql <span class="token punctuation">\</span>
+<span class="token parameter variable">-DMYSQL_DATADIR</span><span class="token operator">=</span>/data/mysql <span class="token punctuation">\</span>
+<span class="token parameter variable">-DSYSCONFDIR</span><span class="token operator">=</span>/etc/mysql <span class="token punctuation">\</span>
+<span class="token parameter variable">-DMYSQL_UNIX_ADDR</span><span class="token operator">=</span>/data/mysql/mysql.sock <span class="token punctuation">\</span>
+<span class="token parameter variable">-DMYSQL_TCP_PORT</span><span class="token operator">=</span><span class="token number">3306</span> <span class="token punctuation">\</span>
+<span class="token parameter variable">-DWITH_INNOBASE_STORAGE_ENGINE</span><span class="token operator">=</span><span class="token number">1</span> <span class="token punctuation">\</span>
+<span class="token parameter variable">-DWITH_BOOST</span><span class="token operator">=</span><span class="token punctuation">..</span>/boost/boost_1_77_0 <span class="token punctuation">\</span>
+<span class="token parameter variable">-DWITH_SSL</span><span class="token operator">=</span>system <span class="token punctuation">\</span>
+<span class="token parameter variable">-DDEFAULT_CHARSET</span><span class="token operator">=</span>utf8mb4 <span class="token punctuation">\</span>
+<span class="token parameter variable">-DDEFAULT_COLLATION</span><span class="token operator">=</span>utf8mb4_unicode_ci <span class="token punctuation">\</span>
+<span class="token parameter variable">-DWITH_SYSTEMD</span><span class="token operator">=</span><span class="token number">1</span> <span class="token punctuation">\</span>
+<span class="token parameter variable">-DWITH_DEBUG</span><span class="token operator">=</span><span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/4.png" loading="lazy"></p>
+<p>Two thousand years later…经过漫长的等待，我们终于编译好了。再经过安装，就可以进入数据库了（可能是由于之前给虚拟机分配的内存有点小，或者CPU分配数量不够，咋这么慢呢qwq）。</p>
+<p><strong>4. 初始化数据库，配置环境</strong></p>
+<p>安装好mysql，为了用 <code>service mysql start/stop</code> 直接管理它的启动停止，我们想把源码包自带的脚本复制到系统目录 <code>/etc/init.d/</code>，命名为 <code>mysql</code>。MySQL 8.0 虽然仍提供 <code>support-files/mysql.server</code>，但官方推荐使用 <code>systemd</code> 管理服务，因此我们选择直接编写 <code>mysqld.service</code> 单元文件。我们直接创建一个systemd服务单元文件，启停服务。在 <code>/usr/lib/systemd/system</code> 下，创建 <code>mysqld.service</code> 文件，写入：</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">Unit</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">Description</span><span class="token punctuation">=</span><span class="token value attr-value">MySQL Server</span>
+<span class="token key attr-name">Documentation</span><span class="token punctuation">=</span><span class="token value attr-value">man:mysqld(8)</span>
+<span class="token key attr-name">After</span><span class="token punctuation">=</span><span class="token value attr-value">network.target</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">Service</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">User</span><span class="token punctuation">=</span><span class="token value attr-value">mysql</span>
+<span class="token key attr-name">Group</span><span class="token punctuation">=</span><span class="token value attr-value">mysql</span>
+<span class="token key attr-name">ExecStart</span><span class="token punctuation">=</span><span class="token value attr-value">/usr/local/mysql/bin/mysqld --defaults-file=/etc/my.cnf</span>
+<span class="token comment">#ExecReload=/usr/local/mysql/bin/mysqladmin shutdown</span>
+<span class="token key attr-name">Restart</span><span class="token punctuation">=</span><span class="token value attr-value">on-failure</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">Install</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">WantedBy</span><span class="token punctuation">=</span><span class="token value attr-value">multi-user.target</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中，核心运行参数的含义是：MySQL进程以 <code>mysql</code> 用户运行，<code>ExecStart</code> 是真正启动命令，<code>ExecReload</code> 执行 <code>systemctl reload mysqld</code> 运行的命令（MySQL 不支持热重载全部配置，修改 <code>my.cnf</code> 需要重启），<code>Restart=on-failure</code> 当程序异常崩溃、意外退出时 <code>systemd</code> 自动重启MySQL。</p>
+<p>接着到了初始化数据库，并且配置环境。具体地，我们先创建运行用户 <code>mysql</code>，给他目录授权，初始化（初次执行 <code>mysqld --initialize --user=mysql</code>，会生成一个没有逻辑的mysql初始密码，我们暂时记录好他，为了方便后续改一个好记的密码 <code>westos</code>，或者 <code>grep &quot;temporary password&quot; /data/mysql/mysql-error.log</code> 过滤查看临时密码(这里路径根据实际情况哈)）</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/5.png" loading="lazy"></p>
+<p><strong>5. 安全加固（<code>mysql_secure_installation</code>）</strong></p>
+<p>启动mysql服务后，3306端口开始运行，进行安全初始化。在这里，我们可以先临时进入mysql，通过 <code>ALTER USER &#39;root&#39;@&#39;localhost&#39; IDENTIFIED BY &#39;westos&#39;;</code> 修改密码。进入mysql的命令是 <code>mysql -u(用户名) -p(密码)</code>，回车后输入密码。<code>-p</code> 也可以直接跟密码，但会被进程列表暴露，问题不大。再退出mysql交互界面，输入 <code>mysql_secure_installation</code> 进行初始化。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/6.png" loading="lazy"></p>
+<p>再次进入mysql，通过 <code>show databases;</code> 查看当前的数据库。数据库里可以存放多个数据表（Table）。</p>
+<p>现在能看到四个MySQL自带的系统库，分别是 <code>mysql</code> 核心库（存放账号、权限、密码等用户信息），<code>information_schema</code> 数据库元信息（记录所有表、字段等信息），<code>performance_schema</code> 服务器性能统计，和 <code>sys</code> 方便查看数据库运行状态。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/7.png" loading="lazy"></p>
+<p><strong>6. phpMyAdmin 部署</strong></p>
+<p>phpMyAdmin软件可以使我们通过Web界面管理MySQL，帮助我们验证 Nginx，PHP，MySQL三者的连通性。我们解压它，简化访问路径（改名），重启Nginx服务。这里我们需要改一下 <code>nginx.conf</code> 文件，在它的默认首页上放上 <code>index.php</code>，并打开 <code>location ~ \.php$</code> 语句块。再重启一下Nginx服务，然后修改 <code>php.ini</code> 中 <code>pdo_mysql.default_socket</code> 和 <code>mysqli.default_socket</code> 的值，指向MySQL的socket文件路径 <code>/data/mysql/mysql.sock</code>，然后重载 php-fpm，就可以在浏览器连接了。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/8.png" loading="lazy"></p>
+<p>这时候就有人要问了，那么好几行的注释，我们能不能一下子取消呢？其实是可以的。我们进入vim编辑界面（默认的普通模式），按 <code>Shift+V</code>（进入行可视化模式），鼠标移动到第一个需要取消的 <code>#</code> 上，方向键 <code>↓</code> 选中所有需要注释的代码，按 <code>Shift+i</code>（大写I），输 <code>d</code>，就把这一列的 <code>#</code> 删完了。想一下子加上注释，输 <code>#</code>，按 <code>Esc</code> 再等一下下，就好啦。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/9.png" loading="lazy"></p>
+<p>在首页输入用户名 <code>root</code> 和密码就进来啦。可以在这里看到数据库。</p>
+<hr>
+<h2 id="二、MySQL-主从复制"><a href="#二、MySQL-主从复制" class="headerlink" title="二、MySQL 主从复制"></a>二、MySQL 主从复制</h2><h3 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>单台server机子的MySQL可能会出错，我们可以多来几台server，让它们自动抄写server1的数据，将它们变成可备份、可扩容的存储集群。即从库（Slave）会会把主库（Master）干的活重新再干一边，但只有主库是写数据的，从库只抄（只读）。</p>
+<p>从库起两个IO和SQL两个线程，IO 线程负责“连主库 → 拉 <code>binlog</code>（二进制日志） → 写到本机 <code>relay log</code>”，SQL 线程负责“读 <code>relay log</code> → 解析成 SQL&#x2F;行事件 → 在从库执行”。理想情况下，从库执行完，数据就和主库一致了。简单说，IO负责连接，SQL负责数据内容。</p>
+<p>我们最终想达到 <code>server1 → server2 → server3</code> 的链式效果，server2既是slave又是master。主库不用直接连多个从库，可以减轻压力。这时候要注意，三个节点的数据必须完全一致，我们要通过 <code>mysqldump</code> 将它们同步起来。</p>
+<h3 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h3><p><strong>1. 基本配置</strong></p>
+<p>实现文件的同步，进入server1（主节点）并启动mysqld服务，将server1的 <code>/usr/local/mysql</code> 程序目录、<code>/etc/mysql</code> 配置文件、<code>systemd</code> 启动脚本、<code>.bash_profile</code> 环境变量都拷贝到新服务器server2上。这需要server2安装好 <code>rsync</code> 服务。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/10.png" loading="lazy"></p>
+<p>在从库server2上配置 <code>server_id</code>，指定主库信息，启动复制线程。创建用户和空目录 <code>/data/mysql</code>，修正目录权限 <code>mysql:mysql</code>，执行初始化命令，生成全新数据目录。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/11.png" loading="lazy"></p>
+<p>这里我们发现，初始化的 <code>mysqld --initialize</code> 执行失败了，我们回到配置文件看看。<code>mysqld --initialize</code> 只负责初始化数据字典和系统表，不加载组复制插件，识别不了 <code>group_replication_*</code> 系列参数。我们应该：先初始化→启动MySQL→<code>INSTALL PLUGIN group_replication SONAME &#39;group_replication.so&#39;</code>→再启用相关参数。简单说，把 <code>group_replication_*</code> 全部注释就能启动啦。等后续要数据库初始化完成、启动成功之后，再恢复启用组复制。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/12.png" loading="lazy"></p>
+<p>和之前主库类似地，我们进行安全初始化并修改密码后，就可以进入mysql交互界面了。我们配置一下GTID的主从，连接上主库，查看slave的状态，看到 <code>Slave_IO_Running</code> 和 <code>Slave_SQL_Running</code> 都是 <code>Yes</code>，就连接成功啦。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/13.png" loading="lazy"></p>
+<p>配置最后，这里有两种位点可选，分别是 <code>MASTER_AUTO_POSITION=1</code>（GTID 自动位点）和 <code>MASTER_LOG_FILE</code>+<code>MASTER_LOG_POS</code>（传统位点），两者互斥。</p>
+<p>我们确认一下文件</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">mysqld</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">basedir</span><span class="token punctuation">=</span><span class="token value attr-value">/usr/local/mysql</span>
+<span class="token key attr-name">datadir</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql</span>
+<span class="token key attr-name">socket</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql.sock</span>
+<span class="token key attr-name">port</span><span class="token punctuation">=</span><span class="token value attr-value">3306</span>
+<span class="token key attr-name">user</span><span class="token punctuation">=</span><span class="token value attr-value">mysql</span>
+<span class="token key attr-name">pid-file</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql.pid</span>
+<span class="token key attr-name">character-set-server</span><span class="token punctuation">=</span><span class="token value attr-value">utf8mb4</span>
+<span class="token key attr-name">collation-server</span><span class="token punctuation">=</span><span class="token value attr-value">utf8mb4_unicode_ci</span>
+<span class="token key attr-name">log-error</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql-error.log</span>
+<span class="token key attr-name">innodb_buffer_pool_size</span><span class="token punctuation">=</span><span class="token value attr-value">1G</span>
+<span class="token key attr-name">max_connections</span><span class="token punctuation">=</span><span class="token value attr-value">1000</span>
+
+<span class="token key attr-name">log-bin</span><span class="token punctuation">=</span><span class="token value attr-value">mysql-bin</span>
+<span class="token key attr-name">server-id</span><span class="token punctuation">=</span><span class="token value attr-value">1</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">client</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">socket</span><span class="token punctuation">=</span><span class="token value attr-value">/data/mysql/mysql.sock</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们先用传统位点来配置。在主库进入MySQL交互界面，输入 <code>show master status;</code> 查看 <code>File</code> 和 <code>Position</code> 给到从库。传统位点复制依赖 <code>MASTER_LOG_FILE</code> + <code>MASTER_LOG_POS</code>，要求主从数据起点一致；GTID 复制通过全局事务 ID 自动定位，但前提是主库开启了 <code>gtid_mode=ON</code>。无论哪种模式，<code>server_id</code> 必须唯一，且从库数据必须与主库在某个时间点保持一致，否则 SQL 线程会报错。</p>
+<p>先在主库创建复制用户。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/14.png" loading="lazy"></p>
+<p>从库是这样配的。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/15.png" loading="lazy"></p>
+<p>这里看到IP变了，可能是由于DHCP自动分配地址。但没事，我们重连，重配一下就好啦。这个还是比较麻烦的，改了很久。下面，我们再用GTID自动复制来一下吧qwq。</p>
+<p><strong>2. 数据同步测试</strong></p>
+<p>去浏览器上访问主库的网页，在里面新建了一个 <code>test</code> 数据库，插入 <code>users</code> 表，在表里插入了两组信息。但其实在主库的MySQL界面用命令行插入信息也可以。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/16.png" loading="lazy"></p>
+<p>进入从库访问MySQL，发现能看到信息，即从库配好啦。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/17.png" loading="lazy"></p>
+<p><strong>3. 线性复制</strong></p>
+<p>我们再搭建一个server3从库，达到 <code>server1 → server2 → server3</code> 的链式效果。这时，server2 既是slave又是master了，其中最关键的一步是 <code>log_slave_updates=ON</code>，没有这个参数，server2 不会把自己从 server1 收到的 binlog 再写到自己的 binlog 里，server3 什么都拉不到。可以说，这是级联复制的灵魂参数。这里由于之前配过GTID，我们配置前先停止GTID服务再连接。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/18.png" loading="lazy"></p>
+<p>在主库上新建内容，发现从库server3读取到啦。但是这次的mysql复制是增量同步，复制只会从指定的 binlog 位置（或 GTID 集合）开始回放，之前的历史数据不会自动同步。如果想同步历史数据，必须在搭建复制前通过 <code>mysqldump</code> 做全量备份并导入从库，使主从数据在某个时间点达成一致。具体地，这需要我们在原始主库（server1）上，锁表导出全量备份，将 <code>all.sql</code> 导入server3。</p>
+<p><img src="/2026/07/31/Lump%E6%9E%B6%E6%9E%84-MySQL%E4%B8%BB%E4%BB%8E%E5%90%8C%E6%AD%A5/19.png" loading="lazy"></p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/08/02/MySQL%E5%8A%A0%E5%9B%BA%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">MySQL加固主从复制</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/07/28/Lnmp%E6%9E%B6%E6%9E%84%E4%B8%8ENginx%E7%AE%A1%E7%90%86/">Lnmp架构与Nginx管理</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/CentOS/" rel="tag">CentOS</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" rel="tag">Lnmp架构</a><a class="-none-link" href="/tags/MySQL/" rel="tag">MySQL</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>
