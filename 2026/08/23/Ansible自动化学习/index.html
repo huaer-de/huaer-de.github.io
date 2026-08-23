@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>Ansible自动化学习 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Ansible自动化学习"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Ansible自动化学习</h2>
+            <div class="post-meta">
+                <time class="date">2026.08.23</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="Ansible自动化运维学习笔记"><a href="#Ansible自动化运维学习笔记" class="headerlink" title="Ansible自动化运维学习笔记"></a>Ansible自动化运维学习笔记</h1><p>从8.13下午的某一分钟开始，我们开始学习自动化运维，似乎也是最后的一大节内容了。嗯……最近几天学习没有那么认真了，还是得调整一下qwq，哎。人生啊。。。。。。</p>
+<p>我们从Ansible自动化开始学起。这篇笔记，我们一起走进Ansible。</p>
+<h2 id="一、Ansible环境搭建"><a href="#一、Ansible环境搭建" class="headerlink" title="一、Ansible环境搭建"></a>一、Ansible环境搭建</h2><h3 id="1-理解"><a href="#1-理解" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>Ansible是一个自动化工具，或者说，它是一个能指挥机器的”遥控器”。我们在自己的电脑上（控制机）写好命令或说明书（Playbook），Ansible就会自动地通过SSH帮我们做完命令。</p>
+<p>初次听到这个说法，感觉和AI的智能体蛮像的。嗯…很小白的想法，两者毫无关系。对于AI，它有一个基本的能力，是有自己的”大脑”，完成任务时，会推理，同样的任务，最终会生成不一样的效果。甚至我们有时候说”听不懂话的’豆包’”，也是因为它会自己思考，能够自作主张。但是自动化只是”把重复的手工操作，变成固定代码去执行”，没有所谓的”智能”。</p>
+<p>Ansible是确定性的运维。相关的同类工具还有SaltStack、Puppet，它依赖的技术有Python（编程语言）、SSH（网络协议）、YAML（配置文件格式），适合给服务器装软件、改配置、批量重启。</p>
+<h3 id="2-实验环境准备"><a href="#2-实验环境准备" class="headerlink" title="2. 实验环境准备"></a>2. 实验环境准备</h3><p>我新开了一个Rocky9的虚拟机，启动了<code>dnf update</code>后，启动菜单多核选择界面多了一个Rocky9.8的启动项。选择它，重新修改&#x2F;boot&#x2F;loader&#x2F;entries&#x2F;下面的配置文件，添加<code>net.ifnames=0</code>，禁止systemd使用可预测的网卡名，这样网卡的名字就规律地变成eth0，eth1……了（在这里还是浅浅有点后悔，最开始的Rocky9.6，应该给它的磁盘空间放的更大一点，毕竟，克隆后的新虚拟机，是不能调整最初的磁盘空间大小的）。</p>
+<p>在这台虚拟机的基础上，克隆server1和server2，再添加CentOS7的server3。我们将通过server1的剧本，控制server2和server3。</p>
+<p>来到server1，我们安装好Ansible，安装epel-release和ansible（因为Rocky9默认仓库中，没有ansible，我们先启用Extra Packages for Enterprise Linux源），并为server2和server3配置SSH免密登录，设置静态IP。</p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/1.png" loading="lazy"></p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/2.png" loading="lazy"></p>
+<p>下面，我们要创建一个存放主机清单的目录，<code>mkdir -p ~/ansible_project/inventory</code>，编辑主机清单文件，存放web服务器。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@server1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p ~/ansible_project</span>
+<span class="token punctuation">[</span>root@server1 ~<span class="token punctuation">]</span><span class="token comment"># cd ~/ansible_project</span>
+<span class="token punctuation">[</span>root@server1 ansible_project<span class="token punctuation">]</span><span class="token comment"># vim inventory</span>
+<span class="token punctuation">[</span>root@server1 ansible_project<span class="token punctuation">]</span><span class="token comment"># cat inventory</span>
+<span class="token comment"># ~/ansible_project/inventory</span>
+<span class="token punctuation">[</span>web_servers<span class="token punctuation">]</span>
+server2 <span class="token assign-left variable">ansible_host</span><span class="token operator">=</span><span class="token number">192.168</span>.86.132
+node1 <span class="token assign-left variable">ansible_host</span><span class="token operator">=</span><span class="token number">192.168</span>.86.187<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们可以通过<code>ansible -i inventory all -m ping</code>，再测试一下连通性。</p>
+<p>如果是第一次测试连通性，可能出现下面的警告。</p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/3.png" loading="lazy"></p>
+<p>这是因为server1从未通过SSH连接过node1，系统无法确认它的身份，我们先连接一下node1，或者在ansible.cfg中设置<code>host_key_checking = False</code>，都可以解决这个问题。</p>
+<p>我们在此连接，返回pong，成功连通。</p>
+<h2 id="二、Playbook部署Apache"><a href="#二、Playbook部署Apache" class="headerlink" title="二、Playbook部署Apache"></a>二、Playbook部署Apache</h2><h3 id="1-理解-1"><a href="#1-理解-1" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>我们将通过编写一个Ansible Playbook，在server2和node1上安装并启动Apache HTTP服务。我们先了解Playbook的基础结构。</p>
+<p>Playbook有四个核心组成部分：</p>
+<ul>
+<li><strong>目标主机（hosts）</strong>：指定在哪些主机上执行任务</li>
+<li><strong>任务列表（tasks）</strong>：实际执行的操作序列</li>
+<li><strong>处理器（handlers）</strong>：在任务触发时执行的特殊操作（如重启服务）</li>
+<li><strong>变量（vars）</strong>：可复用的配置参数</li>
+</ul>
+<p>Playbook采用YAML格式，核心语法要点：</p>
+<ul>
+<li>文件以<code>---</code>（三个短横线）开头</li>
+<li>缩进使用空格（推荐2个空格），不能混用Tab</li>
+<li>列表项以<code>-</code>加空格开头</li>
+<li>键值对以<code>:</code>加空格分隔</li>
+</ul>
+<h3 id="2-实验"><a href="#2-实验" class="headerlink" title="2. 实验"></a>2. 实验</h3><p>在ansible_project下创建<code>apache.yml</code>文件。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 部署Apache Web服务器
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> web_servers
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">vars</span><span class="token punctuation">:</span>
+    <span class="token key atrule">http_port</span><span class="token punctuation">:</span> <span class="token number">80</span>
+    <span class="token key atrule">server_admin</span><span class="token punctuation">:</span> admin@example.com
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 安装httpd包
+      <span class="token key atrule">yum</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> httpd
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 确保firewalld服务已启动
+      <span class="token key atrule">service</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> firewalld
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> started
+        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> yes
+      <span class="token key atrule">when</span><span class="token punctuation">:</span> ansible_facts<span class="token punctuation">[</span><span class="token string">'os_family'</span><span class="token punctuation">]</span> == "RedHat"
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 复制自定义首页
+      <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          &lt;h1>Welcome to &#123;&#123; ansible_hostname &#125;&#125;&lt;/h1>
+          &lt;p>This server is managed by Ansible.&lt;/p>
+          &lt;p>Server IP: &#123;&#123; ansible_default_ipv4.address &#125;&#125;&lt;/p></span>
+        <span class="token key atrule">dest</span><span class="token punctuation">:</span> /var/www/html/index.html
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> root
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> root
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0644'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 启动并启用httpd服务
+      <span class="token key atrule">service</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> httpd
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> started
+        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> yes
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 配置防火墙允许HTTP访问
+      <span class="token key atrule">firewalld</span><span class="token punctuation">:</span>
+        <span class="token key atrule">service</span><span class="token punctuation">:</span> http
+        <span class="token key atrule">permanent</span><span class="token punctuation">:</span> yes
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> enabled
+        <span class="token key atrule">immediate</span><span class="token punctuation">:</span> yes
+      <span class="token key atrule">when</span><span class="token punctuation">:</span> ansible_facts<span class="token punctuation">[</span><span class="token string">'os_family'</span><span class="token punctuation">]</span> == "RedHat"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>接着，我们可以通过<code>ansible-playbook -i inventory apache.yml --syntax-check</code>检查一下语法，没问题的话，就开始运行吧。下面的截图是第二次运行剧本的效果啦。</p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/4.png" loading="lazy"></p>
+<p>这里执行剧本结束，发现所有的任务都是绿色ok状态，而不是changed，这是Ansible的幂等性在起作用。执行剧本前，先检查一下当前的系统状态，如果已经符合期望状态，就不会重复执行不必要的操作。</p>
+<p>如果害怕运行出错，我们可以在运行命令中加上<code>-C</code>来模拟执行。我们在虚拟机中，害怕出错的话，其实多加快照比较方便。</p>
+<p>我们验证一下部署的结果。</p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/5.png" loading="lazy"></p>
+<p>部署成功啦，好耶。</p>
+<h2 id="三、Playbook中的变量与事实"><a href="#三、Playbook中的变量与事实" class="headerlink" title="三、Playbook中的变量与事实"></a>三、Playbook中的变量与事实</h2><h3 id="1-理解-2"><a href="#1-理解-2" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>Ansible中有很多变量，它们组成了一个变量系统，包括内置Facts变量、自定义变量以及不同作用域的变量使用。</p>
+<p>常见的Facts变量如下：</p>
+<table>
+<thead>
+<tr>
+<th>Facts变量</th>
+<th>说明</th>
+<th>示例值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ansible_hostname</td>
+<td>主机名</td>
+<td>server2</td>
+</tr>
+<tr>
+<td>ansible_fqdn</td>
+<td>完整域名</td>
+<td>server2.example.com</td>
+</tr>
+<tr>
+<td>ansible_default_ipv4.address</td>
+<td>默认网卡的IP地址</td>
+<td>192.168.86.132</td>
+</tr>
+<tr>
+<td>ansible_os_family</td>
+<td>操作系统家族</td>
+<td>RedHat</td>
+</tr>
+<tr>
+<td>ansible_distribution</td>
+<td>发行版名称</td>
+<td>Rocky</td>
+</tr>
+<tr>
+<td>ansible_distribution_version</td>
+<td>发行版版本</td>
+<td>9.0</td>
+</tr>
+<tr>
+<td>ansible_processor_vcpus</td>
+<td>CPU核心数</td>
+<td>2</td>
+</tr>
+<tr>
+<td>ansible_memtotal_mb</td>
+<td>总内存(MB)</td>
+<td>4096</td>
+</tr>
+<tr>
+<td>ansible_memory_mb.real.free</td>
+<td>可用内存(MB)</td>
+<td>2048</td>
+</tr>
+<tr>
+<td>ansible_architecture</td>
+<td>系统架构</td>
+<td>x86_64</td>
+</tr>
+</tbody></table>
+<p>这个小节，我们将通过一个实际场景来学习Ansible中的变量：为每台Web服务器配置个性化的配置文件。</p>
+<h3 id="2-实验-1"><a href="#2-实验-1" class="headerlink" title="2. 实验"></a>2. 实验</h3><p>Ansible在执行Playbook时会自动收集受控节点的系统信息，这些信息称为Facts。我们可以使用setup模块来查看所有Facts：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 在 server1 (192.168.86.131) 的 ~/ansible_project 目录下执行</span>
+<span class="token comment"># 查看server2的所有Facts信息</span>
+ansible <span class="token parameter variable">-i</span> inventory server2 <span class="token parameter variable">-m</span> setup
+
+<span class="token comment"># 过滤查看特定信息</span>
+ansible <span class="token parameter variable">-i</span> inventory server2 <span class="token parameter variable">-m</span> setup <span class="token parameter variable">-a</span> <span class="token string">"filter=ansible_memory_mb"</span>
+ansible <span class="token parameter variable">-i</span> inventory server2 <span class="token parameter variable">-m</span> setup <span class="token parameter variable">-a</span> <span class="token string">"filter=ansible_processor"</span>
+ansible <span class="token parameter variable">-i</span> inventory server2 <span class="token parameter variable">-m</span> setup <span class="token parameter variable">-a</span> <span class="token string">"filter=ansible_default_ipv4"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>执行完第一条语句，下面会出现好多的信息，查看信息时，过滤会方便一点。</p>
+<p>创建一个<code>facts_demo.yml</code>，写入下面的内容：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 演示Facts变量的使用
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> web_servers
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">gather_facts</span><span class="token punctuation">:</span> yes
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建包含系统信息的文件
+      <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          # 系统信息报告
+          主机名: &#123;&#123; ansible_hostname &#125;&#125;
+          操作系统: &#123;&#123; ansible_distribution &#125;&#125; &#123;&#123; ansible_distribution_version &#125;&#125;
+          内核版本: &#123;&#123; ansible_kernel &#125;&#125;
+          CPU核心数: &#123;&#123; ansible_processor_vcpus &#125;&#125;
+          总内存: &#123;&#123; ansible_memtotal_mb &#125;&#125; MB
+          可用内存: &#123;&#123; ansible_memory_mb.real.free &#125;&#125; MB
+          IP地址: &#123;&#123; ansible_default_ipv4.address &#125;&#125;</span>
+        <span class="token key atrule">dest</span><span class="token punctuation">:</span> /tmp/system_info.txt
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> root
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> root
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0644'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 根据操作系统安装不同包
+      <span class="token key atrule">package</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> net<span class="token punctuation">-</span>tools
+          <span class="token punctuation">-</span> vim<span class="token punctuation">-</span>enhanced
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+      <span class="token key atrule">when</span><span class="token punctuation">:</span> ansible_os_family == "RedHat"
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 根据内存大小调整swappiness
+      <span class="token key atrule">sysctl</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> vm.swappiness
+        <span class="token key atrule">value</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; (ansible_memtotal_mb / 1024) &lt; 4 | int and 10 or 30 &#125;&#125;"</span>
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+        <span class="token key atrule">reload</span><span class="token punctuation">:</span> yes<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>简单理解一下这条剧本。</p>
+<p><code>gather_facts: yes</code>表示显式开启Facts收集（默认就是yes），第一个任务使用copy模块的content参数创建文件，其中大量使用了Facts变量；</p>
+<p>第二个任务使用package模块（通用包管理模块，自动适配不同发行版），条件判断<code>when: ansible_os_family == &quot;RedHat&quot;</code>确保只在RedHat系列系统执行；</p>
+<p>第三个任务使用sysctl模块调整内核参数，使用了条件表达式根据内存大小设置不同值。</p>
+<p>执行剧本，验证一下效果，发现&#x2F;tmp&#x2F;system_info.txt文件里写入了很多变量信息。</p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/6.png" loading="lazy"></p>
+<p>下面，我们试试自定义变量。</p>
+<p><strong>第一种方式，我们可以直接在Playbook中定义变量vars。</strong> 演示一个示例吧。</p>
+<p>先创建一个使用自定义变量的Playbook <code>custom_vars.yml</code>，写入下面内容：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 演示自定义变量
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> web_servers
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">vars</span><span class="token punctuation">:</span>
+    <span class="token key atrule">app_name</span><span class="token punctuation">:</span> myapp
+    <span class="token key atrule">app_port</span><span class="token punctuation">:</span> <span class="token number">8080</span>
+    <span class="token key atrule">app_user</span><span class="token punctuation">:</span> appuser
+    <span class="token key atrule">app_directory</span><span class="token punctuation">:</span> /opt/<span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span> app_name <span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建应用程序用户
+      <span class="token key atrule">user</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_user &#125;&#125;"</span>
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+        <span class="token key atrule">system</span><span class="token punctuation">:</span> yes
+        <span class="token key atrule">create_home</span><span class="token punctuation">:</span> no
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建应用程序目录
+      <span class="token key atrule">file</span><span class="token punctuation">:</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_directory &#125;&#125;"</span>
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> directory
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_user &#125;&#125;"</span>
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_user &#125;&#125;"</span>
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0755'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建应用配置文件
+      <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          APP_NAME=&#123;&#123; app_name &#125;&#125;
+          APP_PORT=&#123;&#123; app_port &#125;&#125;
+          APP_USER=&#123;&#123; app_user &#125;&#125;</span>
+        <span class="token key atrule">dest</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_directory &#125;&#125;/app.conf"</span>
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_user &#125;&#125;"</span>
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_user &#125;&#125;"</span>
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0644'</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>运行结果是正常的。</p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/7.png" loading="lazy"></p>
+<p><strong>第二种方式，我们可以在inventory文件中定义主机变量和组变量。</strong> 修改inventory文件，添加变量，效果如下。</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">web_servers</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">server2 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.132 http_port=8080 server_role=backend</span>
+<span class="token key attr-name">node1 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.187 http_port=8000 server_role=backend</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">web_servers:vars</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">ntp_server</span><span class="token punctuation">=</span><span class="token value attr-value">pool.ntp.org</span>
+<span class="token key attr-name">timezone</span><span class="token punctuation">=</span><span class="token value attr-value">Asia/Shanghai</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">all:vars</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">ansible_user</span><span class="token punctuation">=</span><span class="token value attr-value">root</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>第三种方式，我们可以使用独立的变量文件。</strong></p>
+<p>比如我们可以创建一个<code>vars</code>目录，里面写入<code>common.yml</code>变量文件：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token comment"># 公共变量 - 所有环境共享</span>
+<span class="token key atrule">app_name</span><span class="token punctuation">:</span> myapp
+<span class="token key atrule">app_user</span><span class="token punctuation">:</span> appuser
+<span class="token key atrule">log_level</span><span class="token punctuation">:</span> info
+<span class="token key atrule">timezone</span><span class="token punctuation">:</span> Asia/Shanghai
+
+<span class="token comment"># 默认端口配置</span>
+<span class="token key atrule">default_http_port</span><span class="token punctuation">:</span> <span class="token number">80</span>
+<span class="token key atrule">default_https_port</span><span class="token punctuation">:</span> <span class="token number">443</span>
+
+<span class="token comment"># 日志配置</span>
+<span class="token key atrule">log_retention_days</span><span class="token punctuation">:</span> <span class="token number">30</span>
+<span class="token key atrule">log_rotation_size</span><span class="token punctuation">:</span> 100M
+
+<span class="token comment"># 备份配置</span>
+<span class="token key atrule">backup_enabled</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token key atrule">backup_path</span><span class="token punctuation">:</span> /backup<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>再创建使用变量文件的Playbook <code>use_vars_file.yml</code>，写入：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 使用外部变量文件
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> web_servers
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">vars_files</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> vars/common.yml
+  <span class="token key atrule">vars</span><span class="token punctuation">:</span>
+    <span class="token comment"># Playbook中定义的变量会覆盖vars_files中的同名变量</span>
+    <span class="token key atrule">log_level</span><span class="token punctuation">:</span> debug
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示变量值（调试用）
+      <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+        <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          app_name: &#123;&#123; app_name &#125;&#125;
+          app_user: &#123;&#123; app_user &#125;&#125;
+          log_level: &#123;&#123; log_level &#125;&#125;
+          http_port: &#123;&#123; http_port | default('未定义') &#125;&#125;
+          server_role: &#123;&#123; server_role | default('未定义') &#125;&#125;</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建应用用户
+      <span class="token key atrule">user</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; app_user &#125;&#125;"</span>
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>执行剧本后，成功创建了应用用户。</p>
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/8.png" loading="lazy"></p>
+<p>三种方式就讲完啦。</p>
+<p><strong>我们可以使用register注册任务输出。</strong> 有时我们需要获取任务的执行结果，register关键字可以将任务输出保存到变量中。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 演示register用法
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> web_servers
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 检查是否已安装httpd
+      <span class="token key atrule">package</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> httpd
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+      <span class="token key atrule">register</span><span class="token punctuation">:</span> httpd_install_result
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示安装结果
+      <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+        <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token string">"httpd安装状态: &#123;&#123; httpd_install_result.changed &#125;&#125;"</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 获取系统日期
+      <span class="token key atrule">command</span><span class="token punctuation">:</span> date +%Y<span class="token punctuation">-</span>%m<span class="token punctuation">-</span>%d
+      <span class="token key atrule">register</span><span class="token punctuation">:</span> current_date
+      <span class="token key atrule">changed_when</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建带日期的文件
+      <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">content</span><span class="token punctuation">:</span> <span class="token string">"报告生成日期: &#123;&#123; current_date.stdout &#125;&#125;"</span>
+        <span class="token key atrule">dest</span><span class="token punctuation">:</span> /tmp/report_<span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span> current_date.stdout <span class="token punctuation">&#125;</span><span class="token punctuation">&#125;</span>.txt<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在这个剧本里，有几个关键词可以注意一下。</p>
+<table>
+<thead>
+<tr>
+<th>关键字&#x2F;属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>register</td>
+<td>将任务输出保存到变量</td>
+</tr>
+<tr>
+<td>.changed</td>
+<td>任务是否改变了系统状态</td>
+</tr>
+<tr>
+<td>.stdout</td>
+<td>命令的标准输出</td>
+</tr>
+<tr>
+<td>.stderr</td>
+<td>命令的错误输出</td>
+</tr>
+<tr>
+<td>.rc</td>
+<td>命令的返回码</td>
+</tr>
+<tr>
+<td>changed_when: false</td>
+<td>标记该任务不会改变系统状态</td>
+</tr>
+</tbody></table>
+<p>现在我们将综合运用所学知识，创建一个更完善的网站部署Playbook吧。</p>
+<h2 id="四、使用Jinja2模板管理配置文件"><a href="#四、使用Jinja2模板管理配置文件" class="headerlink" title="四、使用Jinja2模板管理配置文件"></a>四、使用Jinja2模板管理配置文件</h2><h3 id="1-理解-3"><a href="#1-理解-3" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>本实验的目标是学习使用template模块和Jinja2模板语言，实现配置文件的动态生成。我们将为每台服务器生成个性化的Apache虚拟主机配置文件。</p>
+<p>我们先了解一下template模块和Jinja2语言。</p>
+<p>Templates模板是一个文本文件，嵌套有脚本（使用模板编程语言编写）。Jinja2是python的一种模板语言，以Django的模板语言为原本。Jinja2模板包含着变量和逻辑控制语句，Ansible在执行时会将其渲染为最终的配置文件。</p>
+<p>这些模板文件有一些约定：文件通常放在<code>templates/</code>目录下，文件扩展名通常为<code>.j2</code>，使用<code>&#123;&#123; variable &#125;&#125;</code>引用变量，使用<code>&#123;% statement %&#125;</code>执行控制语句（if、for等）。我们从实验中，深入学习一下。</p>
+<h3 id="2-实验-2"><a href="#2-实验-2" class="headerlink" title="2. 实验"></a>2. 实验</h3><p>创建templates文件夹，写入<code>site_index.j2</code>文件。</p>
+<pre class="line-numbers language-django" data-language="django"><code class="language-django"><span class="token doctype"><span class="token punctuation">&lt;!</span><span class="token doctype-tag">DOCTYPE</span> <span class="token name">html</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>html</span> <span class="token attr-name">lang</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>zh-CN<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>head</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta</span> <span class="token attr-name">charset</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>UTF-8<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta</span> <span class="token attr-name">name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>viewport<span class="token punctuation">"</span></span> <span class="token attr-name">content</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>width=device-width, initial-scale=1.0<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>title</span><span class="token punctuation">></span></span><span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">site_title</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'我的网站'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>title</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>style</span><span class="token punctuation">></span></span><span class="token style"><span class="token language-css">
+        <span class="token selector">body</span> <span class="token punctuation">&#123;</span>
+            <span class="token property">font-family</span><span class="token punctuation">:</span> <span class="token string">"Microsoft YaHei"</span><span class="token punctuation">,</span> sans-serif<span class="token punctuation">;</span>
+            <span class="token property">max-width</span><span class="token punctuation">:</span> 800px<span class="token punctuation">;</span>
+            <span class="token property">margin</span><span class="token punctuation">:</span> 50px auto<span class="token punctuation">;</span>
+            <span class="token property">padding</span><span class="token punctuation">:</span> 20px<span class="token punctuation">;</span>
+            <span class="token property">background</span><span class="token punctuation">:</span> #f5f5f5<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token selector">.card</span> <span class="token punctuation">&#123;</span>
+            <span class="token property">background</span><span class="token punctuation">:</span> white<span class="token punctuation">;</span>
+            <span class="token property">border-radius</span><span class="token punctuation">:</span> 10px<span class="token punctuation">;</span>
+            <span class="token property">padding</span><span class="token punctuation">:</span> 30px<span class="token punctuation">;</span>
+            <span class="token property">box-shadow</span><span class="token punctuation">:</span> 0 2px 10px <span class="token function">rgba</span><span class="token punctuation">(</span>0<span class="token punctuation">,</span>0<span class="token punctuation">,</span>0<span class="token punctuation">,</span>0.1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token selector">h1</span> <span class="token punctuation">&#123;</span> <span class="token property">color</span><span class="token punctuation">:</span> #333<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+        <span class="token selector">.info</span> <span class="token punctuation">&#123;</span> <span class="token property">color</span><span class="token punctuation">:</span> #666<span class="token punctuation">;</span> <span class="token property">font-size</span><span class="token punctuation">:</span> 14px<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+        <span class="token selector">.highlight</span> <span class="token punctuation">&#123;</span> <span class="token property">color</span><span class="token punctuation">:</span> #e74c3c<span class="token punctuation">;</span> <span class="token property">font-weight</span><span class="token punctuation">:</span> bold<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+    </span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>style</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>head</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>body</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>card<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>h1</span><span class="token punctuation">></span></span>🎯 <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">site_title</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'我的网站'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>h1</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>hr</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>h3</span><span class="token punctuation">></span></span>📋 服务器信息<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>h3</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>ul</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>li</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>strong</span><span class="token punctuation">></span></span>主机名:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>strong</span><span class="token punctuation">></span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_hostname</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>li</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>li</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>strong</span><span class="token punctuation">></span></span>IP地址:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>strong</span><span class="token punctuation">></span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_default_ipv4</span><span class="token punctuation">.</span><span class="token variable">address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>li</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>li</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>strong</span><span class="token punctuation">></span></span>操作系统:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>strong</span><span class="token punctuation">></span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_distribution</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_distribution_version</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>li</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>li</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>strong</span><span class="token punctuation">></span></span>CPU核心:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>strong</span><span class="token punctuation">></span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_processor_vcpus</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>li</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>li</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>strong</span><span class="token punctuation">></span></span>总内存:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>strong</span><span class="token punctuation">></span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_memtotal_mb</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> MB<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>li</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>li</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>strong</span><span class="token punctuation">></span></span>运行时间:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>strong</span><span class="token punctuation">></span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_uptime_seconds</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>li</span><span class="token punctuation">></span></span>
+            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>li</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>strong</span><span class="token punctuation">></span></span>当前时间:<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>strong</span><span class="token punctuation">></span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_date_time</span><span class="token punctuation">.</span><span class="token variable">iso8601</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>li</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>ul</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>hr</span><span class="token punctuation">></span></span>
+        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>p</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>info<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>由 Ansible 自动部署 | 维护: <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">site_owner</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'未知'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>p</span><span class="token punctuation">></span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>body</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>html</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这个模板文件是用来创建网页首页的，保存后模板就建成了。</p>
+<p>继续创建第二个模板，Apache虚拟主机配置。在<code>templates/virtualhost.conf.j2</code>写入下面内容。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 使用Jinja2模板部署网站
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> web_servers
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">gather_facts</span><span class="token punctuation">:</span> yes
+
+  <span class="token key atrule">vars</span><span class="token punctuation">:</span>
+    <span class="token key atrule">site_title</span><span class="token punctuation">:</span> <span class="token string">"Ansible演示站"</span>  <span class="token comment"># 直接赋值，不加 &#123;&#123; &#125;&#125;</span>
+    <span class="token key atrule">site_owner</span><span class="token punctuation">:</span> <span class="token string">"运维团队"</span>
+    <span class="token key atrule">http_port</span><span class="token punctuation">:</span> <span class="token number">80</span>
+    <span class="token key atrule">server_admin</span><span class="token punctuation">:</span> <span class="token string">"admin@example.com"</span>
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 确保httpd已安装
+      <span class="token key atrule">package</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> httpd
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建网站根目录
+      <span class="token key atrule">file</span><span class="token punctuation">:</span>
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> <span class="token string">"/var/www/html/&#123;&#123; site_title | lower | replace(' ', '_') &#125;&#125;"</span>
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> directory
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0755'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 使用模板生成首页
+      <span class="token key atrule">template</span><span class="token punctuation">:</span>
+        <span class="token key atrule">src</span><span class="token punctuation">:</span> site_index.j2
+        <span class="token key atrule">dest</span><span class="token punctuation">:</span> /var/www/html/index.html
+        <span class="token key atrule">owner</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">group</span><span class="token punctuation">:</span> apache
+        <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0644'</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 确保httpd已启动
+      <span class="token key atrule">service</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> httpd
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> started
+        <span class="token key atrule">enabled</span><span class="token punctuation">:</span> yes
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示部署结果
+      <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+        <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          网站部署完成！
+          访问地址: http://&#123;&#123; ansible_default_ipv4.address &#125;&#125;:&#123;&#123; http_port &#125;&#125;
+          网站标题: &#123;&#123; site_title &#125;&#125;</span>
+
+  <span class="token key atrule">handlers</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> restart_httpd
+      <span class="token key atrule">service</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> httpd
+        <span class="token key atrule">state</span><span class="token punctuation">:</span> restarted<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><img src="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/9.png" loading="lazy"></p>
+<p>剧本没有问题，模板调取成功啦。我们访问网页看看效果吧。</p>
+<p><img src="/10.png" loading="lazy"></p>
+<p>虽然界面丑丑的，但确实通过模板自动化部署成功啦，好耶。</p>
+<h2 id="五、构建高可用集群"><a href="#五、构建高可用集群" class="headerlink" title="五、构建高可用集群"></a>五、构建高可用集群</h2><h3 id="1-理解-4"><a href="#1-理解-4" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>听到”集群”，实验好像突然就变难了。但我们是用Ansible剧本来跑的，所以最主要的还是要搭建好剧本。</p>
+<p>这次实验的目标是使用Ansible在server2和node1上部署Keepalived，实现VIP（Virtual IP）的高可用。当主节点（MASTER）发生故障时，备用节点（BACKUP）会自动接管VIP，确保服务不中断。</p>
+<p>实验中，server2是MASTER节点，node1是BACKUP节点，集群对外提供服务的虚拟IP（VIP）是192.168.86.200。</p>
+<p>实验开始。</p>
+<h3 id="2-实验-3"><a href="#2-实验-3" class="headerlink" title="2. 实验"></a>2. 实验</h3><p>我们在server1上创建实验目录和角色目录。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">cd</span> ~/ansible_project
+<span class="token function">mkdir</span> <span class="token parameter variable">-p</span> roles/keepalived/<span class="token punctuation">&#123;</span>tasks,templates,handlers,vars,defaults<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>其中，<code>tasks/</code>：存放任务定义文件，<code>templates/</code>：存放Jinja2模板文件，<code>handlers/</code>：存放处理器（触发器）定义，<code>vars/</code>：存放变量定义，<code>defaults/</code>：存放默认变量（优先级最低）。</p>
+<p>接着，我们重新配置主机变量。修改inventory文件如下。</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">web_servers</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">server2 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.132</span>
+<span class="token key attr-name">node1 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.187</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">ha_cluster</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">server2 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.132 keepalived_state=MASTER keepalived_priority=150</span>
+<span class="token key attr-name">node1 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.187 keepalived_state=BACKUP keepalived_priority=100</span>
+
+<span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">ha_cluster:vars</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">vip_address</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.200</span>
+<span class="token key attr-name">vip_cidr</span><span class="token punctuation">=</span><span class="token value attr-value">24</span>
+<span class="token key attr-name">virtual_router_id</span><span class="token punctuation">=</span><span class="token value attr-value">51</span>
+<span class="token key attr-name">vrrp_interface</span><span class="token punctuation">=</span><span class="token value attr-value">eth0</span>
+<span class="token key attr-name">vrrp_auth_pass</span><span class="token punctuation">=</span><span class="token value attr-value">AnsibleHA2024</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>接着，编写Keepalived配置模板。在<code>roles/keepalived/templates/keepalived.conf.j2</code>创建Jinja2模板文件，内容如下。</p>
+<pre class="line-numbers language-django" data-language="django"><code class="language-django"># <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_managed</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'Ansible managed'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+# 节点: <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">inventory_hostname</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> (<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_default_ipv4</span><span class="token punctuation">.</span><span class="token variable">address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>)
+# 角色: <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">keepalived_state</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+# 优先级: <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">keepalived_priority</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+
+global_defs &#123;
+    router_id <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">inventory_hostname</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    # 启用日志记录
+    enable_script_security
+&#125;
+
+# VRRP实例配置
+vrrp_instance VI_<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">virtual_router_id</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> &#123;
+    state <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">keepalived_state</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    interface <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">vrrp_interface</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    virtual_router_id <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">virtual_router_id</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    priority <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">keepalived_priority</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    advert_int 1
+
+    # 认证配置
+    authentication &#123;
+        auth_type PASS
+        auth_pass <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">vrrp_auth_pass</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    &#125;
+
+    # 虚拟IP地址
+    virtual_ipaddress &#123;
+        <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">vip_address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>/<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">vip_cidr</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    &#125;
+
+    # 高优先级节点不抢占（防止网络抖动导致频繁切换）
+    nopreempt
+
+    # 追踪脚本（用于健康检查）
+    track_script &#123;
+        chk_service
+    &#125;
+&#125;
+
+# 健康检查脚本：检查httpd服务是否运行
+vrrp_script chk_service &#123;
+    script "/usr/bin/pgrep httpd"
+    interval 2
+    fall 3
+    rise 2
+&#125;
+
+# 通知脚本（状态变更时执行）
+vrrp_instance VI_<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">virtual_router_id</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> &#123;
+    # 状态变为MASTER时执行
+    notify_master "/etc/keepalived/notify.sh MASTER <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">vip_address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>"
+    # 状态变为BACKUP时执行
+    notify_backup "/etc/keepalived/notify.sh BACKUP <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">vip_address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>"
+    # 状态变为FAULT时执行
+    notify_fault "/etc/keepalived/notify.sh FAULT <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">vip_address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>"
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>接着，创建通知脚本<code>roles/keepalived/files/notify.sh</code>，写入：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token shebang important">#!/bin/bash</span>
+<span class="token comment"># Keepalived状态变更通知脚本</span>
+<span class="token comment"># 用法: notify.sh &lt;STATE> &lt;VIP></span>
+
+<span class="token assign-left variable">STATE</span><span class="token operator">=</span><span class="token variable">$1</span>
+<span class="token assign-left variable">VIP</span><span class="token operator">=</span><span class="token variable">$2</span>
+<span class="token assign-left variable">LOG_FILE</span><span class="token operator">=</span><span class="token string">"/var/log/keepalived-notify.log"</span>
+
+<span class="token builtin class-name">echo</span> <span class="token string">"<span class="token variable"><span class="token variable">$(</span><span class="token function">date</span> <span class="token string">'+%Y-%m-%d %H:%M:%S'</span><span class="token variable">)</span></span> - 节点: <span class="token variable"><span class="token variable">$(</span><span class="token function">hostname</span><span class="token variable">)</span></span> - 状态变更: <span class="token variable">$STATE</span> - VIP: <span class="token variable">$VIP</span>"</span> <span class="token operator">>></span> <span class="token variable">$LOG_FILE</span>
+
+<span class="token keyword">case</span> <span class="token variable">$STATE</span> <span class="token keyword">in</span>
+    MASTER<span class="token punctuation">)</span>
+        <span class="token builtin class-name">echo</span> <span class="token string">"<span class="token variable"><span class="token variable">$(</span><span class="token function">date</span> <span class="token string">'+%Y-%m-%d %H:%M:%S'</span><span class="token variable">)</span></span> - 成为MASTER，VIP已绑定"</span> <span class="token operator">>></span> <span class="token variable">$LOG_FILE</span>
+        <span class="token punctuation">;</span><span class="token punctuation">;</span>
+    BACKUP<span class="token punctuation">)</span>
+        <span class="token builtin class-name">echo</span> <span class="token string">"<span class="token variable"><span class="token variable">$(</span><span class="token function">date</span> <span class="token string">'+%Y-%m-%d %H:%M:%S'</span><span class="token variable">)</span></span> - 成为BACKUP，VIP已释放"</span> <span class="token operator">>></span> <span class="token variable">$LOG_FILE</span>
+        <span class="token punctuation">;</span><span class="token punctuation">;</span>
+    FAULT<span class="token punctuation">)</span>
+        <span class="token builtin class-name">echo</span> <span class="token string">"<span class="token variable"><span class="token variable">$(</span><span class="token function">date</span> <span class="token string">'+%Y-%m-%d %H:%M:%S'</span><span class="token variable">)</span></span> - 进入FAULT状态，请检查服务"</span> <span class="token operator">>></span> <span class="token variable">$LOG_FILE</span>
+        <span class="token punctuation">;</span><span class="token punctuation">;</span>
+<span class="token keyword">esac</span>
+
+<span class="token builtin class-name">exit</span> <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过<code>chmod +x roles/keepalived/files/notify.sh</code>给它赋予执行权限。</p>
+<p>接着，编写Tasks任务。创建主任务文件<code>roles/keepalived/tasks/main.yml</code>，写入下面内容。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 导入各子任务
+  <span class="token key atrule">import_tasks</span><span class="token punctuation">:</span> install.yml
+  <span class="token key atrule">import_tasks</span><span class="token punctuation">:</span> configure.yml
+  <span class="token key atrule">import_tasks</span><span class="token punctuation">:</span> service.yml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>创建安装任务 <code>roles/keepalived/tasks/install.yml</code>，写入：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 安装keepalived软件包
+  <span class="token key atrule">package</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> keepalived
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 创建keepalived配置目录
+  <span class="token key atrule">file</span><span class="token punctuation">:</span>
+    <span class="token key atrule">path</span><span class="token punctuation">:</span> /etc/keepalived
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> directory
+    <span class="token key atrule">owner</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">group</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0755'</span>
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 部署通知脚本
+  <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+    <span class="token key atrule">src</span><span class="token punctuation">:</span> notify.sh
+    <span class="token key atrule">dest</span><span class="token punctuation">:</span> /etc/keepalived/notify.sh
+    <span class="token key atrule">owner</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">group</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0755'</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>创建配置任务 <code>roles/keepalived/tasks/configure.yml</code>，写入：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 生成keepalived主配置文件
+  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+    <span class="token key atrule">src</span><span class="token punctuation">:</span> keepalived.conf.j2
+    <span class="token key atrule">dest</span><span class="token punctuation">:</span> /etc/keepalived/keepalived.conf
+    <span class="token key atrule">owner</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">group</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0644'</span>
+  <span class="token key atrule">notify</span><span class="token punctuation">:</span> restart_keepalived<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>创建服务管理任务 <code>roles/keepalived/tasks/service.yml</code>，写入：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 启动并启用keepalived服务
+  <span class="token key atrule">service</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> keepalived
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> started
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> yes
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 验证keepalived服务状态
+  <span class="token key atrule">service</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> keepalived
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> started
+  <span class="token key atrule">register</span><span class="token punctuation">:</span> keepalived_status
+  <span class="token key atrule">failed_when</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示服务状态
+  <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+    <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token string">"keepalived服务状态: &#123;&#123; keepalived_status.status.ActiveState &#125;&#125;"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>编写Handlers处理器<code>roles/keepalived/handlers/main.yml</code>。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> restart_keepalived
+  <span class="token key atrule">service</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> keepalived
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> restarted<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>然后，终于到编写剧本了。我们编写主Playbook，创建 <code>~/ansible_project/ha_deploy.yml</code>，写入下面内容。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 部署Keepalived高可用集群
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> ha_cluster
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">gather_facts</span><span class="token punctuation">:</span> yes
+
+  <span class="token key atrule">roles</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> keepalived
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 验证VIP分配情况
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> ha_cluster
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">gather_facts</span><span class="token punctuation">:</span> no
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 检查VIP是否绑定
+      <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+        <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token string">"VIP &#123;&#123; vip_address &#125;&#125; 当前绑定在 &#123;&#123; ansible_hostname &#125;&#125; (&#123;&#123; ansible_default_ipv4.address &#125;&#125;)"</span>
+      <span class="token key atrule">when</span><span class="token punctuation">:</span> vip_address in ansible_default_ipv4.address<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>检查语法后，执行剧本。发现没有问题。</p>
+<h2 id="六、部署HAProxy负载均衡器"><a href="#六、部署HAProxy负载均衡器" class="headerlink" title="六、部署HAProxy负载均衡器"></a>六、部署HAProxy负载均衡器</h2><h3 id="1-理解-5"><a href="#1-理解-5" class="headerlink" title="1. 理解"></a>1. 理解</h3><p>实验的目标是在 server1（控制节点，也作为调度器）上部署 HAProxy，将后端的 web_servers（server2 和 node1）的 HTTP 服务通过负载均衡对外提供访问。我们将使用 Jinja2 模板动态生成后端服务器列表，实现弹性扩容——只需在 inventory 中添加新主机，无需修改模板。</p>
+<p>我们可以将 HAProxy 部署在 server1 上，也可以单独使用 VIP（如 192.168.86.200）结合 Keepalived 实现 HAProxy 的高可用，但本实验简化为单节点 HAProxy。</p>
+<h3 id="2-实验-4"><a href="#2-实验-4" class="headerlink" title="2. 实验"></a>2. 实验</h3><p><strong>环境规划</strong></p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>主机</th>
+<th>IP</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>调度器</td>
+<td>server1</td>
+<td>192.168.86.131</td>
+<td>安装 HAProxy，对外提供服务</td>
+</tr>
+<tr>
+<td>Web后端1</td>
+<td>server2</td>
+<td>192.168.86.132</td>
+<td>运行 httpd，端口 80</td>
+</tr>
+<tr>
+<td>Web后端2</td>
+<td>node1</td>
+<td>192.168.86.187</td>
+<td>运行 httpd，端口 80</td>
+</tr>
+</tbody></table>
+<p><strong>步骤1：创建 HAProxy 角色目录</strong></p>
+<p>在 server1 (192.168.86.131) 上执行：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">cd</span> ~/ansible_project
+<span class="token function">mkdir</span> <span class="token parameter variable">-p</span> roles/haproxy/<span class="token punctuation">&#123;</span>tasks,templates,handlers,vars,defaults<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p><strong>步骤2：编写 HAProxy 配置模板</strong></p>
+<p>创建 <code>roles/haproxy/templates/haproxy.cfg.j2</code>：</p>
+<pre class="line-numbers language-django" data-language="django"><code class="language-django"># <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_managed</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'Ansible managed'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+# 生成时间: <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_date_time</span><span class="token punctuation">.</span><span class="token variable">iso8601</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+# 调度器: <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_hostname</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> (<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">ansible_default_ipv4</span><span class="token punctuation">.</span><span class="token variable">address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>)
+
+global
+    log         127.0.0.1 local2
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy
+    group       haproxy
+    daemon
+    stats socket /var/lib/haproxy/stats
+
+defaults
+    mode                    http
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option http-server-close
+    option forwardfor       except 127.0.0.0/8
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         10s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 3000
+
+# 统计页面（可选）
+listen stats
+    bind *:<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">haproxy_stats_port</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token number">8080</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    stats enable
+    stats uri /stats
+    stats realm HAProxy\ Statistics
+    stats auth <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">haproxy_stats_user</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'admin'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>:<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">haproxy_stats_password</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'password'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+
+# 前端：接收客户端请求
+frontend http_front
+    bind *:<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">haproxy_http_port</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token number">80</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    default_backend http_back
+
+# 后端：Web服务器集群
+backend http_back
+    balance <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">haproxy_balance</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token string">'roundrobin'</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>
+    option httpchk GET /index.html HTTP/1.0
+    option forwardfor
+    http-request set-header X-Forwarded-Port %[dst_port]
+
+    # 动态生成后端服务器列表
+    <span class="token django language-django"><span class="token delimiter punctuation">&#123;%</span> <span class="token tag keyword">for</span> <span class="token variable">host</span> <span class="token keyword">in</span> <span class="token variable">groups</span><span class="token punctuation">[</span><span class="token string">'web_servers'</span><span class="token punctuation">]</span> <span class="token delimiter punctuation">%&#125;</span></span>
+    server <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">hostvars</span><span class="token punctuation">[</span><span class="token variable">host</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token variable">ansible_hostname</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> <span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">hostvars</span><span class="token punctuation">[</span><span class="token variable">host</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token variable">ansible_default_ipv4</span><span class="token punctuation">.</span><span class="token variable">address</span> <span class="token delimiter punctuation">&#125;&#125;</span></span>:<span class="token django language-django"><span class="token delimiter punctuation">&#123;&#123;</span> <span class="token variable">hostvars</span><span class="token punctuation">[</span><span class="token variable">host</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token variable">http_port</span> <span class="token operator">|</span> <span class="token function">default</span><span class="token punctuation">(</span><span class="token number">80</span><span class="token punctuation">)</span> <span class="token delimiter punctuation">&#125;&#125;</span></span> check inter 2000 rise 2 fall 3
+    <span class="token django language-django"><span class="token delimiter punctuation">&#123;%</span> <span class="token tag keyword">endfor</span> <span class="token delimiter punctuation">%&#125;</span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>步骤3：编写 Tasks</strong></p>
+<p>创建主任务文件 <code>roles/haproxy/tasks/main.yml</code>：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">import_tasks</span><span class="token punctuation">:</span> install.yml
+<span class="token punctuation">-</span> <span class="token key atrule">import_tasks</span><span class="token punctuation">:</span> configure.yml
+<span class="token punctuation">-</span> <span class="token key atrule">import_tasks</span><span class="token punctuation">:</span> service.yml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>安装任务 <code>roles/haproxy/tasks/install.yml</code>：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 安装HAProxy软件包
+  <span class="token key atrule">package</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> haproxy
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 安装rsyslog（用于日志）
+  <span class="token key atrule">package</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> rsyslog
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> present
+  <span class="token key atrule">when</span><span class="token punctuation">:</span> ansible_os_family == "RedHat"<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>配置任务 <code>roles/haproxy/tasks/configure.yml</code>：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 生成HAProxy配置文件
+  <span class="token key atrule">template</span><span class="token punctuation">:</span>
+    <span class="token key atrule">src</span><span class="token punctuation">:</span> haproxy.cfg.j2
+    <span class="token key atrule">dest</span><span class="token punctuation">:</span> /etc/haproxy/haproxy.cfg
+    <span class="token key atrule">owner</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">group</span><span class="token punctuation">:</span> root
+    <span class="token key atrule">mode</span><span class="token punctuation">:</span> <span class="token string">'0644'</span>
+  <span class="token key atrule">notify</span><span class="token punctuation">:</span> restart_haproxy
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 配置rsyslog记录HAProxy日志
+  <span class="token key atrule">copy</span><span class="token punctuation">:</span>
+    <span class="token key atrule">content</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+      # HAProxy日志配置
+      $ModLoad imudp
+      $UDPServerRun 514
+      local2.*    /var/log/haproxy.log</span>
+    <span class="token key atrule">dest</span><span class="token punctuation">:</span> /etc/rsyslog.d/haproxy.conf
+  <span class="token key atrule">notify</span><span class="token punctuation">:</span> restart_rsyslog<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>服务管理任务 <code>roles/haproxy/tasks/service.yml</code>：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 启动并启用HAProxy服务
+  <span class="token key atrule">service</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> haproxy
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> started
+    <span class="token key atrule">enabled</span><span class="token punctuation">:</span> yes
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 确保防火墙允许HTTP访问
+  <span class="token key atrule">firewalld</span><span class="token punctuation">:</span>
+    <span class="token key atrule">service</span><span class="token punctuation">:</span> http
+    <span class="token key atrule">permanent</span><span class="token punctuation">:</span> yes
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> enabled
+    <span class="token key atrule">immediate</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">when</span><span class="token punctuation">:</span> ansible_os_family == "RedHat"
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 检查HAProxy状态
+  <span class="token key atrule">service</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> haproxy
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> started
+  <span class="token key atrule">register</span><span class="token punctuation">:</span> haproxy_status
+  <span class="token key atrule">failed_when</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示HAProxy状态
+  <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+    <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token string">"HAProxy服务状态: &#123;&#123; haproxy_status.status.ActiveState &#125;&#125;"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>步骤4：编写 Handlers</strong></p>
+<p>创建 <code>roles/haproxy/handlers/main.yml</code>：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> restart_haproxy
+  <span class="token key atrule">service</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> haproxy
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> restarted
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> restart_rsyslog
+  <span class="token key atrule">service</span><span class="token punctuation">:</span>
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> rsyslog
+    <span class="token key atrule">state</span><span class="token punctuation">:</span> restarted<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>步骤5：编写主 Playbook</strong></p>
+<p>创建 <code>~/ansible_project/haproxy_deploy.yml</code>：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token punctuation">---</span>
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 部署HAProxy负载均衡器
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> server1
+  <span class="token key atrule">become</span><span class="token punctuation">:</span> yes
+  <span class="token key atrule">gather_facts</span><span class="token punctuation">:</span> yes
+
+  <span class="token key atrule">roles</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> haproxy
+
+<span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 验证负载均衡效果
+  <span class="token key atrule">hosts</span><span class="token punctuation">:</span> localhost
+  <span class="token key atrule">connection</span><span class="token punctuation">:</span> local
+  <span class="token key atrule">gather_facts</span><span class="token punctuation">:</span> no
+
+  <span class="token key atrule">vars</span><span class="token punctuation">:</span>
+    <span class="token key atrule">haproxy_host</span><span class="token punctuation">:</span> <span class="token string">"192.168.86.131"</span>
+    <span class="token key atrule">haproxy_port</span><span class="token punctuation">:</span> <span class="token string">"&#123;&#123; haproxy_http_port | default(80) &#125;&#125;"</span>
+
+  <span class="token key atrule">tasks</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 发送测试请求到HAProxy
+      <span class="token key atrule">uri</span><span class="token punctuation">:</span>
+        <span class="token key atrule">url</span><span class="token punctuation">:</span> <span class="token string">"http://&#123;&#123; haproxy_host &#125;&#125;:&#123;&#123; haproxy_port &#125;&#125;/"</span>
+        <span class="token key atrule">return_content</span><span class="token punctuation">:</span> yes
+      <span class="token key atrule">register</span><span class="token punctuation">:</span> response
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> 显示负载均衡响应
+      <span class="token key atrule">debug</span><span class="token punctuation">:</span>
+        <span class="token key atrule">msg</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          负载均衡测试成功！
+          响应内容摘要: &#123;&#123; response.content | regex_replace('\n', ' ') | truncate(200) &#125;&#125;
+          来源服务器: &#123;&#123; response.server &#125;&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>步骤6：关于后端端口配置</strong></p>
+<p>如果需要为每个后端指定不同的端口，可以在 inventory 中添加 http_port 变量。例如，让 server2 使用 80，node1 使用 8080：</p>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">web_servers</span><span class="token punctuation">]</span></span>
+<span class="token key attr-name">server2 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.132 http_port=80</span>
+<span class="token key attr-name">node1 ansible_host</span><span class="token punctuation">=</span><span class="token value attr-value">192.168.86.187 http_port=8080</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>由于我们之前的 Apache 部署都使用默认 80 端口，这里可以不添加 http_port，模板会使用默认值 80。</p>
+<p><strong>步骤7：执行Playbook</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">ansible-playbook <span class="token parameter variable">-i</span> inventory haproxy_deploy.yml --syntax-check
+ansible-playbook <span class="token parameter variable">-i</span> inventory haproxy_deploy.yml<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>发现没有报错。</p>
+<p><strong>步骤8：验证负载均衡</strong></p>
+<p>从浏览器访问 <code>http://192.168.86.131:8080/stats</code>（默认用户名 admin &#x2F; 密码 password），可以看到后端服务器的实时状态。</p>
+<p>多次访问 HAProxy 前端，通过以下命令查看轮询效果：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token keyword">for</span> <span class="token for-or-select variable">i</span> <span class="token keyword">in</span> <span class="token punctuation">&#123;</span><span class="token number">1</span><span class="token punctuation">..</span><span class="token number">6</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span> <span class="token keyword">do</span> <span class="token function">curl</span> <span class="token parameter variable">-s</span> http://192.168.86.131/ <span class="token operator">|</span> <span class="token function">grep</span> <span class="token parameter variable">-E</span> <span class="token string">"(主机名|IP地址)"</span><span class="token punctuation">;</span> <span class="token keyword">done</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>我们看到请求在 server2 和 node1 之间轮询分配。</p>
+<p><strong>步骤9：验证故障转移</strong></p>
+<p>如果我们停止其中一台后端服务器的 httpd 服务：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">ansible <span class="token parameter variable">-i</span> inventory server2 <span class="token parameter variable">-m</span> <span class="token function">service</span> <span class="token parameter variable">-a</span> <span class="token string">"name=httpd state=stopped"</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>再次访问 HAProxy，所有请求会自动路由到仍然在线的 node1。恢复 server2 的 httpd 后，它会自动重新加入后端池。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>好耶，至此Ansible的笔记就写完了！从环境搭建到Playbook编写，从变量使用到模板渲染，再到高可用集群和负载均衡的部署，也算是把Ansible的核心功能都过了一遍。</p>
+<p>虽然中间有几天学习不太认真（挠头），但笔记还是坚持整理完了。希望后面复习的时候能派上用场吧。</p>
+<p>人生啊……继续加油吧！</p>
+<p>虽然但是，马上就开学了捏…</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li>
+                
+            </ul>
+        </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AD%A6%E4%B9%A0/">Ansible自动化学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":true,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>
