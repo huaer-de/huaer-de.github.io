@@ -6,19 +6,31 @@
     <title>运维学习笔记Day5 - hualalala 的博客</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="运维学习笔记Day5 - hualalala 的博客"/>
+    <meta property="og:url" content="https://huaer-de.github.io/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/">
+    <meta property="og:description" content="这是一个记录学习的博客ovo 😊">
+    <meta property="og:type" content="article">
+    <!-- 预连接 / 预解析，加快第三方资源加载 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.pixabay.com">
+    <!-- 字体：Inter（拉丁）+ 系统中文字体，display=swap 避免阻塞渲染 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     
 <link rel="stylesheet" href="/static/kico.css">
 <link rel="stylesheet" href="/static/hingle.css">
 
     
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta property="og:site_name" content="hualalala 的博客">
-    <meta property="og:title" content="运维学习笔记Day5"/>
-    
-    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
-    
+    <!-- 主题配置（脚本按 defer 顺序在 DOM 解析完成后执行） -->
+    <script>window.__HINGLE_CONFIG__ = {"theme":{"copyright":false,"night":true},"music":{"enable":true,"autoplay":false,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"}};</script>
+    <script defer src="/static/kico.js"></script>
+    <script defer src="/static/hingle.js"></script>
 <meta name="generator" content="Hexo 8.1.1"></head>
 
   <body>
@@ -27,17 +39,17 @@
         <h4>hualalala 的博客</h4>
     </div>
     <div class="head-action">
-        <div class="toggle-btn"></div>
-        <div class="light-btn"></div>
-        <div class="search-btn"></div>
+        <button class="toggle-btn" type="button" title="菜单" aria-label="展开菜单"></button>
+        <button class="light-btn" type="button" title="夜间模式" aria-label="切换夜间模式"></button>
+        <button class="search-btn" type="button" title="搜索" aria-label="展开搜索框"></button>
     </div>
-    <form class="head-search" method="post">
-        <input type="text" name="s" placeholder="搜索什么？">
+    <form class="head-search" role="search">
+        <input type="search" name="s" placeholder="搜索什么？" aria-label="搜索关键词">
     </form>
-    <nav class="head-menu">
+    <nav class="head-menu" aria-label="主导航">
         <a href="/">首页</a>
         <div class="has-child">
-            <a href>分类</a>
+            <a href="javascript:void(0)">分类</a>
             <div class="sub-menu">
                 <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
             </div>
@@ -75,31 +87,35 @@
 <h3 id="方法一：现代化方法-nmcli-命令"><a href="#方法一：现代化方法-nmcli-命令" class="headerlink" title="方法一：现代化方法 (nmcli 命令)"></a>方法一：现代化方法 (nmcli 命令)</h3><blockquote>
 <p><strong>适用系统</strong>：RHEL 7&#x2F;8&#x2F;9、CentOS 7&#x2F;8&#x2F;9 推荐。<br><strong>核心</strong>：NetworkManager 服务必须保持 <strong>running</strong>。</p>
 </blockquote>
-<h4 id="1-前提检查-NetworkManager"><a href="#1-前提检查-NetworkManager" class="headerlink" title="1. 前提检查 (NetworkManager)"></a>1. 前提检查 (NetworkManager)</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">systemctl status NetworkManager   <span class="comment"># 确保状态是 active (running)</span></span><br><span class="line">systemctl start NetworkManager    <span class="comment"># 若未启动则手动启动</span></span><br><span class="line">systemctl <span class="built_in">enable</span> NetworkManager   <span class="comment"># 设置开机自启</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/0.png" alt="0.png"></p>
-<h4 id="2-常用-nmcli-实操-针对-ens37"><a href="#2-常用-nmcli-实操-针对-ens37" class="headerlink" title="2. 常用 nmcli 实操 (针对 ens37)"></a>2. 常用 nmcli 实操 (针对 ens37)</h4><p><strong>① 查看状态，确认网卡识别</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/1.png" alt="1.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ip a                               <span class="comment"># 查看所有网卡及 IP，确认 ens37 存在</span></span><br><span class="line">nmcli device status                <span class="comment"># 查看设备状态，确认 ens37 为 UP 状态</span></span><br></pre></td></tr></table></figure>
-<p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/2.png" alt="2.png"></p>
+<h4 id="1-前提检查-NetworkManager"><a href="#1-前提检查-NetworkManager" class="headerlink" title="1. 前提检查 (NetworkManager)"></a>1. 前提检查 (NetworkManager)</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">systemctl status NetworkManager   <span class="token comment"># 确保状态是 active (running)</span>
+systemctl start NetworkManager    <span class="token comment"># 若未启动则手动启动</span>
+systemctl <span class="token builtin class-name">enable</span> NetworkManager   <span class="token comment"># 设置开机自启</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/0.png" alt="0.png" loading="lazy"></p>
+<h4 id="2-常用-nmcli-实操-针对-ens37"><a href="#2-常用-nmcli-实操-针对-ens37" class="headerlink" title="2. 常用 nmcli 实操 (针对 ens37)"></a>2. 常用 nmcli 实操 (针对 ens37)</h4><p><strong>① 查看状态，确认网卡识别</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/1.png" alt="1.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">ip</span> a                               <span class="token comment"># 查看所有网卡及 IP，确认 ens37 存在</span>
+nmcli device status                <span class="token comment"># 查看设备状态，确认 ens37 为 UP 状态</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/2.png" alt="2.png" loading="lazy"></p>
 <blockquote>
 <p>嗯嗯，好啦。</p>
 </blockquote>
-<p><strong>② 设置静态 IP：12.130.1.37&#x2F;24（修改并生效，查看变化）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/3.png" alt="3.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmcli c modify ens37 ipv4.method manual ipv4.addresses 12.130.1.37/24 ipv4.gateway 12.130.1.1 ipv4.dns 114.114.114.114 &amp;&amp; nmcli c up ens37 &amp;&amp; ip a</span><br></pre></td></tr></table></figure>
+<p><strong>② 设置静态 IP：12.130.1.37&#x2F;24（修改并生效，查看变化）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/3.png" alt="3.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nmcli c modify ens37 ipv4.method manual ipv4.addresses <span class="token number">12.130</span>.1.37/24 ipv4.gateway <span class="token number">12.130</span>.1.1 ipv4.dns <span class="token number">114.114</span>.114.114 <span class="token operator">&amp;&amp;</span> nmcli c up ens37 <span class="token operator">&amp;&amp;</span> <span class="token function">ip</span> a<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <blockquote>
 <p>发现 <code>12.130.1.100</code> 消失 → 变成 <code>12.130.1.37/24</code>。</p>
 </blockquote>
-<p><strong>③ 额外多绑定一个 IP（12.130.1.38）（追加 IP，查看双 IP 效果）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/4.png" alt="4.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmcli c modify ens37 +ipv4.addresses 12.130.1.38/24 &amp;&amp; nmcli c up ens37 &amp;&amp; ip a</span><br></pre></td></tr></table></figure>
+<p><strong>③ 额外多绑定一个 IP（12.130.1.38）（追加 IP，查看双 IP 效果）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/4.png" alt="4.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nmcli c modify ens37 +ipv4.addresses <span class="token number">12.130</span>.1.38/24 <span class="token operator">&amp;&amp;</span> nmcli c up ens37 <span class="token operator">&amp;&amp;</span> <span class="token function">ip</span> a<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <blockquote>
 <p>多出 <code>12.130.1.38</code>，IP 同时有 <code>37</code> + <code>38</code>。</p>
 </blockquote>
-<p><strong>④ 切换为 DHCP（需要先清空原有静态 IP，避免报错）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/5.png" alt="5.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmcli c modify ens37 ipv4.method auto ipv4.addresses <span class="string">&quot;&quot;</span> ipv4.gateway <span class="string">&quot;&quot;</span> &amp;&amp; nmcli c up ens37 &amp;&amp; ip a</span><br></pre></td></tr></table></figure>
+<p><strong>④ 切换为 DHCP（需要先清空原有静态 IP，避免报错）</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/5.png" alt="5.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nmcli c modify ens37 ipv4.method auto ipv4.addresses <span class="token string">""</span> ipv4.gateway <span class="token string">""</span> <span class="token operator">&amp;&amp;</span> nmcli c up ens37 <span class="token operator">&amp;&amp;</span> <span class="token function">ip</span> a<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <blockquote>
 <p>震惊！静态 IP 全部消失，但获取到新的 DHCP 地址。</p>
 </blockquote>
-<p><strong>⑤ 关闭网卡</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/6.png" alt="6.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nmcli c down ens37</span><br><span class="line">ip a</span><br></pre></td></tr></table></figure>
+<p><strong>⑤ 关闭网卡</strong><br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/6.png" alt="6.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nmcli c down ens37
+<span class="token function">ip</span> a<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <blockquote>
 <p>哦哦，<code>ens37</code> 的所有 IPv4 消失了。</p>
 <p><em>注：DHCP 自动获取 IP 不固定，虚拟机重启后 <code>ens33</code> IP 变为 <code>10.0.0.136</code>，远程连接工具需重新连接。</em></p>
@@ -120,25 +136,39 @@
 <li>系统语言改为英文（避免中文路径&#x2F;显示异常）</li>
 <li><code>ens33</code> 是正在使用的网卡，绝对不能乱删乱改</li>
 </ul>
-<h4 id="2-核心操作：禁用-NetworkManager（重点）"><a href="#2-核心操作：禁用-NetworkManager（重点）" class="headerlink" title="2. 核心操作：禁用 NetworkManager（重点）"></a>2. 核心操作：禁用 NetworkManager（重点）</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/7.png" alt="7.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop NetworkManager</span><br><span class="line">systemctl <span class="built_in">disable</span> NetworkManager</span><br></pre></td></tr></table></figure>
+<h4 id="2-核心操作：禁用-NetworkManager（重点）"><a href="#2-核心操作：禁用-NetworkManager（重点）" class="headerlink" title="2. 核心操作：禁用 NetworkManager（重点）"></a>2. 核心操作：禁用 NetworkManager（重点）</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/7.png" alt="7.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">systemctl stop NetworkManager
+systemctl disable NetworkManager<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 <blockquote>
 <p>✅ 作用：关闭自动网络管理，才能手动改配置文件。</p>
 </blockquote>
-<h4 id="3-直接修改网卡配置文件（企业最常用）"><a href="#3-直接修改网卡配置文件（企业最常用）" class="headerlink" title="3. 直接修改网卡配置文件（企业最常用）"></a>3. 直接修改网卡配置文件（企业最常用）</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/8.png" alt="8.png"></p>
+<h4 id="3-直接修改网卡配置文件（企业最常用）"><a href="#3-直接修改网卡配置文件（企业最常用）" class="headerlink" title="3. 直接修改网卡配置文件（企业最常用）"></a>3. 直接修改网卡配置文件（企业最常用）</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/8.png" alt="8.png" loading="lazy"></p>
 <ul>
 <li>进入目录：<code>/etc/sysconfig/network-scripts/</code></li>
 <li>编辑配置文件（以 <code>ifcfg-ens33</code> 为例），只保留核心内容：</li>
 </ul>
-<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">TYPE</span>=Ethernet</span><br><span class="line"><span class="attr">BOOTPROTO</span>=static</span><br><span class="line"><span class="attr">NAME</span>=ens33</span><br><span class="line"><span class="attr">DEVICE</span>=ens33</span><br><span class="line"><span class="attr">ONBOOT</span>=<span class="literal">yes</span></span><br><span class="line"><span class="attr">IPADDR</span>=<span class="number">10.0</span>.<span class="number">0.136</span></span><br><span class="line"><span class="attr">NETMASK</span>=<span class="number">255.255</span>.<span class="number">255.0</span></span><br><span class="line"><span class="attr">GATEWAY</span>=<span class="number">10.0</span>.<span class="number">0.2</span></span><br><span class="line"><span class="attr">DNS1</span>=<span class="number">114.114</span>.<span class="number">114.114</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-ini" data-language="ini"><code class="language-ini"><span class="token key attr-name">TYPE</span><span class="token punctuation">=</span><span class="token value attr-value">Ethernet</span>
+<span class="token key attr-name">BOOTPROTO</span><span class="token punctuation">=</span><span class="token value attr-value">static</span>
+<span class="token key attr-name">NAME</span><span class="token punctuation">=</span><span class="token value attr-value">ens33</span>
+<span class="token key attr-name">DEVICE</span><span class="token punctuation">=</span><span class="token value attr-value">ens33</span>
+<span class="token key attr-name">ONBOOT</span><span class="token punctuation">=</span><span class="token value attr-value">yes</span>
+<span class="token key attr-name">IPADDR</span><span class="token punctuation">=</span><span class="token value attr-value">10.0.0.136</span>
+<span class="token key attr-name">NETMASK</span><span class="token punctuation">=</span><span class="token value attr-value">255.255.255.0</span>
+<span class="token key attr-name">GATEWAY</span><span class="token punctuation">=</span><span class="token value attr-value">10.0.0.2</span>
+<span class="token key attr-name">DNS1</span><span class="token punctuation">=</span><span class="token value attr-value">114.114.114.114</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h4 id="4-重启网络服务，让配置生效"><a href="#4-重启网络服务，让配置生效" class="headerlink" title="4. 重启网络服务，让配置生效"></a>4. 重启网络服务，让配置生效</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/9.png" alt="9.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart network   <span class="comment"># 注意是 network，不是 NetworkManager</span></span><br></pre></td></tr></table></figure>
+<h4 id="4-重启网络服务，让配置生效"><a href="#4-重启网络服务，让配置生效" class="headerlink" title="4. 重启网络服务，让配置生效"></a>4. 重启网络服务，让配置生效</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/9.png" alt="9.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">systemctl restart network   <span class="token comment"># 注意是 network，不是 NetworkManager</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
-<h4 id="5-测试网络是否配置成功"><a href="#5-测试网络是否配置成功" class="headerlink" title="5. 测试网络是否配置成功"></a>5. 测试网络是否配置成功</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/10.png" alt="10.png"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ip a</span><br><span class="line">ping -c 4 baidu.com</span><br></pre></td></tr></table></figure>
+<h4 id="5-测试网络是否配置成功"><a href="#5-测试网络是否配置成功" class="headerlink" title="5. 测试网络是否配置成功"></a>5. 测试网络是否配置成功</h4><p><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/10.png" alt="10.png" loading="lazy"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">ip</span> a
+<span class="token function">ping</span> <span class="token parameter variable">-c</span> <span class="token number">4</span> baidu.com<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
-<h4 id="6-网络工具命令"><a href="#6-网络工具命令" class="headerlink" title="6. 网络工具命令"></a>6. 网络工具命令</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wget 网址             <span class="comment"># 下载文件（Linux版迅雷）</span></span><br><span class="line">wget -C 网址          <span class="comment"># 断点续传（断网后继续下载）</span></span><br><span class="line">curl 网址             <span class="comment"># 测试网站连通性</span></span><br><span class="line">curl -I 网址          <span class="comment"># 查看服务器响应头（看Nginx、状态码）</span></span><br><span class="line">vim /etc/hosts        <span class="comment"># 修改主机名解析（IP 主机名）</span></span><br></pre></td></tr></table></figure>
+<h4 id="6-网络工具命令"><a href="#6-网络工具命令" class="headerlink" title="6. 网络工具命令"></a>6. 网络工具命令</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">wget</span> 网址             <span class="token comment"># 下载文件（Linux版迅雷）</span>
+<span class="token function">wget</span> <span class="token parameter variable">-C</span> 网址          <span class="token comment"># 断点续传（断网后继续下载）</span>
+<span class="token function">curl</span> 网址             <span class="token comment"># 测试网站连通性</span>
+<span class="token function">curl</span> <span class="token parameter variable">-I</span> 网址          <span class="token comment"># 查看服务器响应头（看Nginx、状态码）</span>
+<span class="token function">vim</span> /etc/hosts        <span class="token comment"># 修改主机名解析（IP 主机名）</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h4 id="7-传统方法总结"><a href="#7-传统方法总结" class="headerlink" title="7. 传统方法总结"></a>7. 传统方法总结</h4><ul>
 <li>生产环境服务器<strong>一律用静态 IP</strong>，不能用动态 DHCP</li>
@@ -151,13 +181,21 @@
 </ul>
 <hr>
 <h3 id="实战演练：静态-IP-Apache-搭建"><a href="#实战演练：静态-IP-Apache-搭建" class="headerlink" title="实战演练：静态 IP + Apache 搭建"></a>实战演练：静态 IP + Apache 搭建</h3><blockquote>
-<p><strong>背景</strong>：前面网卡配置冲突，跟着 AI 删除所有旧连接后重建 <code>ens33</code>，最终成功。<br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/11.png" alt="11.png"><br>可以发现，倒数第二行成功输出 <code>&quot;hello world&quot;</code>，本小节试验成功ヽ(✿ﾟ▽ﾟ)ノ</p>
+<p><strong>背景</strong>：前面网卡配置冲突，跟着 AI 删除所有旧连接后重建 <code>ens33</code>，最终成功。<br><img src="/2026/04/20/%E8%BF%90%E7%BB%B4%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0day5/11.png" alt="11.png" loading="lazy"><br>可以发现，倒数第二行成功输出 <code>&quot;hello world&quot;</code>，本小节试验成功ヽ(✿ﾟ▽ﾟ)ノ</p>
 </blockquote>
 <p><strong>清空重建流程（遇到冲突时的解决方法）</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nmcli c show</span><br><span class="line">nmcli c delete ens33</span><br><span class="line">nmcli c delete <span class="string">&quot;Wired connection 1&quot;</span></span><br><span class="line">nmcli c add <span class="built_in">type</span> ethernet ifname ens33 con-name ens33</span><br><span class="line">nmcli c up ens33</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">nmcli c show
+nmcli c delete ens33
+nmcli c delete <span class="token string">"Wired connection 1"</span>
+nmcli c <span class="token function">add</span> <span class="token builtin class-name">type</span> ethernet ifname ens33 con-name ens33
+nmcli c up ens33<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p><strong>搭建 Apache (httpd) 服务</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">yum install -y httpd</span><br><span class="line">systemctl start httpd</span><br><span class="line">systemctl <span class="built_in">enable</span> httpd</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;hello world&quot;</span> &gt; /var/www/html/index.html</span><br><span class="line">curl http://10.0.0.136   <span class="comment"># 输出：hello world</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">yum <span class="token function">install</span> <span class="token parameter variable">-y</span> httpd
+systemctl start httpd
+systemctl <span class="token builtin class-name">enable</span> httpd
+<span class="token builtin class-name">echo</span> <span class="token string">"hello world"</span> <span class="token operator">></span> /var/www/html/index.html
+<span class="token function">curl</span> http://10.0.0.136   <span class="token comment"># 输出：hello world</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p><strong>小 tips</strong>：</p>
 <ul>
@@ -193,7 +231,14 @@
 <td align="left">大文件（如 Linux 内核源码）</td>
 </tr>
 </tbody></table>
-<h4 id="2-核心命令"><a href="#2-核心命令" class="headerlink" title="2. 核心命令"></a>2. 核心命令</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建压缩包</span></span><br><span class="line">tar -czf 目标包名.tar.gz 要压缩的目录/文件</span><br><span class="line">tar -cjf 目标包名.tar.bz2 要压缩的目录/文件</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解压压缩包</span></span><br><span class="line">tar -xzf 压缩包名.tar.gz</span><br><span class="line">tar -xjf 压缩包名.tar.bz2</span><br><span class="line">tar -xzf xxx.tar.gz -C /指定路径   <span class="comment"># 解压到指定目录</span></span><br></pre></td></tr></table></figure>
+<h4 id="2-核心命令"><a href="#2-核心命令" class="headerlink" title="2. 核心命令"></a>2. 核心命令</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 创建压缩包</span>
+<span class="token function">tar</span> <span class="token parameter variable">-czf</span> 目标包名.tar.gz 要压缩的目录/文件
+<span class="token function">tar</span> <span class="token parameter variable">-cjf</span> 目标包名.tar.bz2 要压缩的目录/文件
+
+<span class="token comment"># 解压压缩包</span>
+<span class="token function">tar</span> <span class="token parameter variable">-xzf</span> 压缩包名.tar.gz
+<span class="token function">tar</span> <span class="token parameter variable">-xjf</span> 压缩包名.tar.bz2
+<span class="token function">tar</span> <span class="token parameter variable">-xzf</span> xxx.tar.gz <span class="token parameter variable">-C</span> /指定路径   <span class="token comment"># 解压到指定目录</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p><strong>参数解释</strong>：</p>
 <ul>
@@ -209,7 +254,9 @@
 <li>Shell 是用户与系统内核交互的<strong>翻译官</strong>，负责解释和执行命令。</li>
 <li>命令分为<strong>内置命令</strong>（如 <code>cd</code>, <code>type</code>）和<strong>外置命令</strong>（如 <code>ls</code>, <code>tar</code>）。可用 <code>type -a 命令名</code> 查看。</li>
 </ul>
-<h4 id="2-别名-Alias"><a href="#2-别名-Alias" class="headerlink" title="2. 别名 (Alias)"></a>2. 别名 (Alias)</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">alias</span> ping3=<span class="string">&#x27;ping -c 3&#x27;</span>          <span class="comment"># 临时设置</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;alias ping3=&#x27;ping -c 3&#x27;&quot;</span> &gt;&gt; ~/.bashrc   <span class="comment"># 永久设置（需 source 或重登生效）</span></span><br><span class="line">\<span class="built_in">ls</span>                              <span class="comment"># 在命令前加反斜杠可忽略别名</span></span><br></pre></td></tr></table></figure>
+<h4 id="2-别名-Alias"><a href="#2-别名-Alias" class="headerlink" title="2. 别名 (Alias)"></a>2. 别名 (Alias)</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">alias</span> <span class="token assign-left variable">ping3</span><span class="token operator">=</span><span class="token string">'ping -c 3'</span>          <span class="token comment"># 临时设置</span>
+<span class="token builtin class-name">echo</span> <span class="token string">"alias ping3='ping -c 3'"</span> <span class="token operator">>></span> ~/.bashrc   <span class="token comment"># 永久设置（需 source 或重登生效）</span>
+<span class="token punctuation">\</span>ls                              <span class="token comment"># 在命令前加反斜杠可忽略别名</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
 
 <h4 id="3-环境变量-PATH"><a href="#3-环境变量-PATH" class="headerlink" title="3. 环境变量 PATH"></a>3. 环境变量 PATH</h4><ul>
 <li>系统通过 <code>PATH</code> 变量中定义的路径列表来查找可执行命令。</li>
@@ -290,13 +337,21 @@
 </tr>
 </tbody></table>
 <h4 id="3-管理命令"><a href="#3-管理命令" class="headerlink" title="3. 管理命令"></a>3. 管理命令</h4><p><strong>用户管理</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">useradd [选项] 用户名          <span class="comment"># 创建用户（-u UID, -s Shell, -d 家目录, -g 主组, -G 附加组）</span></span><br><span class="line">usermod [选项] 用户名          <span class="comment"># 修改用户</span></span><br><span class="line">userdel -r 用户名              <span class="comment"># 删除用户并连带家目录</span></span><br><span class="line">passwd 用户名                  <span class="comment"># 设置密码</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;新密码&quot;</span> | passwd --stdin 用户名 &gt; /dev/null   <span class="comment"># 非交互式改密</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">useradd</span> <span class="token punctuation">[</span>选项<span class="token punctuation">]</span> 用户名          <span class="token comment"># 创建用户（-u UID, -s Shell, -d 家目录, -g 主组, -G 附加组）</span>
+<span class="token function">usermod</span> <span class="token punctuation">[</span>选项<span class="token punctuation">]</span> 用户名          <span class="token comment"># 修改用户</span>
+<span class="token function">userdel</span> <span class="token parameter variable">-r</span> 用户名              <span class="token comment"># 删除用户并连带家目录</span>
+<span class="token function">passwd</span> 用户名                  <span class="token comment"># 设置密码</span>
+<span class="token builtin class-name">echo</span> <span class="token string">"新密码"</span> <span class="token operator">|</span> <span class="token function">passwd</span> <span class="token parameter variable">--stdin</span> 用户名 <span class="token operator">></span> /dev/null   <span class="token comment"># 非交互式改密</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p><strong>组管理</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">groupadd 组名</span><br><span class="line">groupmod [选项] 组名</span><br><span class="line">groupdel 组名                 <span class="comment"># 组内无用户时才能删除</span></span><br><span class="line">gpasswd -a 用户 组名          <span class="comment"># 将用户加入组</span></span><br><span class="line">gpasswd -d 用户 组名          <span class="comment"># 将用户移出组</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">groupadd</span> 组名
+<span class="token function">groupmod</span> <span class="token punctuation">[</span>选项<span class="token punctuation">]</span> 组名
+<span class="token function">groupdel</span> 组名                 <span class="token comment"># 组内无用户时才能删除</span>
+gpasswd <span class="token parameter variable">-a</span> 用户 组名          <span class="token comment"># 将用户加入组</span>
+gpasswd <span class="token parameter variable">-d</span> 用户 组名          <span class="token comment"># 将用户移出组</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p><strong>检查命令执行状态</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> $?     <span class="comment"># 返回 0 为成功，非 0 为失败</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">echo</span> <span class="token variable">$?</span>     <span class="token comment"># 返回 0 为成功，非 0 为失败</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <h4 id="4-账号切换"><a href="#4-账号切换" class="headerlink" title="4. 账号切换"></a>4. 账号切换</h4><table>
 <thead>
@@ -330,7 +385,12 @@
 </li>
 </ul>
 <h4 id="2-权限匹配顺序"><a href="#2-权限匹配顺序" class="headerlink" title="2. 权限匹配顺序"></a>2. 权限匹配顺序</h4><p>系统按 <strong>Owner → Group → Other</strong> 顺序检查，一旦匹配即应用对应权限。</p>
-<h4 id="3-修改权限命令"><a href="#3-修改权限命令" class="headerlink" title="3. 修改权限命令"></a>3. 修改权限命令</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">chmod</span> 755 文件/目录               <span class="comment"># 数字法</span></span><br><span class="line"><span class="built_in">chmod</span> u=rwx,g=rx,o=r 文件/目录    <span class="comment"># 字符法</span></span><br><span class="line"><span class="built_in">chmod</span> -R 755 目录名               <span class="comment"># 递归修改</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">chown</span> 所有者:所属组 文件/目录      <span class="comment"># 修改所有者和所属组</span></span><br><span class="line"><span class="built_in">chgrp</span> 所属组 文件/目录             <span class="comment"># 仅修改所属组</span></span><br></pre></td></tr></table></figure>
+<h4 id="3-修改权限命令"><a href="#3-修改权限命令" class="headerlink" title="3. 修改权限命令"></a>3. 修改权限命令</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">chmod</span> <span class="token number">755</span> 文件/目录               <span class="token comment"># 数字法</span>
+<span class="token function">chmod</span> <span class="token assign-left variable">u</span><span class="token operator">=</span>rwx,g<span class="token operator">=</span>rx,o<span class="token operator">=</span>r 文件/目录    <span class="token comment"># 字符法</span>
+<span class="token function">chmod</span> <span class="token parameter variable">-R</span> <span class="token number">755</span> 目录名               <span class="token comment"># 递归修改</span>
+
+<span class="token function">chown</span> 所有者:所属组 文件/目录      <span class="token comment"># 修改所有者和所属组</span>
+<span class="token function">chgrp</span> 所属组 文件/目录             <span class="token comment"># 仅修改所属组</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h4 id="4-特殊权限"><a href="#4-特殊权限" class="headerlink" title="4. 特殊权限"></a>4. 特殊权限</h4><table>
 <thead>
@@ -362,7 +422,10 @@
 </tbody></table>
 <p>示例：<code>chmod 4755 file</code> 设置 SetUID；<code>chmod 1777 /shared</code> 设置 Sticky Bit。</p>
 <h4 id="5-访问控制列表-ACL"><a href="#5-访问控制列表-ACL" class="headerlink" title="5. 访问控制列表 (ACL)"></a>5. 访问控制列表 (ACL)</h4><p><strong>用途</strong>：提供比 UGO 更精细的权限控制，可为特定用户或组单独授权。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">setfacl -m u:用户名:权限 目录         <span class="comment"># 设置 ACL（如 u:tom:rx /project）</span></span><br><span class="line">getfacl 目录                          <span class="comment"># 查看 ACL（权限位末尾有 `+` 号表示存在 ACL）</span></span><br><span class="line">setfacl -x u:用户名 目录               <span class="comment"># 删除特定 ACL 条目</span></span><br><span class="line">setfacl -b 目录                       <span class="comment"># 清空所有 ACL</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">setfacl <span class="token parameter variable">-m</span> u:用户名:权限 目录         <span class="token comment"># 设置 ACL（如 u:tom:rx /project）</span>
+getfacl 目录                          <span class="token comment"># 查看 ACL（权限位末尾有 `+` 号表示存在 ACL）</span>
+setfacl <span class="token parameter variable">-x</span> u:用户名 目录               <span class="token comment"># 删除特定 ACL 条目</span>
+setfacl <span class="token parameter variable">-b</span> 目录                       <span class="token comment"># 清空所有 ACL</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h4 id="6-默认权限与-umask"><a href="#6-默认权限与-umask" class="headerlink" title="6. 默认权限与 umask"></a>6. 默认权限与 umask</h4><ul>
 <li>新建文件&#x2F;目录的默认权限由 <strong>最大权限</strong> 减去 <strong>umask</strong> 得到。</li>
@@ -375,7 +438,8 @@
 </li>
 </ul>
 <p><strong>设置 umask</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">umask</span> 077                           <span class="comment"># 临时设置</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;umask 077&quot;</span> &gt;&gt; ~/.bashrc       <span class="comment"># 永久设置（写入用户配置文件）</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">umask</span> 077                           <span class="token comment"># 临时设置</span>
+<span class="token builtin class-name">echo</span> <span class="token string">"umask 077"</span> <span class="token operator">>></span> ~/.bashrc       <span class="token comment"># 永久设置（写入用户配置文件）</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <hr>
 <blockquote>
@@ -418,21 +482,21 @@
 
     <footer>
     <div class="buttons">
-        <button class="to-top" href="#"></button>
+        <button class="to-top" type="button" title="回到顶部" aria-label="回到顶部"></button>
     </div>
     <div class="wrap min">
         <section class="widget">
             <div class="row">
                 <div class="col-m-4">
-                    <h3 class="title-recent">最新文章：</h3>
+                    <h3 class="title-recent">最新文章</h3>
                     <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
                 </div>
                 <div class="col-m-4">
-                    <h3 class="title-date">时光机：</h3>
+                    <h3 class="title-date">时光机</h3>
                     <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
                 </div>
                 <div class="col-m-4">
-                    <h3 class="title-tags">标签云：</h3>
+                    <h3 class="title-tags">标签云</h3>
                     <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
                 </div>
             </div>
@@ -444,11 +508,56 @@
 </footer>
 
 
-<script src="/static/kico.js"></script>
-<script src="/static/hingle.js"></script>
+<div class="music-player" id="music-player">
+    <button class="music-btn" type="button" title="播放音乐" aria-label="播放音乐" aria-expanded="false">
+        <span class="music-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        <svg class="music-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    </button>
+    <div class="music-panel" role="dialog" aria-label="音乐播放器">
+        <div class="music-info">
+            <p class="music-title">--</p>
+            <p class="music-artist">--</p>
+        </div>
+        <div class="music-progress">
+            <div class="music-bar"><i class="music-now-bar"></i></div>
+            <span class="music-time">0:00 / 0:00</span>
+        </div>
+        <div class="music-controls">
+            <button class="music-prev" type="button" title="上一首" aria-label="上一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h2v12H6z"/><path d="M20 6l-10 6 10 6z"/></svg></button>
+            <button class="music-play" type="button" title="播放 / 暂停" aria-label="播放 / 暂停"><svg class="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></button>
+            <button class="music-next" type="button" title="下一首" aria-label="下一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6h2v12h-2z"/><path d="M4 6l10 6-10 6z"/></svg></button>
+            <div class="music-volume">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
+                <input type="range" class="music-vol" min="0" max="100" value="50" aria-label="音量">
+            </div>
+        </div>
+        <ul class="music-list">
+        
+            <li class="music-item" data-index="0">
+                <span class="music-item-name">LoFi 学习曲</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="1">
+                <span class="music-item-name">Bossa Nova 轻音乐</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="2">
+                <span class="music-item-name">爵士钢琴</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="3">
+                <span class="music-item-name">咖啡厅爵士</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+        </ul>
+    </div>
+</div>
 
 
-<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
   </body>
 </html>

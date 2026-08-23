@@ -6,19 +6,31 @@
     <title>Zabbix监控-1 - hualalala 的博客</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Zabbix监控-1 - hualalala 的博客"/>
+    <meta property="og:url" content="https://huaer-de.github.io/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">
+    <meta property="og:description" content="这是一个记录学习的博客ovo 😊">
+    <meta property="og:type" content="article">
+    <!-- 预连接 / 预解析，加快第三方资源加载 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.pixabay.com">
+    <!-- 字体：Inter（拉丁）+ 系统中文字体，display=swap 避免阻塞渲染 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     
 <link rel="stylesheet" href="/static/kico.css">
 <link rel="stylesheet" href="/static/hingle.css">
 
     
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta property="og:site_name" content="hualalala 的博客">
-    <meta property="og:title" content="Zabbix监控-1"/>
-    
-    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
-    
+    <!-- 主题配置（脚本按 defer 顺序在 DOM 解析完成后执行） -->
+    <script>window.__HINGLE_CONFIG__ = {"theme":{"copyright":false,"night":true},"music":{"enable":true,"autoplay":false,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"}};</script>
+    <script defer src="/static/kico.js"></script>
+    <script defer src="/static/hingle.js"></script>
 <meta name="generator" content="Hexo 8.1.1"></head>
 
   <body>
@@ -27,17 +39,17 @@
         <h4>hualalala 的博客</h4>
     </div>
     <div class="head-action">
-        <div class="toggle-btn"></div>
-        <div class="light-btn"></div>
-        <div class="search-btn"></div>
+        <button class="toggle-btn" type="button" title="菜单" aria-label="展开菜单"></button>
+        <button class="light-btn" type="button" title="夜间模式" aria-label="切换夜间模式"></button>
+        <button class="search-btn" type="button" title="搜索" aria-label="展开搜索框"></button>
     </div>
-    <form class="head-search" method="post">
-        <input type="text" name="s" placeholder="搜索什么？">
+    <form class="head-search" role="search">
+        <input type="search" name="s" placeholder="搜索什么？" aria-label="搜索关键词">
     </form>
-    <nav class="head-menu">
+    <nav class="head-menu" aria-label="主导航">
         <a href="/">首页</a>
         <div class="has-child">
-            <a href>分类</a>
+            <a href="javascript:void(0)">分类</a>
             <div class="sub-menu">
                 <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
             </div>
@@ -68,19 +80,19 @@
 <h3 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>我们需要在 Vmware 上，新搭建一个干净的 Rocky Linux 9.6 的操作系统底座。</p>
 <p>具体地，我们提前在本机上安装好 Rocky Linux 9.6 最小化的镜像，官方路径在 <a target="_blank" rel="noopener" href="https://dl.rockylinux.org/vault/rocky/9.6/isos/x86_64/">Rocky9.6官方镜像</a> 。</p>
 <p>进入 Vmware，创建新的虚拟机，选择典型（推荐）里面 Rocky Linux 64 位版本的操作系统，建议 2 核 4G 内存，NAT 模式，最后在虚拟机设置里选择镜像，就建好虚拟机了。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/1.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/1.png" loading="lazy"></p>
 <p>开启虚拟机，启动菜单选择 <code>Install Rocky Linux 9</code> 开始安装，在安装摘要界面处理好带感叹号！的选项，打开网卡，地区选亚洲&#x2F;上海，打开网络时间同步，设置 root 密码，勾选【允许 root 用户使用密码进行 SSH 登录】，重启系统，就进入了登录界面。</p>
 <p>远程连接后，开始初始化配置。大概需要关闭防火墙，下载常用包，更换镜像仓库（如果我们访问官方源，是比较慢的，可以换为阿里云），修改网卡名称，配置域名解析等。监控时候，如果不开防火墙，会产生一些问题。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/2.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/2.png" loading="lazy"></p>
 <p>修改一下网卡配置吧，我们修改内核启动参数，进入 <code>/boot/loader/entries/</code> 在 <code>options root=</code> 这一行的最后面，加上 <code>net.ifnames=0</code>，这样，系统就不会自动生成 ensxxx 这种新式的网卡名字，而是挥发老系统的 eth0, eth1 命名方法。再次重启虚拟机，配置就会生效了。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/3.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/3.png" loading="lazy"></p>
 <p>我们需要注意一下，RHEL9 不可以直接修改 <code>/etc/sysconfig/grub</code>，那是 grub2 的传统方式，用 <code>grub2-mkconfig</code> 生成配置。RHEL9 的 systemd-boot（UEFI 启动）配置是 <code>/boot/loader/entries/*.conf</code>，直接编辑就好，不用生成。</p>
 <p>后续我们可以再通过下面的命令，确认修改生效并为 eth0 创建连接。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/4.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/4.png" loading="lazy"></p>
 <p>通过 <code>nmcli</code> 命令，看到有两行多余行，网卡 eth0 的连接名字是 <code>Wired connection 1</code>，我们通过 <code>nmcli connection modify &quot;Wired connection 1&quot; connection.id eth0</code>，把名字改回 eth0，通过 <code>nmcli connection delete ens160</code> 删去多余行。重载后会生效。</p>
 <p>我们在这里了解一下 <code>nmcli</code> 的含义。<code>nmcli</code> 完整写法是 NetworkManager command-line，用来管理网络连接。connection 是连接设备，NAME 列，一套网络配置（ip、网关、dns），可以有多套配置；device 是物理网卡，DEVICE 列，里面的 eth0、ens160、lo 等，是真实网卡的硬件名字。</p>
 <p>系统原本应用的 dhcp 策略容易使 IP 发生变化，我们可以使用 nmcli 命令的方式配置为静态 IP，我的 IP 在 192.168.86.135，于是命令为 <code>nmcli c modify eth0 ipv4.addresses &#39;192.168.86.135/24&#39; ipv4.gateway &#39;192.168.86.2&#39; ipv4.dns &#39;114.114.114.114&#39;</code>。<br>最后要记得<code>nmcli c up eth0</code>激活配置使静态网卡生效。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/5.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/5.png" loading="lazy"></p>
 <p>可能是刚开始用 Rocky9，部署很习惯，配置静态 IP 还是 CentOS7 容易一点。</p>
 <p>在 CentOS7 里，我们只需改 <code>/etc/sysconfig/network-scripts/ifcfg-ens32</code>（也可能是 ifcfg-ens33），修改后，<code>BOOTPROTO=static</code>（或 none），添加静态 IPADDR，子网掩码 <code>IPNETMASK=255.255.255.0</code>，网关 <code>GATEWAY=192.168.86.2</code>，<code>DNS1=114.114.114.114</code>，以及网卡对外的名称 <code>NAME=eth0</code>。</p>
 <p>设置网卡名字，需要我们在<code>/etc/default/grub</code>里面，<code>GRUB_CMDLINE_LINUX</code>行末尾（但是在引号内）加上<code>net.ifnames=0 biosdevname=0</code>，然后通过<code>grub2-mkconfig -o /boot/grub2/grub.cfg</code>自动生成配置。重启，eth0网卡名字生效。</p>
@@ -93,17 +105,17 @@
 <p>我们部署的时候，要先把基础环境搭建好。装 MySQL，Apache(Web)，配 YUM 源。下面我们正式开始部署吧。</p>
 <h3 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>官方下载和安装文档的路径在 <a target="_blank" rel="noopener" href="https://www.zabbix.com/cn/download">zabbix安装</a> ，使用文档在 <a target="_blank" rel="noopener" href="https://www.zabbix.com/documentation/6.0/zh/manual/">zabbix使用文档</a>。</p>
 <p>提前配好 MySQL 服务，下面我们跟着文档来做，在 server1 上安装 Zabbix 官方源，导入 Zabbix 初始数据。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/6.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/6.png" loading="lazy"></p>
 <p>因为我已经装过了，显示有一些异常，是提醒用户存在之类的，我们不用理会。</p>
 <p>大概来说，我们安装好 Zabbix 软件仓库后，要继续安装服务器，Web 前端及代理程序的服务。再登录 MySQL 创建初始数据库，将配置文件 <code>/etc/zabbix/zabbix_server.conf</code> 里的密码改为 password，<code>DBPassword=password</code>。启动 <code>zabbix-server zabbix-agent httpd php-fpm</code> 进程并设为开机自启，下面我们去 agent 端操作。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/7.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/7.png" loading="lazy"></p>
 <p>我们需要在 server2 上安装 Agent，在 zabbix_agent 配置文件里，将服务指向 server1 的 IP，配置 Hostname 为 server2，再启动 zabbix_agent 服务。这样，架构就算搭好了。</p>
 <p>下面，我们进行前端初始化。</p>
 <p>进入浏览器，访问 server 端虚拟机中的 Zabbix 界面（如我的，是访问 192.168.86.135&#x2F;zabbix），根据我们的情况来填写，最后检查的信息如下。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/8.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/8.png" loading="lazy"></p>
 <p>实际初始化和图片所示，有区别，没有 ”Pre-installation summary” 这一栏。因为实验用的是 6.0 版本，图片所示为 5.0。</p>
 <p>我们登录管理员站好 Admin，密码为 zabbix，就进入管理界面了。</p>
-<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/9.png"></p>
+<p><img src="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/9.png" loading="lazy"></p>
 <blockquote>
 <p>下一篇，我们使用 Zabbix。</p>
 </blockquote>
@@ -142,21 +154,21 @@
 
     <footer>
     <div class="buttons">
-        <button class="to-top" href="#"></button>
+        <button class="to-top" type="button" title="回到顶部" aria-label="回到顶部"></button>
     </div>
     <div class="wrap min">
         <section class="widget">
             <div class="row">
                 <div class="col-m-4">
-                    <h3 class="title-recent">最新文章：</h3>
+                    <h3 class="title-recent">最新文章</h3>
                     <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
                 </div>
                 <div class="col-m-4">
-                    <h3 class="title-date">时光机：</h3>
+                    <h3 class="title-date">时光机</h3>
                     <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
                 </div>
                 <div class="col-m-4">
-                    <h3 class="title-tags">标签云：</h3>
+                    <h3 class="title-tags">标签云</h3>
                     <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
                 </div>
             </div>
@@ -168,11 +180,56 @@
 </footer>
 
 
-<script src="/static/kico.js"></script>
-<script src="/static/hingle.js"></script>
+<div class="music-player" id="music-player">
+    <button class="music-btn" type="button" title="播放音乐" aria-label="播放音乐" aria-expanded="false">
+        <span class="music-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        <svg class="music-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    </button>
+    <div class="music-panel" role="dialog" aria-label="音乐播放器">
+        <div class="music-info">
+            <p class="music-title">--</p>
+            <p class="music-artist">--</p>
+        </div>
+        <div class="music-progress">
+            <div class="music-bar"><i class="music-now-bar"></i></div>
+            <span class="music-time">0:00 / 0:00</span>
+        </div>
+        <div class="music-controls">
+            <button class="music-prev" type="button" title="上一首" aria-label="上一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h2v12H6z"/><path d="M20 6l-10 6 10 6z"/></svg></button>
+            <button class="music-play" type="button" title="播放 / 暂停" aria-label="播放 / 暂停"><svg class="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></button>
+            <button class="music-next" type="button" title="下一首" aria-label="下一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6h2v12h-2z"/><path d="M4 6l10 6-10 6z"/></svg></button>
+            <div class="music-volume">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
+                <input type="range" class="music-vol" min="0" max="100" value="50" aria-label="音量">
+            </div>
+        </div>
+        <ul class="music-list">
+        
+            <li class="music-item" data-index="0">
+                <span class="music-item-name">LoFi 学习曲</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="1">
+                <span class="music-item-name">Bossa Nova 轻音乐</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="2">
+                <span class="music-item-name">爵士钢琴</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="3">
+                <span class="music-item-name">咖啡厅爵士</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+        </ul>
+    </div>
+</div>
 
 
-<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
   </body>
 </html>

@@ -6,19 +6,31 @@
     <title>Codis集群搭建 - hualalala 的博客</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Codis集群搭建 - hualalala 的博客"/>
+    <meta property="og:url" content="https://huaer-de.github.io/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">
+    <meta property="og:description" content="这是一个记录学习的博客ovo 😊">
+    <meta property="og:type" content="article">
+    <!-- 预连接 / 预解析，加快第三方资源加载 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.pixabay.com">
+    <!-- 字体：Inter（拉丁）+ 系统中文字体，display=swap 避免阻塞渲染 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     
 <link rel="stylesheet" href="/static/kico.css">
 <link rel="stylesheet" href="/static/hingle.css">
 
     
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta property="og:site_name" content="hualalala 的博客">
-    <meta property="og:title" content="Codis集群搭建"/>
-    
-    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
-    
+    <!-- 主题配置（脚本按 defer 顺序在 DOM 解析完成后执行） -->
+    <script>window.__HINGLE_CONFIG__ = {"theme":{"copyright":false,"night":true},"music":{"enable":true,"autoplay":false,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"}};</script>
+    <script defer src="/static/kico.js"></script>
+    <script defer src="/static/hingle.js"></script>
 <meta name="generator" content="Hexo 8.1.1"></head>
 
   <body>
@@ -27,17 +39,17 @@
         <h4>hualalala 的博客</h4>
     </div>
     <div class="head-action">
-        <div class="toggle-btn"></div>
-        <div class="light-btn"></div>
-        <div class="search-btn"></div>
+        <button class="toggle-btn" type="button" title="菜单" aria-label="展开菜单"></button>
+        <button class="light-btn" type="button" title="夜间模式" aria-label="切换夜间模式"></button>
+        <button class="search-btn" type="button" title="搜索" aria-label="展开搜索框"></button>
     </div>
-    <form class="head-search" method="post">
-        <input type="text" name="s" placeholder="搜索什么？">
+    <form class="head-search" role="search">
+        <input type="search" name="s" placeholder="搜索什么？" aria-label="搜索关键词">
     </form>
-    <nav class="head-menu">
+    <nav class="head-menu" aria-label="主导航">
         <a href="/">首页</a>
         <div class="has-child">
-            <a href>分类</a>
+            <a href="javascript:void(0)">分类</a>
             <div class="sub-menu">
                 <a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
             </div>
@@ -64,29 +76,43 @@
             <h1 id="Codis-集群搭建笔记"><a href="#Codis-集群搭建笔记" class="headerlink" title="Codis 集群搭建笔记"></a>Codis 集群搭建笔记</h1><h2 id="1-介绍"><a href="#1-介绍" class="headerlink" title="1. 介绍"></a>1. 介绍</h2><p>Codis 是一个由豆瓣开源的分布式 Redis 解决方案。对于上层应用来说，连接到 Codis Proxy 和连接原生的 Redis Server 没有显著区别，底层会处理请求的转发和不停机的数据迁移等工作。</p>
 <hr>
 <h2 id="2-环境准备"><a href="#2-环境准备" class="headerlink" title="2. 环境准备"></a>2. 环境准备</h2><p><strong>实验环境</strong>：CentOS 7 虚拟机，IP: 192.168.86.135</p>
-<h3 id="2-1-安装-JDK"><a href="#2-1-安装-JDK" class="headerlink" title="2.1 安装 JDK"></a>2.1 安装 JDK</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf jdk-8uXXX-linux-x64.tar.gz -C /usr/local/</span><br><span class="line"><span class="built_in">mv</span> /usr/local/jdk1.8.0_XXX /usr/local/java</span><br></pre></td></tr></table></figure>
+<h3 id="2-1-安装-JDK"><a href="#2-1-安装-JDK" class="headerlink" title="2.1 安装 JDK"></a>2.1 安装 JDK</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">tar</span> <span class="token parameter variable">-zxvf</span> jdk-8uXXX-linux-x64.tar.gz <span class="token parameter variable">-C</span> /usr/local/
+<span class="token function">mv</span> /usr/local/jdk1.8.0_XXX /usr/local/java<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>配置 JAVA_HOME 环境变量后，验证安装：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -version</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">java</span> <span class="token parameter variable">-version</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/1.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/1.png" loading="lazy"></p>
 <h3 id="2-2-安装-ZooKeeper"><a href="#2-2-安装-ZooKeeper" class="headerlink" title="2.2 安装 ZooKeeper"></a>2.2 安装 ZooKeeper</h3><p>Codis 使用 ZooKeeper 作为外部存储，管理集群元数据。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf zookeeper-3.4.14.tar.gz -C /usr/local/</span><br><span class="line"><span class="built_in">mv</span> /usr/local/zookeeper-3.4.14 /usr/local/zookeeper</span><br><span class="line"><span class="built_in">mkdir</span> -p /data/zookeeper</span><br><span class="line"><span class="built_in">cp</span> /usr/local/zookeeper/conf/zoo_sample.cfg /usr/local/zookeeper/conf/zoo.cfg</span><br><span class="line">sed -i <span class="string">&#x27;s@dataDir=/tmp/zookeeper@dataDir=/data/zookeeper@&#x27;</span> /usr/local/zookeeper/conf/zoo.cfg</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">tar</span> <span class="token parameter variable">-zxvf</span> zookeeper-3.4.14.tar.gz <span class="token parameter variable">-C</span> /usr/local/
+<span class="token function">mv</span> /usr/local/zookeeper-3.4.14 /usr/local/zookeeper
+<span class="token function">mkdir</span> <span class="token parameter variable">-p</span> /data/zookeeper
+<span class="token function">cp</span> /usr/local/zookeeper/conf/zoo_sample.cfg /usr/local/zookeeper/conf/zoo.cfg
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'s@dataDir=/tmp/zookeeper@dataDir=/data/zookeeper@'</span> /usr/local/zookeeper/conf/zoo.cfg<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>启动并验证 ZooKeeper：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/zookeeper/bin/zkServer.sh start</span><br><span class="line">/usr/local/zookeeper/bin/zkServer.sh status</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">/usr/local/zookeeper/bin/zkServer.sh start
+/usr/local/zookeeper/bin/zkServer.sh status<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/2.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/2.png" loading="lazy"></p>
 <h3 id="2-3-安装-Go-运行环境"><a href="#2-3-安装-Go-运行环境" class="headerlink" title="2.3 安装 Go 运行环境"></a>2.3 安装 Go 运行环境</h3><p>Codis 由 Go 语言编写，需要 Go 运行环境。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wget https://golang.org/dl/go1.7.3.linux-amd64.tar.gz</span><br><span class="line">tar -zxvf go1.7.3.linux-amd64.tar.gz -C /usr/local/</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;export PATH=$PATH:/usr/local/go/bin&#x27;</span> &gt;&gt; /etc/profile</span><br><span class="line"><span class="built_in">source</span> /etc/profile</span><br><span class="line">go version</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">wget</span> https://golang.org/dl/go1.7.3.linux-amd64.tar.gz
+<span class="token function">tar</span> <span class="token parameter variable">-zxvf</span> go1.7.3.linux-amd64.tar.gz <span class="token parameter variable">-C</span> /usr/local/
+<span class="token builtin class-name">echo</span> <span class="token string">'export PATH=$PATH:/usr/local/go/bin'</span> <span class="token operator">>></span> /etc/profile
+<span class="token builtin class-name">source</span> /etc/profile
+go version<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <blockquote>
 <p><strong>注意</strong>：需要设置 <code>$GOPATH</code> 环境变量，Codis 源码需下载到 <code>$GOPATH/src/github.com/CodisLabs/codis</code>。</p>
 </blockquote>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/3.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/3.png" loading="lazy"></p>
 <hr>
 <h2 id="3-编译-Codis"><a href="#3-编译-Codis" class="headerlink" title="3. 编译 Codis"></a>3. 编译 Codis</h2><p>从 GitHub 下载 Codis 3.2 分支源码并编译：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p <span class="variable">$GOPATH</span>/src/github.com/CodisLabs</span><br><span class="line"><span class="built_in">cd</span> <span class="variable">$GOPATH</span>/src/github.com/CodisLabs</span><br><span class="line">git <span class="built_in">clone</span> https://github.com/CodisLabs/codis.git -b release3.2</span><br><span class="line"><span class="built_in">cd</span> codis</span><br><span class="line">make</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mkdir</span> <span class="token parameter variable">-p</span> <span class="token variable">$GOPATH</span>/src/github.com/CodisLabs
+<span class="token builtin class-name">cd</span> <span class="token variable">$GOPATH</span>/src/github.com/CodisLabs
+<span class="token function">git</span> clone https://github.com/CodisLabs/codis.git <span class="token parameter variable">-b</span> release3.2
+<span class="token builtin class-name">cd</span> codis
+<span class="token function">make</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>编译成功后，<code>bin/</code> 目录下会生成以下可执行文件：</p>
 <ul>
@@ -96,46 +122,61 @@
 <li><code>codis-fe</code> — Web 管理界面</li>
 <li><code>codis-server</code> — 基于 Redis 3.2.8 的服务端</li>
 </ul>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/4.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/4.png" loading="lazy"></p>
 <hr>
 <h2 id="4-修改配置文件"><a href="#4-修改配置文件" class="headerlink" title="4. 修改配置文件"></a>4. 修改配置文件</h2><p>需要修改以下三个配置文件（位于 <code>config/</code> 目录下）：</p>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/5.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/5.png" loading="lazy"></p>
 <h3 id="4-1-dashboard-toml"><a href="#4-1-dashboard-toml" class="headerlink" title="4.1 dashboard.toml"></a>4.1 dashboard.toml</h3><p>配置 Dashboard 参数：</p>
-<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">coordinator_name</span> = <span class="string">&quot;zookeeper&quot;</span>            <span class="comment"># 外部存储类型：zookeeper/etcd</span></span><br><span class="line"><span class="attr">coordinator_addr</span> = <span class="string">&quot;192.168.86.135:2181&quot;</span>  <span class="comment"># ZooKeeper 地址</span></span><br><span class="line"><span class="attr">product_name</span> = <span class="string">&quot;codis-demo&quot;</span>               <span class="comment"># 集群名称</span></span><br><span class="line"><span class="attr">product_auth</span> = <span class="string">&quot;&quot;</span>                         <span class="comment"># 集群密码（默认为空）</span></span><br><span class="line"><span class="attr">admin_addr</span> = <span class="string">&quot;0.0.0.0:18080&quot;</span>              <span class="comment"># Dashboard API 端口</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-toml" data-language="toml"><code class="language-toml"><span class="token key property">coordinator_name</span> <span class="token punctuation">=</span> <span class="token string">"zookeeper"</span>            <span class="token comment"># 外部存储类型：zookeeper/etcd</span>
+<span class="token key property">coordinator_addr</span> <span class="token punctuation">=</span> <span class="token string">"192.168.86.135:2181"</span>  <span class="token comment"># ZooKeeper 地址</span>
+<span class="token key property">product_name</span> <span class="token punctuation">=</span> <span class="token string">"codis-demo"</span>               <span class="token comment"># 集群名称</span>
+<span class="token key property">product_auth</span> <span class="token punctuation">=</span> <span class="token string">""</span>                         <span class="token comment"># 集群密码（默认为空）</span>
+<span class="token key property">admin_addr</span> <span class="token punctuation">=</span> <span class="token string">"0.0.0.0:18080"</span>              <span class="token comment"># Dashboard API 端口</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="4-2-proxy-toml"><a href="#4-2-proxy-toml" class="headerlink" title="4.2 proxy.toml"></a>4.2 proxy.toml</h3><p>配置 Proxy 参数：</p>
-<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">product_name</span> = <span class="string">&quot;codis-demo&quot;</span>           <span class="comment"># 必须与 Dashboard 一致</span></span><br><span class="line"><span class="attr">product_auth</span> = <span class="string">&quot;&quot;</span>                     <span class="comment"># 必须与 Dashboard 一致</span></span><br><span class="line"><span class="attr">admin_addr</span> = <span class="string">&quot;0.0.0.0:11080&quot;</span>          <span class="comment"># Proxy 管理端口</span></span><br><span class="line"><span class="attr">proto_type</span> = <span class="string">&quot;tcp4&quot;</span></span><br><span class="line"><span class="attr">proxy_addr</span> = <span class="string">&quot;0.0.0.0:19000&quot;</span>          <span class="comment"># Proxy 服务端口（客户端连接端口）</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-toml" data-language="toml"><code class="language-toml"><span class="token key property">product_name</span> <span class="token punctuation">=</span> <span class="token string">"codis-demo"</span>           <span class="token comment"># 必须与 Dashboard 一致</span>
+<span class="token key property">product_auth</span> <span class="token punctuation">=</span> <span class="token string">""</span>                     <span class="token comment"># 必须与 Dashboard 一致</span>
+<span class="token key property">admin_addr</span> <span class="token punctuation">=</span> <span class="token string">"0.0.0.0:11080"</span>          <span class="token comment"># Proxy 管理端口</span>
+<span class="token key property">proto_type</span> <span class="token punctuation">=</span> <span class="token string">"tcp4"</span>
+<span class="token key property">proxy_addr</span> <span class="token punctuation">=</span> <span class="token string">"0.0.0.0:19000"</span>          <span class="token comment"># Proxy 服务端口（客户端连接端口）</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h3 id="4-3-redis-conf"><a href="#4-3-redis-conf" class="headerlink" title="4.3 redis.conf"></a>4.3 redis.conf</h3><p>Codis Server 基于 Redis，使用标准 Redis 配置文件，默认端口 6379。</p>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/6.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/6.png" loading="lazy"></p>
 <hr>
 <h2 id="5-启动集群"><a href="#5-启动集群" class="headerlink" title="5. 启动集群"></a>5. 启动集群</h2><blockquote>
 <p><strong>启动顺序</strong>：必须按照 Dashboard → Proxy → Server → FE 的顺序启动。</p>
 </blockquote>
-<h3 id="5-1-启动-Dashboard"><a href="#5-1-启动-Dashboard" class="headerlink" title="5.1 启动 Dashboard"></a>5.1 启动 Dashboard</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> ./bin/codis-dashboard --ncpu=4 --config=config/dashboard.toml \</span><br><span class="line">  --<span class="built_in">log</span>=logs/dashboard.log --log-level=WARN &amp;</span><br></pre></td></tr></table></figure>
+<h3 id="5-1-启动-Dashboard"><a href="#5-1-启动-Dashboard" class="headerlink" title="5.1 启动 Dashboard"></a>5.1 启动 Dashboard</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">nohup</span> ./bin/codis-dashboard <span class="token parameter variable">--ncpu</span><span class="token operator">=</span><span class="token number">4</span> <span class="token parameter variable">--config</span><span class="token operator">=</span>config/dashboard.toml <span class="token punctuation">\</span>
+  <span class="token parameter variable">--log</span><span class="token operator">=</span>logs/dashboard.log --log-level<span class="token operator">=</span>WARN <span class="token operator">&amp;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>启动后 Dashboard 监听 <code>18080</code> 端口提供 RESTful API。可通过日志确认启动状态：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">tail</span> -100 logs/dashboard.log</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">tail</span> <span class="token parameter variable">-100</span> logs/dashboard.log<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
-<h3 id="5-2-启动-Proxy"><a href="#5-2-启动-Proxy" class="headerlink" title="5.2 启动 Proxy"></a>5.2 启动 Proxy</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> ./bin/codis-proxy --ncpu=4 --config=config/proxy.toml \</span><br><span class="line">  --<span class="built_in">log</span>=logs/proxy.log --log-level=WARN &amp;</span><br></pre></td></tr></table></figure>
+<h3 id="5-2-启动-Proxy"><a href="#5-2-启动-Proxy" class="headerlink" title="5.2 启动 Proxy"></a>5.2 启动 Proxy</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">nohup</span> ./bin/codis-proxy <span class="token parameter variable">--ncpu</span><span class="token operator">=</span><span class="token number">4</span> <span class="token parameter variable">--config</span><span class="token operator">=</span>config/proxy.toml <span class="token punctuation">\</span>
+  <span class="token parameter variable">--log</span><span class="token operator">=</span>logs/proxy.log --log-level<span class="token operator">=</span>WARN <span class="token operator">&amp;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <blockquote>
 <p><strong>重要</strong>：Proxy 启动后处于 <code>waiting</code> 状态，不会接受客户端连接，需要添加到集群并完成状态同步后才能变为 <code>online</code>。</p>
 </blockquote>
 <h3 id="5-3-将-Proxy-添加到集群并设为-Online"><a href="#5-3-将-Proxy-添加到集群并设为-Online" class="headerlink" title="5.3 将 Proxy 添加到集群并设为 Online"></a>5.3 将 Proxy 添加到集群并设为 Online</h3><p>通过 <code>codis-admin</code> 命令行工具将 Proxy 加入集群：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">./bin/codis-admin --dashboard=192.168.86.135:18080 \</span><br><span class="line">  --create-proxy --addr=192.168.86.135:11080</span><br><span class="line"></span><br><span class="line">./bin/codis-admin --dashboard=192.168.86.135:18080 \</span><br><span class="line">  --online-proxy --addr=192.168.86.135:11080</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">./bin/codis-admin <span class="token parameter variable">--dashboard</span><span class="token operator">=</span><span class="token number">192.168</span>.86.135:18080 <span class="token punctuation">\</span>
+  --create-proxy <span class="token parameter variable">--addr</span><span class="token operator">=</span><span class="token number">192.168</span>.86.135:11080
+
+./bin/codis-admin <span class="token parameter variable">--dashboard</span><span class="token operator">=</span><span class="token number">192.168</span>.86.135:18080 <span class="token punctuation">\</span>
+  --online-proxy <span class="token parameter variable">--addr</span><span class="token operator">=</span><span class="token number">192.168</span>.86.135:11080<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>添加过程中，Dashboard 会完成：验证集群 name 和 auth、将 Proxy 信息写入外部存储、同步 slots 状态、标记 Proxy 为 online。</p>
-<h3 id="5-4-启动-Codis-Server"><a href="#5-4-启动-Codis-Server" class="headerlink" title="5.4 启动 Codis Server"></a>5.4 启动 Codis Server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/codis-server config/redis.conf</span><br></pre></td></tr></table></figure>
+<h3 id="5-4-启动-Codis-Server"><a href="#5-4-启动-Codis-Server" class="headerlink" title="5.4 启动 Codis Server"></a>5.4 启动 Codis Server</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">./bin/codis-server config/redis.conf<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
 <p>启动方式与普通 Redis 完全一致。</p>
-<h3 id="5-5-启动-Codis-FE（Web-管理界面）"><a href="#5-5-启动-Codis-FE（Web-管理界面）" class="headerlink" title="5.5 启动 Codis FE（Web 管理界面）"></a>5.5 启动 Codis FE（Web 管理界面）</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">nohup</span> ./bin/codis-fe --zookeeper=192.168.86.135:2181 \</span><br><span class="line">  --listen=0.0.0.0:9090 --<span class="built_in">log</span>=logs/fe.log --log-level=WARN &amp;</span><br></pre></td></tr></table></figure>
+<h3 id="5-5-启动-Codis-FE（Web-管理界面）"><a href="#5-5-启动-Codis-FE（Web-管理界面）" class="headerlink" title="5.5 启动 Codis FE（Web 管理界面）"></a>5.5 启动 Codis FE（Web 管理界面）</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">nohup</span> ./bin/codis-fe <span class="token parameter variable">--zookeeper</span><span class="token operator">=</span><span class="token number">192.168</span>.86.135:2181 <span class="token punctuation">\</span>
+  <span class="token parameter variable">--listen</span><span class="token operator">=</span><span class="token number">0.0</span>.0.0:9090 <span class="token parameter variable">--log</span><span class="token operator">=</span>logs/fe.log --log-level<span class="token operator">=</span>WARN <span class="token operator">&amp;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>FE 启动后监听 <code>9090</code> 端口。通过浏览器访问 <code>http://192.168.86.135:9090</code> 即可进入管理界面。</p>
 <p>检查端口：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -tlnp | grep 9090</span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">netstat</span> <span class="token parameter variable">-tlnp</span> <span class="token operator">|</span> <span class="token function">grep</span> <span class="token number">9090</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/7.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/7.png" loading="lazy"></p>
 <hr>
 <h2 id="6-配置集群"><a href="#6-配置集群" class="headerlink" title="6. 配置集群"></a>6. 配置集群</h2><h3 id="6-1-创建-Group-并添加-Server"><a href="#6-1-创建-Group-并添加-Server" class="headerlink" title="6.1 创建 Group 并添加 Server"></a>6.1 创建 Group 并添加 Server</h3><p>通过 FE 界面操作：</p>
 <ol>
@@ -147,22 +188,26 @@
 <p><strong>原理</strong>：Group 是 Codis 中的服务器组，每个 Group 包含一个 Master 和多个 Slave，负责存储一部分数据。</p>
 </blockquote>
 <p>创建 Group 界面：</p>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/8.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/8.png" loading="lazy"></p>
 <p>添加 Server 后，界面显示状态如下（Data Center 显示 NO:ONE 可忽略，Memory 和 Keys 正常）：</p>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/9.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/9.png" loading="lazy"></p>
 <h3 id="6-2-初始化-Slots"><a href="#6-2-初始化-Slots" class="headerlink" title="6.2 初始化 Slots"></a>6.2 初始化 Slots</h3><p>Codis 将数据分散到 <strong>1024 个槽位（Slots）</strong> 中。新增集群的 slot 状态为 <code>offline</code>，需要进行初始化：</p>
 <p>在 FE 界面点击 <strong>Rebalance All Slots</strong> 按钮，系统会将 1024 个 slot 自动分配到各个 Group。</p>
 <blockquote>
 <p><strong>原理</strong>：Codis 3.x 的 rebalance 算法基于 Group 下的 slot 数量进行分配。分配完成后，蓝色条（未分配）消失，表示所有 slot 已分配完毕。</p>
 </blockquote>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/10.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/10.png" loading="lazy"></p>
 <h3 id="6-3-通过-redis-cli-测试"><a href="#6-3-通过-redis-cli-测试" class="headerlink" title="6.3 通过 redis-cli 测试"></a>6.3 通过 redis-cli 测试</h3><p>通过 <code>redis-cli</code> 连接 Codis Proxy（端口 19000）进行测试：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">redis-cli -h 192.168.86.135 -p 19000</span><br><span class="line">127.0.0.1:19000&gt; <span class="built_in">set</span> key1 value1</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:19000&gt; get key1</span><br><span class="line"><span class="string">&quot;value1&quot;</span></span><br></pre></td></tr></table></figure>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">redis-cli <span class="token parameter variable">-h</span> <span class="token number">192.168</span>.86.135 <span class="token parameter variable">-p</span> <span class="token number">19000</span>
+<span class="token number">127.0</span>.0.1:1900<span class="token operator"><span class="token file-descriptor important">0</span>></span> <span class="token builtin class-name">set</span> key1 value1
+OK
+<span class="token number">127.0</span>.0.1:1900<span class="token operator"><span class="token file-descriptor important">0</span>></span> get key1
+<span class="token string">"value1"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <blockquote>
 <p><strong>注意</strong>：客户端应连接 Proxy 端口（19000），而非直接连接 Codis Server（6379）。</p>
 </blockquote>
-<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/11.png"></p>
+<p><img src="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/11.png" loading="lazy"></p>
 
         </article>
         <section class="post-near">
@@ -198,21 +243,21 @@
 
     <footer>
     <div class="buttons">
-        <button class="to-top" href="#"></button>
+        <button class="to-top" type="button" title="回到顶部" aria-label="回到顶部"></button>
     </div>
     <div class="wrap min">
         <section class="widget">
             <div class="row">
                 <div class="col-m-4">
-                    <h3 class="title-recent">最新文章：</h3>
+                    <h3 class="title-recent">最新文章</h3>
                     <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/07/Zabbix%E7%9B%91%E6%8E%A7-1/">Zabbix监控-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/03/Codis%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">Codis集群搭建</a></li></ul>
                 </div>
                 <div class="col-m-4">
-                    <h3 class="title-date">时光机：</h3>
+                    <h3 class="title-date">时光机</h3>
                     <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
                 </div>
                 <div class="col-m-4">
-                    <h3 class="title-tags">标签云：</h3>
+                    <h3 class="title-tags">标签云</h3>
                     <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 11.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
                 </div>
             </div>
@@ -224,11 +269,56 @@
 </footer>
 
 
-<script src="/static/kico.js"></script>
-<script src="/static/hingle.js"></script>
+<div class="music-player" id="music-player">
+    <button class="music-btn" type="button" title="播放音乐" aria-label="播放音乐" aria-expanded="false">
+        <span class="music-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        <svg class="music-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    </button>
+    <div class="music-panel" role="dialog" aria-label="音乐播放器">
+        <div class="music-info">
+            <p class="music-title">--</p>
+            <p class="music-artist">--</p>
+        </div>
+        <div class="music-progress">
+            <div class="music-bar"><i class="music-now-bar"></i></div>
+            <span class="music-time">0:00 / 0:00</span>
+        </div>
+        <div class="music-controls">
+            <button class="music-prev" type="button" title="上一首" aria-label="上一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h2v12H6z"/><path d="M20 6l-10 6 10 6z"/></svg></button>
+            <button class="music-play" type="button" title="播放 / 暂停" aria-label="播放 / 暂停"><svg class="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></button>
+            <button class="music-next" type="button" title="下一首" aria-label="下一首"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6h2v12h-2z"/><path d="M4 6l10 6-10 6z"/></svg></button>
+            <div class="music-volume">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a9 9 0 0 1 0 14"/></svg>
+                <input type="range" class="music-vol" min="0" max="100" value="50" aria-label="音量">
+            </div>
+        </div>
+        <ul class="music-list">
+        
+            <li class="music-item" data-index="0">
+                <span class="music-item-name">LoFi 学习曲</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="1">
+                <span class="music-item-name">Bossa Nova 轻音乐</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="2">
+                <span class="music-item-name">爵士钢琴</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+            <li class="music-item" data-index="3">
+                <span class="music-item-name">咖啡厅爵士</span>
+                <span class="music-item-artist">Pixabay</span>
+            </li>
+        
+        </ul>
+    </div>
+</div>
 
 
-<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
   </body>
 </html>
