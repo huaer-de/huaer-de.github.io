@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>Docker入门指南 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="Docker入门指南"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A/">大三上</a><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Docker入门指南</h2>
+            <div class="post-meta">
+                <time class="date">2026.09.05</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A/">大三上</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>明天就开始学习 k8s 了，同时，这也意味着 Docker 的讲解结束了。</p>
+<p>在这里，我将根据老师上课的课件，用两台 Rocky9 从头地重新做一遍实验并重新整理 Docker 相关的知识点。</p>
+<p>本篇为简单一些的内容OvO</p>
+<h1 id="一、-搭建-Docker-环境"><a href="#一、-搭建-Docker-环境" class="headerlink" title="一、 搭建 Docker 环境"></a>一、 搭建 Docker 环境</h1><h3 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h3><p>每次安装新的软件或换成新的系统，正确安装软件，部署环境是第一个难题。在 Rocky Linux 9 中，我们比较省心的部署方法是使用社区的脚本，让它自动完成换源、安装和配置加速。</p>
+<pre class="line-numbers language-Shell" data-language="Shell"><code class="language-Shell">bash &lt;(curl -sSL https:&#x2F;&#x2F;linuxmirrors.cn&#x2F;docker.sh)<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>但为了稍微更详细一点地了解它的原理，我们使用<em>阿里云镜像源</em>安装并启动Docker。</p>
+<p>由于一些国际原因（嗯……），我们在国内访问 Docker Hub 官方源是很不顺畅的。这就需要<em>镜像加速器</em>啦。</p>
+<h3 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h3><p>登录进虚拟机（docker1: <code>192.168.86.101</code>，docker2: <code>192.168.86.102</code>），更新系统并安装必要工具。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 更新系统所有软件包（包括内核），这是避免后续依赖冲突的关键一步[reference:4]</span>
+dnf update <span class="token parameter variable">-y</span>
+<span class="token comment"># 安装 yum-utils（仓库管理工具）和 Docker 依赖的存储驱动[reference:5][reference:6]</span>
+dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> yum-utils device-mapper-persistent-data lvm2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>添加阿里云仓库并配置镜像加速器。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 1. 添加阿里云的 Docker CE 仓库</span>
+dnf config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+<span class="token comment"># 2. 安装 Doc成功）</span>
+dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plu 
+
+<span class="token comment"># 3. 创建配置文件（如已存在则覆盖）</span>
+<span class="token function">cat</span> <span class="token operator">></span> /etc/docker/daemon.json <span class="token operator">&lt;&lt;</span><span class="token string">EOF
+&#123;
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://docker.1ms.run",
+    "https://registry.docker-cn.com"
+  ],
+  "dns": ["8.8.8.8", "114.114.114.114"]
+&#125;
+EOF</span>gin
+
+<span class="token comment"># 4. 启动 Docker 并设置开机自启</span>
+systemctl <span class="token builtin class-name">enable</span> <span class="token parameter variable">--now</span> <span class="token function">docker</span>
+
+<span class="token comment"># 5. 验证安装</span>
+<span class="token function">docker</span> run hello-world<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><a href="1.png"></a><br>我们看到，它已经拉取成功了。</p>
+<p>在此，我们提前拉取几个后续实验会用到的镜像（建议有条件的各位，可以科学地上网）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 拉取 busybox（轻量调试工具）</span>
+<span class="token function">docker</span> pull docker.1ms.run/busybox
+<span class="token function">docker</span> tag docker.1ms.run/busybox busybox:latest
+
+<span class="token comment"># 拉取 nginx（用于 web 服务）</span>
+<span class="token function">docker</span> pull docker.1ms.run/nginx
+<span class="token function">docker</span> tag docker.1ms.run/nginx nginx:latest
+
+<span class="token comment"># 拉取游戏 2048（可选）</span>
+<span class="token function">docker</span> pull docker.1ms.run/yakexi007/game2048<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><a href="2.png"></a></p>
+<h1 id="二、-Docker-基础操作"><a href="#二、-Docker-基础操作" class="headerlink" title="二、 Docker 基础操作"></a>二、 Docker 基础操作</h1><h2 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>这一小节（基础操作）是一些简单命令的集合，只需要 docker1 就可以完成演示，目的是熟悉常用命令。由于课件上的环境为 CentOS7 ，与我现在所用到的环境不同，命令会有轻微的差别（问题不大）。</p>
+<h2 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h2><h5 id="拉取镜像"><a href="#拉取镜像" class="headerlink" title="拉取镜像"></a>拉取镜像</h5><p>我们从 Docker Hub 上拉取 <code>busybox</code> 镜像（若配置了加速器，会走加速后的地址）。这是一个极简的 Linux 工具集，体积小，适合做容器调试。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># docker1</span>
+<span class="token function">docker</span> pull busybox<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h5 id="查看本地镜像列表"><a href="#查看本地镜像列表" class="headerlink" title="查看本地镜像列表"></a>查看本地镜像列表</h5><p>通过<code>docker images</code>，终端会显示出所有已下载的镜像（REPOSITORY、TAG、IMAGE ID、SIZE）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker images</span>
+                                                                                                                                i Info →   U  In Use
+IMAGE                                      ID             DISK USAGE   CONTENT SIZE   EXTRA
+busybox:latest                             dc2d74b28e4c       <span class="token number">6</span>.74MB         <span class="token number">2</span>.23MB
+docker.1ms.run/busybox:latest              dc2d74b28e4c       <span class="token number">6</span>.74MB         <span class="token number">2</span>.23MB
+docker.1ms.run/nginx:latest                05b8cb60c354        250MB         <span class="token number">69</span>.2MB
+docker.1ms.run/yakexi007/game2048:latest   8a34fb9cb168       <span class="token number">77</span>.2MB         <span class="token number">17</span>.8MB
+hello-world:latest                         5dd0d3e6e255       <span class="token number">21</span>.8kB         <span class="token number">9</span>.49kB    U
+nginx:latest                               05b8cb60c354        250MB         <span class="token number">69</span>.2MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="运行一个一次性容器"><a href="#运行一个一次性容器" class="headerlink" title="运行一个一次性容器"></a>运行一个一次性容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker run busybox echo "hello world"</span>
+hello world<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里，<code>docker run</code>是指，基于镜像启动容器；<code>busybox</code>是指定的镜像名；<code>echo &quot;hello world&quot;</code>是容器启动后执行的命令。容器运行结束后，主进程结束了，容器也会自动退出。</p>
+<h5 id="交互式运行容器"><a href="#交互式运行容器" class="headerlink" title="交互式运行容器"></a>交互式运行容器</h5><pre class="line-numbers language-SHELL" data-language="SHELL"><code class="language-SHELL">
+
+
+
+
+
+[root@docker1 ~]# docker run -it --name helloworld busybox
+&#x2F; # ls
+bin    dev    etc    home   lib    lib64  proc   root   sys    tmp    usr    var
+&#x2F; # touch file1
+&#x2F; # ls
+bin    etc    home   lib64  root   tmp    var
+dev    file1  lib    proc   sys    usr
+&#x2F; # exit
+[root@docker1 ~]# docker start helloworld
+helloworld
+[root@docker1 ~]# docker exec -it helloworld &#x2F;bin&#x2F;sh
+&#x2F; #<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>-it</code>是交互式终端（<code>-i</code> 保持 STDIN 打开，<code>-t</code> 分配伪终端），<code>--name helloworld</code>用以给容器命名（分配命名空间）。输入 <code>exit</code> 退出容器后，容器停止，下次进入这个容器，只需输入<code>docker exec -it helloworld /bin/sh</code>就进去啦（但也可能需要重启一下容器）。</p>
+<h5 id="查看容器状态"><a href="#查看容器状态" class="headerlink" title="查看容器状态"></a>查看容器状态</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker ps          # 只显示运行中的容器</span>
+CONTAINER ID   IMAGE     COMMAND   CREATED          STATUS         PORTS     NAMES
+eaa46c1a7be5   busybox   <span class="token string">"sh"</span>      <span class="token number">11</span> minutes ago   Up <span class="token number">2</span> minutes             helloworld
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker ps -a       # 显示所有容器（包括已停止）</span>
+CONTAINER ID   IMAGE         COMMAND                CREATED          STATUS                      PORTS     NAMES
+eaa46c1a7be5   busybox       <span class="token string">"sh"</span>                   <span class="token number">11</span> minutes ago   Up <span class="token number">2</span> minutes                          helloworld
+1ce5cb550000   busybox       <span class="token string">"sh"</span>                   <span class="token number">13</span> minutes ago   Exited <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token number">13</span> minutes ago             elastic_cannon
+9c283bd9df01   busybox       <span class="token string">"echo 'hello world'"</span>   <span class="token number">15</span> minutes ago   Exited <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token number">15</span> minutes ago             trusting_leakey
+ec2782cbbce7   hello-world   <span class="token string">"/hello"</span>               <span class="token number">47</span> minutes ago   Exited <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token number">47</span> minutes ago             ecstatic_chebyshev<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们看到<code>helloworld</code>容器正处于 <code>Up</code> 状态。</p>
+<h5 id="重新连接（attach）到正在运行的容器"><a href="#重新连接（attach）到正在运行的容器" class="headerlink" title="重新连接（attach）到正在运行的容器"></a>重新连接（attach）到正在运行的容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
+
+
+
+
+
+
+
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker attach helloworld</span>
+/ <span class="token comment">#</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们可以通过<code>attach</code>，重新进入容器的终端会话，这里按 <code>Ctrl + p</code> 然后按 <code>Ctrl + q</code> 可以<em>分离</em>（detach）终端，让容器<em>继续在后台运行</em>，而不是退出。</p>
+<h5 id="查看容器-镜像的详细信息"><a href="#查看容器-镜像的详细信息" class="headerlink" title="查看容器&#x2F;镜像的详细信息"></a>查看容器&#x2F;镜像的详细信息</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker inspect helloworld</span>
+<span class="token punctuation">[</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token string">"Id"</span><span class="token builtin class-name">:</span> <span class="token string">"eaa46c1a7be507b0afe5152bcbf253ac4d9aa630068ea5675c4a20066affa477"</span>,
+        <span class="token string">"Created"</span><span class="token builtin class-name">:</span> <span class="token string">"2026-09-05T12:08:26.298305009Z"</span>,
+        <span class="token string">"Path"</span><span class="token builtin class-name">:</span> <span class="token string">"sh"</span>,
+        <span class="token string">"Args"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>,
+        <span class="token string">"State"</span><span class="token builtin class-name">:</span> <span class="token punctuation">&#123;</span>
+            <span class="token string">"Status"</span><span class="token builtin class-name">:</span> <span class="token string">"exited"</span>,
+            <span class="token string">"Running"</span><span class="token builtin class-name">:</span> false,
+            <span class="token string">"Paused"</span><span class="token builtin class-name">:</span> false,
+            <span class="token string">"Restarting"</span><span class="token builtin class-name">:</span> false,
+            <span class="token string">"OOMKilled"</span><span class="token builtin class-name">:</span> false,
+            <span class="token string">"Dead"</span><span class="token builtin class-name">:</span> false,
+            <span class="token string">"Pid"</span><span class="token builtin class-name">:</span> <span class="token number">0</span>,
+            <span class="token string">"ExitCode"</span><span class="token builtin class-name">:</span> <span class="token number">130</span>,
+            <span class="token string">"Error"</span><span class="token builtin class-name">:</span> <span class="token string">""</span>,
+           <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>很长很长的一段信息啊，包含着容器的所有配置信息（网络、挂载卷、资源限制等），配合 <code>grep</code> 筛选会更合适一些。</p>
+<h5 id="查看容器的实施资源占用"><a href="#查看容器的实施资源占用" class="headerlink" title="查看容器的实施资源占用"></a>查看容器的实施资源占用</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
+
+<span class="token function">docker</span> stats helloworld      <span class="token comment"># 实时显示CPU、内存等</span>
+
+<span class="token comment"># 输入进去会跳转到一个实时更新的界面，内容与下面输出相近</span>
+CONTAINER ID   NAME         CPU %     MEM USAGE / LIMIT   MEM %     NET I/O   BLOCK I/O   PIDS
+eaa46c1a7be5   helloworld   <span class="token number">0.00</span>%     0B / 0B             <span class="token number">0.00</span>%     0B / 0B   0B / 0B     <span class="token number">0</span>
+
+<span class="token function">docker</span> <span class="token function">top</span> helloworld        <span class="token comment"># 显示容器内的进程列表</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="删除容器与日志"><a href="#删除容器与日志" class="headerlink" title="删除容器与日志"></a>删除容器与日志</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm helloworld           # 删除已停止的容器</span>
+helloworld
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f $(docker ps -aq)  #  删除所有容器（清理环境）</span>
+1ce5cb550000
+9c283bd9df01
+ec2782cbbce7
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rmi busybox             # 删除镜像</span>
+Untagged: busybox:latest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>如果需要被删除的容器还在运行，我们可以在命令中加上<code>-f</code>强制删除，这样实际上，容器会先停止再被删除。<code>docker ps -aq</code> 会列出所有容器的 ID，<code>-f</code>将它们强制删除。<br>如果镜像被容器使用，是无法被删除的，需要先删除容器。</p>
+<h1 id="二、-部署应用堆栈（MySQL-HTTPD）"><a href="#二、-部署应用堆栈（MySQL-HTTPD）" class="headerlink" title="二、 部署应用堆栈（MySQL + HTTPD）"></a>二、 部署应用堆栈（MySQL + HTTPD）</h1><h2 id="（1）理解-2"><a href="#（1）理解-2" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>课件里，老师演示了如何使用 <code>mysql</code> 和 <code>httpd</code> 镜像，构建一个简单的 Web 应用。我们按此操作。</p>
+<h2 id="（2）实验-2"><a href="#（2）实验-2" class="headerlink" title="（2）实验"></a>（2）实验</h2><h5 id="1-导入或拉取所需镜像（课前已经准备）"><a href="#1-导入或拉取所需镜像（课前已经准备）" class="headerlink" title="1. 导入或拉取所需镜像（课前已经准备）"></a>1. 导入或拉取所需镜像（课前已经准备）</h5><p>我们拉取老师分享的两个 <code>.tar</code> 文件，将它们导入本地镜像。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker load -i mysql.tar</span>
+Loaded image: mysql:latest
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker load -i httpd.tar</span>
+Loaded image: httpd:webapp<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="2-给镜像打标签（便于识别）"><a href="#2-给镜像打标签（便于识别）" class="headerlink" title="2. 给镜像打标签（便于识别）"></a>2. 给镜像打标签（便于识别）</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> tag yakexi007/httpd:webapp httpd:webapp
+<span class="token function">docker</span> tag yakexi007/mysql:latest mysql:latest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>这里是从官网拉取镜像的同学们，名字比较长，需要改一下名字（让它简单一点），我不用改哒。</p>
+<h5 id="3-启动-MySQL-容器"><a href="#3-启动-MySQL-容器" class="headerlink" title="3. 启动 MySQL 容器"></a>3. 启动 MySQL 容器</h5><p>这条命令比较长，会返回一串长数字。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=redhat --name dbserver mysql</span>
+e28b1efa2736ce410a6638b6e20ea1c54b2c853c51060e7c51e3c2e500557162<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>里面有一些参数，我们详细看看。<code>-p 3306:3306</code>：将宿主机的 3306 端口映射到容器的 3306 端口（这样外部可以访问 MySQL）；<code>-e MYSQL_ROOT_PASSWORD=redhat</code>：设置 MySQL root 密码；<code>--name dbserver</code>：容器名。</p>
+<h5 id="4-安装-MySQL-客户端（宿主机上）"><a href="#4-安装-MySQL-客户端（宿主机上）" class="headerlink" title="4. 安装 MySQL 客户端（宿主机上）"></a>4. 安装 MySQL 客户端（宿主机上）</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> mysql<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>或者使用<code>yum install -y mysql</code>也可以啦，所使用的包名为 <code>mysql</code> 或 <code>mariadb</code></p>
+<h5 id="5-导入数据库（-os-sql-文件）"><a href="#5-导入数据库（-os-sql-文件）" class="headerlink" title="5. 导入数据库（ os.sql 文件）"></a>5. 导入数据库（ <code>os.sql</code> 文件）</h5><p>老师上传了一个<code>os.sql</code> 文件，我们把它导入数据库中。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mysql -h 127.0.0.1 -u root -predhat &lt; os.sql</span>
+mysql: <span class="token punctuation">[</span>Warning<span class="token punctuation">]</span> Using a password on the <span class="token builtin class-name">command</span> line interface can be insecure.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>这里用<code>-h 127.0.0.1</code>，因为端口映射到宿主机，相当于访问本机。</p>
+<h5 id="6-启动-Web-容器（连接-MySQL）"><a href="#6-启动-Web-容器（连接-MySQL）" class="headerlink" title="6. 启动 Web 容器（连接 MySQL）"></a>6. 启动 Web 容器（连接 MySQL）</h5><p>这条命令也很长捏。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker run -d -p 80:80 --link dbserver:db --name webserver httpd:webapp</span>
+WARNING: Links on the default bridge network are deprecated and will be removed <span class="token keyword">in</span> a future release. Use a custom network instead.
+965a771640bd268f40ec2bb09a0a6c21ce5fcd636c76fac9f5b1b9bcb7acdbe6<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>命令中，<code>--link dbserver:db</code>是将 <code>dbserver</code> 容器别名设为 <code>db</code>，并在 Web 容器的 <code>/etc/hosts</code> 中添加解析，使Web 应用可通过 <code>db</code> 主机名访问 MySQL。<code>-p 80:80</code>是用来映射 Web 服务的 80 端口。</p>
+<h5 id="7-访问测试"><a href="#7-访问测试" class="headerlink" title="7. 访问测试"></a>7. 访问测试</h5><p>在浏览器访问 <code>http://192.168.86.201</code>以及 <code>http://192.168.86.201/cgi-bin/action</code>，发现访问成功啦（好耶）。</p>
+<p><a href="3.png"></a></p>
+<p><a href="4.png"></a></p>
+<h5 id="8-清理该堆栈"><a href="#8-清理该堆栈" class="headerlink" title="8. 清理该堆栈"></a>8. 清理该堆栈</h5><p>最后，我们把刚刚的操作清理一下（但是怎么有点像不负责任的渣男，用完就走人呢（bushi））</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f $(docker ps -aq)</span>
+965a771640bd
+e28b1efa2736<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<blockquote>
+<p>好，我们先到这里（实则是图书馆快关门了，要停电了。<br>很没有自制力的人，不能坚持每天写作业，但可以一次写很多作业……但怎么不算能坚持呢……吧）<br>未来有缘再更新OvO。</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/">Ansible自动化学习</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/Docker/" rel="tag">Docker</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/Rocky9/" rel="tag">Rocky9</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/09/05/Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/">Docker入门指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/23/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/">Ansible自动化学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/09/MysqlRouter%E9%85%8D%E7%BD%AE/">MysqlRouter配置</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 13.33px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 16.67px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":false,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>
