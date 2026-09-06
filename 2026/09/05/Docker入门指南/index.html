@@ -43,7 +43,7 @@
         <div class="has-child">
             <a href>分类</a>
             <div class="sub-menu">
-                <a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A/">大三上</a><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A%E5%AD%A6%E6%9C%9F/">大三上学期</a><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
             </div>
         </div>
         
@@ -59,7 +59,7 @@
             <div class="post-meta">
                 <time class="date">2026.09.05</time>
             
-                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A/">大三上</a></span>
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A%E5%AD%A6%E6%9C%9F/">大三上学期</a></span>
             
             </div>
         </section>
@@ -104,7 +104,8 @@ systemctl <span class="token builtin class-name">enable</span> <span class="toke
 <span class="token comment"># 5. 验证安装</span>
 <span class="token function">docker</span> run hello-world<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<p><a href="1.png"></a><br>我们看到，它已经拉取成功了。</p>
+<p><img src="/2026/09/05/Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/1.png" loading="lazy"></p>
+<p>我们看到，它已经拉取成功了。</p>
 <p>在此，我们提前拉取几个后续实验会用到的镜像（建议有条件的各位，可以科学地上网）。</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 拉取 busybox（轻量调试工具）</span>
 <span class="token function">docker</span> pull docker.1ms.run/busybox
@@ -117,7 +118,7 @@ systemctl <span class="token builtin class-name">enable</span> <span class="toke
 <span class="token comment"># 拉取游戏 2048（可选）</span>
 <span class="token function">docker</span> pull docker.1ms.run/yakexi007/game2048<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<p><a href="2.png"></a></p>
+<p><img src="/2026/09/05/Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/2.png" loading="lazy"></p>
 <h1 id="二、-Docker-基础操作"><a href="#二、-Docker-基础操作" class="headerlink" title="二、 Docker 基础操作"></a>二、 Docker 基础操作</h1><h2 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>这一小节（基础操作）是一些简单命令的集合，只需要 docker1 就可以完成演示，目的是熟悉常用命令。由于课件上的环境为 CentOS7 ，与我现在所用到的环境不同，命令会有轻微的差别（问题不大）。</p>
 <h2 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h2><h5 id="拉取镜像"><a href="#拉取镜像" class="headerlink" title="拉取镜像"></a>拉取镜像</h5><p>我们从 Docker Hub 上拉取 <code>busybox</code> 镜像（若配置了加速器，会走加速后的地址）。这是一个极简的 Linux 工具集，体积小，适合做容器调试。</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># docker1</span>
@@ -134,34 +135,11 @@ docker.1ms.run/yakexi007/game2048:latest   8a34fb9cb168       <span class="token
 hello-world:latest                         5dd0d3e6e255       <span class="token number">21</span>.8kB         <span class="token number">9</span>.49kB    U
 nginx:latest                               05b8cb60c354        250MB         <span class="token number">69</span>.2MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<h5 id="运行一个一次性容器"><a href="#运行一个一次性容器" class="headerlink" title="运行一个一次性容器"></a>运行一个一次性容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker run busybox echo "hello world"</span>
-hello world<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h5 id="运行一个一次性容器"><a href="#运行一个一次性容器" class="headerlink" title="运行一个一次性容器"></a>运行一个一次性容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker run busybox echo "hello world"</span>
+hello world<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>这里，<code>docker run</code>是指，基于镜像启动容器；<code>busybox</code>是指定的镜像名；<code>echo &quot;hello world&quot;</code>是容器启动后执行的命令。容器运行结束后，主进程结束了，容器也会自动退出。</p>
-<h5 id="交互式运行容器"><a href="#交互式运行容器" class="headerlink" title="交互式运行容器"></a>交互式运行容器</h5><pre class="line-numbers language-SHELL" data-language="SHELL"><code class="language-SHELL">
-
-
-
-
-
-[root@docker1 ~]# docker run -it --name helloworld busybox
+<h5 id="交互式运行容器"><a href="#交互式运行容器" class="headerlink" title="交互式运行容器"></a>交互式运行容器</h5><pre class="line-numbers language-SHELL" data-language="SHELL"><code class="language-SHELL">[root@docker1 ~]# docker run -it --name helloworld busybox
 &#x2F; # ls
 bin    dev    etc    home   lib    lib64  proc   root   sys    tmp    usr    var
 &#x2F; # touch file1
@@ -172,7 +150,7 @@ dev    file1  lib    proc   sys    usr
 [root@docker1 ~]# docker start helloworld
 helloworld
 [root@docker1 ~]# docker exec -it helloworld &#x2F;bin&#x2F;sh
-&#x2F; #<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+&#x2F; #<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p><code>-it</code>是交互式终端（<code>-i</code> 保持 STDIN 打开，<code>-t</code> 分配伪终端），<code>--name helloworld</code>用以给容器命名（分配命名空间）。输入 <code>exit</code> 退出容器后，容器停止，下次进入这个容器，只需输入<code>docker exec -it helloworld /bin/sh</code>就进去啦（但也可能需要重启一下容器）。</p>
 <h5 id="查看容器状态"><a href="#查看容器状态" class="headerlink" title="查看容器状态"></a>查看容器状态</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker ps          # 只显示运行中的容器</span>
@@ -186,16 +164,8 @@ eaa46c1a7be5   busybox       <span class="token string">"sh"</span>             
 ec2782cbbce7   hello-world   <span class="token string">"/hello"</span>               <span class="token number">47</span> minutes ago   Exited <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token number">47</span> minutes ago             ecstatic_chebyshev<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>我们看到<code>helloworld</code>容器正处于 <code>Up</code> 状态。</p>
-<h5 id="重新连接（attach）到正在运行的容器"><a href="#重新连接（attach）到正在运行的容器" class="headerlink" title="重新连接（attach）到正在运行的容器"></a>重新连接（attach）到正在运行的容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-
-
-
-
-
-
-
-<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker attach helloworld</span>
-/ <span class="token comment">#</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h5 id="重新连接（attach）到正在运行的容器"><a href="#重新连接（attach）到正在运行的容器" class="headerlink" title="重新连接（attach）到正在运行的容器"></a>重新连接（attach）到正在运行的容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker attach helloworld</span>
+/ <span class="token comment">#</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 
 <p>我们可以通过<code>attach</code>，重新进入容器的终端会话，这里按 <code>Ctrl + p</code> 然后按 <code>Ctrl + q</code> 可以<em>分离</em>（detach）终端，让容器<em>继续在后台运行</em>，而不是退出。</p>
 <h5 id="查看容器-镜像的详细信息"><a href="#查看容器-镜像的详细信息" class="headerlink" title="查看容器&#x2F;镜像的详细信息"></a>查看容器&#x2F;镜像的详细信息</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker inspect helloworld</span>
@@ -218,15 +188,13 @@ ec2782cbbce7   hello-world   <span class="token string">"/hello"</span>         
            <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>很长很长的一段信息啊，包含着容器的所有配置信息（网络、挂载卷、资源限制等），配合 <code>grep</code> 筛选会更合适一些。</p>
-<h5 id="查看容器的实施资源占用"><a href="#查看容器的实施资源占用" class="headerlink" title="查看容器的实施资源占用"></a>查看容器的实施资源占用</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
-
-<span class="token function">docker</span> stats helloworld      <span class="token comment"># 实时显示CPU、内存等</span>
+<h5 id="查看容器的实施资源占用"><a href="#查看容器的实施资源占用" class="headerlink" title="查看容器的实施资源占用"></a>查看容器的实施资源占用</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> stats helloworld      <span class="token comment"># 实时显示CPU、内存等</span>
 
 <span class="token comment"># 输入进去会跳转到一个实时更新的界面，内容与下面输出相近</span>
 CONTAINER ID   NAME         CPU %     MEM USAGE / LIMIT   MEM %     NET I/O   BLOCK I/O   PIDS
 eaa46c1a7be5   helloworld   <span class="token number">0.00</span>%     0B / 0B             <span class="token number">0.00</span>%     0B / 0B   0B / 0B     <span class="token number">0</span>
 
-<span class="token function">docker</span> <span class="token function">top</span> helloworld        <span class="token comment"># 显示容器内的进程列表</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token function">docker</span> <span class="token function">top</span> helloworld        <span class="token comment"># 显示容器内的进程列表</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h5 id="删除容器与日志"><a href="#删除容器与日志" class="headerlink" title="删除容器与日志"></a>删除容器与日志</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm helloworld           # 删除已停止的容器</span>
 helloworld
@@ -269,8 +237,8 @@ WARNING: Links on the default bridge network are deprecated and will be removed 
 
 <p>命令中，<code>--link dbserver:db</code>是将 <code>dbserver</code> 容器别名设为 <code>db</code>，并在 Web 容器的 <code>/etc/hosts</code> 中添加解析，使Web 应用可通过 <code>db</code> 主机名访问 MySQL。<code>-p 80:80</code>是用来映射 Web 服务的 80 端口。</p>
 <h5 id="7-访问测试"><a href="#7-访问测试" class="headerlink" title="7. 访问测试"></a>7. 访问测试</h5><p>在浏览器访问 <code>http://192.168.86.201</code>以及 <code>http://192.168.86.201/cgi-bin/action</code>，发现访问成功啦（好耶）。</p>
-<p><a href="3.png"></a></p>
-<p><a href="4.png"></a></p>
+<p><img src="/2026/09/05/Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/3.png" loading="lazy"></p>
+<p><img src="/2026/09/05/Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/4.png" loading="lazy"></p>
 <h5 id="8-清理该堆栈"><a href="#8-清理该堆栈" class="headerlink" title="8. 清理该堆栈"></a>8. 清理该堆栈</h5><p>最后，我们把刚刚的操作清理一下（但是怎么有点像不负责任的渣男，用完就走人呢（bushi））</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f $(docker ps -aq)</span>
 965a771640bd
