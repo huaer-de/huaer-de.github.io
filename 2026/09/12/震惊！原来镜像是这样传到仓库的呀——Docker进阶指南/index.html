@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>震惊！原来镜像是这样传到仓库的呀——Docker进阶指南 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="震惊！原来镜像是这样传到仓库的呀——Docker进阶指南"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A%E5%AD%A6%E6%9C%9F/">大三上学期</a><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>震惊！原来镜像是这样传到仓库的呀——Docker进阶指南</h2>
+            <div class="post-meta">
+                <time class="date">2026.09.12</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A%E5%AD%A6%E6%9C%9F/">大三上学期</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>嗯……还是有缘分哒，我更新啦。</p>
+<p>这次笔记，我们就进入了 Docker 更核心的知识点，镜像（<code>image</code>）与仓库。 </p>
+<h1 id="一、-镜像构建"><a href="#一、-镜像构建" class="headerlink" title="一、 镜像构建"></a>一、 镜像构建</h1><h2 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h2><p><strong>Docker 镜像</strong>（<code>Image</code>）是静态的、只读的模板，用于存储和分发（就像<code>.iso</code> 文件）。由只读层（Read-Only Layers）堆叠而成。</p>
+<p>镜像是由层组成的，每层代表一组添加、删除或修改文件的文件系统更改。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/0.png" loading="lazy"></p>
+<p>我们在镜像的基础上，启动它，让它开始运行，这就变成了<em>容器</em>。</p>
+<p><strong>Docker 容器</strong>是动态的、可写（临时）的，用于运行和操作（像正在运行的虚拟机，每个容器，都有自己的<code>root</code>用户权限、进程空间、用户空间和网络空间等）。</p>
+<p>运行容器，会在镜像的最上面添加一个可写层（Writable Layer）。<code>docker pull</code>拉取镜像后，<code>docker run</code>就启动了容器。</p>
+<p>下面的实验，我们从基础语法开始了解，熟悉后，构建一份 Nginx 镜像。</p>
+<h2 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h2><h4 id="1-使用-docker-commit-构建镜像"><a href="#1-使用-docker-commit-构建镜像" class="headerlink" title="1. 使用 docker commit 构建镜像"></a>1. 使用 <code>docker commit</code> 构建镜像</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker start  demo</span>
+demo
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker attach demo</span>
+/ <span class="token comment"># touch file1 file2</span>
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker commit -m "add files" demo demo:v1</span>
+sha256:2270de76554c2a40cf1af376559423f60a68914215822456f74b4d34f05af27a
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker history demo:v1</span>
+IMAGE          CREATED          CREATED BY                          SIZE      COMMENT
+2270de76554c   <span class="token number">20</span> seconds ago   <span class="token function">sh</span>                                  <span class="token number">4</span>.1kB     <span class="token function">add</span> files
+dc2d74b28e4c   <span class="token number">3</span> months ago     BusyBox <span class="token number">1.38</span>.0 <span class="token punctuation">(</span>glibc<span class="token punctuation">)</span>, Debian <span class="token number">13</span>   <span class="token number">4</span>.51MB
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rmi demo:v1</span>
+Untagged: demo:v1
+Deleted: sha256:2270de76554c2a40cf1af376559423f60a68914215822456f74b4d34f05af27a
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f demo   # 删除容器</span>
+demo<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过<code>docker run -it --name demo busybox</code>启动容器，提交容器作为新的镜像（提交容器 demo 为镜像 demo:v1），查看新镜像的历史，将镜像和容器删除（后续用 Dockerfile 代替）。</p>
+<p>我们在容器里进行交互式操作时，快捷键<code>ctrl+d</code>： 退出容器后容器自动关闭；<code>ctrl+pq</code>： 退出容器后继续在后台运行。</p>
+<p>这是在容器内部创建新文件，修改了容器的“可写层”。此时容器顶层的“可写层”记录了这些变更，但底层只读镜像 <code>busybox</code> 未变。</p>
+<h4 id="2-使用-Dockerfile-构建"><a href="#2-使用-Dockerfile-构建" class="headerlink" title="2. 使用 Dockerfile 构建"></a>2. 使用 Dockerfile 构建</h4><p><code>docker commit</code> 虽然能工作，但无法审计、不可重复。我们更推荐 Dockerfile 构建的方式。</p>
+<p>在 root 家目录下创建一个干净的构建目录，并编写 Dockerfile 。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p ~/docker-build &amp;&amp; cd docker-build/</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># vim Dockerfile</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat DockerfilFROM  </span>
+busybox
+ENV name world
+ENTRYPOINT <span class="token builtin class-name">echo</span> <span class="token string">"hello, <span class="token variable">$name</span>"</span>令覆盖<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里的 Dockerfile 文件是老师的一个示例，相关的常用参数含义如下。</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FROM</td>
+<td>指定base镜像，如果本地不存在会从远程仓库下载。</td>
+</tr>
+<tr>
+<td>COPY 、ADD</td>
+<td>把文件从build context复制到镜像<br>src必须指定build context中的文件或目录</td>
+</tr>
+<tr>
+<td>ENV</td>
+<td>设置环境变量，变量可以被后续的指令使用<br>ENV HOSTNAME sevrer1.example.com</td>
+</tr>
+<tr>
+<td>EXPOSE</td>
+<td>如果容器中运行应用服务，可以把服务端口暴露出去：<br>EXPOSE 80</td>
+</tr>
+<tr>
+<td>VOLUME</td>
+<td>申明数据卷，通常指定的是应用的数据挂在点：<br>VOLUME [“&#x2F;var&#x2F;www&#x2F;html”]</td>
+</tr>
+<tr>
+<td>WORKDIR</td>
+<td>为RUN、CMD、ENTRYPOINT、ADD和COPY指令设置镜像中的当前工作目录，如果目录不存在会自动创建。</td>
+</tr>
+<tr>
+<td>RUN</td>
+<td>在容器中运行命令并创建新的镜像层，常用于安装软件包<br>RUN yum install -y vim</td>
+</tr>
+<tr>
+<td>CMD 与 ENTRYPOINT</td>
+<td>这两个指令都是用于设置容器启动后执行的命令，但CMD会被docker run后面的命令行覆盖，而ENTRYPOINT不会被忽略，一定会被执行。<br>docker run后面的参数可以传递给ENTRYPOINT指令当作参数。<br>Dockerfile中只能指定一个ENTRYPOINT，如果指定了很多，只有最后一个有效。</td>
+</tr>
+</tbody></table>
+<p>接着，我们<strong>构建镜像并测试一下效果</strong>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -t demo:v1 .</span>
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">0</span>.6s <span class="token punctuation">(</span><span class="token number">5</span>/5<span class="token punctuation">)</span> FINISHED                                                                                            docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile                                                                                  <span class="token number">0</span>.0s
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token operator">=</span><span class="token operator">></span> transferring dockerfile: 96B                                                                                                   <span class="token number">0</span>.0s
+
+<span class="token punctuation">..</span> <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token comment"># 此处省略一部分内容 ... ... ...</span>
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token operator">=</span><span class="token operator">></span> unpacking to docker.io/library/demo:v1                                                                                         <span class="token number">0</span>.0s 
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker run --rm demo:v1  #（Shell 格式解析了 $name 变量）</span>
+hello, world<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>构建镜像时，<code>-t demo:v1</code>：指定了镜像名和标签；<code>.</code>：构建上下文（将当前目录所有文件发送给 Docker 守护进程）。测试时，参数<code>--rm</code> 会让运行后自动回收容器。</p>
+<p>我们看一下 Exec 格式与 Shell 格式的区别。</p>
+<p><strong>创建第二个 Dockerfile（Dockerfile.exec）</strong>，写入内容并测试。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># vim Dockerfile.exec</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -f Dockerfile.exec -t demo:v2 .</span>
+<span class="token function">docker</span> run <span class="token parameter variable">--rm</span> demo:v2
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">0</span>.5s <span class="token punctuation">(</span><span class="token number">5</span>/5<span class="token punctuation">)</span> FINISHED                                                                                           docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile.exec                                                                             <span class="token number">0</span>.0s
+<span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">(</span>省略一些内容<span class="token punctuation">)</span> 
+ <span class="token number">1</span> warning found <span class="token punctuation">(</span>use <span class="token function">docker</span> <span class="token parameter variable">--debug</span> to <span class="token function">expand</span><span class="token punctuation">)</span>: <span class="token comment"># 没报错就行</span>
+ - LegacyKeyValueFormat: <span class="token string">"ENV key=value"</span> should be used instead of legacy <span class="token string">"ENV key value"</span> <span class="token function">format</span> <span class="token punctuation">(</span>line <span class="token number">2</span><span class="token punctuation">)</span>
+hello, <span class="token variable">$name</span> <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们发现输出了<code>hello, \$name</code>，这是因为 Exec 格式不会自动调用 shell，<code>\$name</code> 被当作普通字符串了。</p>
+<p>将文件最后改为<code>ENTRYPOINT [&quot;/bin/sh&quot;, &quot;-c&quot;, &quot;echo hello, \$name&quot;]</code>，就可以修正它啦。Exec 格式（<code>[]</code>）更安全、信号处理更好，但若需变量，必须显式调用 <code>/bin/sh -c</code>。</p>
+<p><strong>创建 Dockerfile.cmd</strong>，学习一下 CMD 与 ENTRYPOINT 配合时的效果。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># vim Dockerfile.cmd</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat Dockerfile.cmd</span>
+FROM busybox
+ENTRYPOINT <span class="token punctuation">[</span><span class="token string">"/bin/echo"</span>, <span class="token string">"hello"</span><span class="token punctuation">]</span>
+CMD <span class="token punctuation">[</span><span class="token string">"world"</span><span class="token punctuation">]</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -f Dockerfile.cmd -t demo:v3 .</span>
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">0</span>.4s <span class="token punctuation">(</span><span class="token number">5</span>/5<span class="token punctuation">)</span> FINISHED                                                                                           docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile.cmd                                                                              <span class="token number">0</span>.0s
+<span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. （省略部分内容）
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token operator">=</span><span class="token operator">></span> unpacking to docker.io/library/demo:v3                                                                                         <span class="token number">0</span>.0s
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker run --rm demo:v3           # 输出 hello world</span>
+<span class="token function">docker</span> run <span class="token parameter variable">--rm</span> demo:v3 centos    <span class="token comment"># 输出 hello centos（CMD 被替换）</span>
+hello world
+hello centos<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里<code>ENTRYPOINT</code> 是固定命令，<code>CMD</code> 作为默认参数。<code>docker run</code> 后面的参数，会覆盖掉<code>CMD</code>。</p>
+<h4 id="3-构建-Nginx-镜像"><a href="#3-构建-Nginx-镜像" class="headerlink" title="3. 构建 Nginx 镜像"></a>3. 构建 Nginx 镜像</h4><p>我们从 <a target="_blank" rel="noopener" href="https://nginx.org/download/">nginx官网下载链接</a> 上拷到我们需要的压缩包，并用镜像编译它。</p>
+<p>课件的系统为CentOS7，为了更深入了解优化（Rocky9 比较先进，不用优化就可以达到很好的效果OvO，但学习效果可能就没那么好啦），我们将模拟 CentOS7 镜像，并一步步优化版本，达到“瘦身”。</p>
+<p><strong>准备 yum repo 文件和 nginx 压缩包</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># pwd</span>
+/root/docker-build
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat > CentOS-Base.repo &lt;&lt;EOF</span>
+<span class="token punctuation">[</span>base<span class="token punctuation">]</span>
+<span class="token assign-left variable">name</span><span class="token operator">=</span>CentOS-7 - Base - mirrors.aliyun.com
+<span class="token assign-left variable">baseurl</span><span class="token operator">=</span>http://mirrors.aliyun.com/centos-vault/7.9.2009/os/x86_64/
+<span class="token assign-left variable">gpgcheck</span><span class="token operator">=</span><span class="token number">0</span>
+<span class="token assign-left variable">enabled</span><span class="token operator">=</span><span class="token number">1</span>
+
+<span class="token punctuation">[</span>updates<span class="token punctuation">]</span>
+<span class="token assign-left variable">name</span><span class="token operator">=</span>CentOS-7 - Updates - mirrors.aliyun.com
+<span class="token assign-left variable">baseurl</span><span class="token operator">=</span>http://mirrors.aliyun.com/centos-vault/7.9.2009/updates/x86_64/
+<span class="token assign-left variable">gpgcheck</span><span class="token operator">=</span><span class="token number">0</span>
+<span class="token assign-left variable">enabled</span><span class="token operator">=</span><span class="token number">1</span>
+
+<span class="token punctuation">[</span>extras<span class="token punctuation">]</span>
+<span class="token assign-left variable">name</span><span class="token operator">=</span>CentOS-7 - Extras - mirrors.aliyun.com
+<span class="token assign-left variable">baseurl</span><span class="token operator">=</span>http://mirrors.aliyun.com/centos-vault/7.9.2009/extras/x86_64/
+<span class="token assign-left variable">gpgcheck</span><span class="token operator">=</span><span class="token number">0</span>
+<span class="token assign-left variable">enabled</span><span class="token operator">=</span><span class="token number">1</span>
+
+<span class="token punctuation">[</span>centosplus<span class="token punctuation">]</span>
+<span class="token assign-left variable">name</span><span class="token operator">=</span>CentOS-7 - Plus - mirrors.aliyun.com
+<span class="token assign-left variable">baseurl</span><span class="token operator">=</span>http://mirrors.aliyun.com/centos-vault/7.9.2009/centosplus/x86_64/
+<span class="token assign-left variable">gpgcheck</span><span class="token operator">=</span><span class="token number">0</span>
+<span class="token assign-left variable">enabled</span><span class="token operator">=</span><span class="token number">0</span>
+EOF
+25MB
+
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># wget https://nginx.org/download/nginx-1.28.0.tar.gz</span>
+--2026-09-06 <span class="token number">12</span>:10:27--  https://nginx.org/download/nginx-1.28.0.tar.gz
+Resolving nginx.org <span class="token punctuation">(</span>nginx.org<span class="token punctuation">)</span><span class="token punctuation">..</span>. <span class="token number">3.125</span>.197.172, 2a05:d014:5c0:2600::6, 2a05:d014:5c0:2601::6
+Connecting to nginx.org <span class="token punctuation">(</span>nginx.org<span class="token punctuation">)</span><span class="token operator">|</span><span class="token number">3.125</span>.197.172<span class="token operator">|</span>:443<span class="token punctuation">..</span>. connected.
+HTTP request sent, awaiting response<span class="token punctuation">..</span>. <span class="token number">200</span> OK
+Length: <span class="token number">1280111</span> <span class="token punctuation">(</span><span class="token number">1</span>.2M<span class="token punctuation">)</span> <span class="token punctuation">[</span>application/octet-stream<span class="token punctuation">]</span>
+Saving to: ‘nginx-1.28.0.tar.gz.1’
+
+nginx-1.28.0.tar.gz.1              <span class="token number">100</span>%<span class="token punctuation">[</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">=</span><span class="token operator">></span><span class="token punctuation">]</span>   <span class="token number">1</span>.22M   970KB/s    <span class="token keyword">in</span> <span class="token number">1</span>.3s
+
+<span class="token number">2026</span>-09-06 <span class="token number">12</span>:10:30 <span class="token punctuation">(</span><span class="token number">970</span> KB/s<span class="token punctuation">)</span> - ‘nginx-1.28.0.tar.gz.1’ saved <span class="token punctuation">[</span><span class="token number">12801111.28</span>.0.tar.gz.1 
+ 
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># ls</span>
+CentOS-Base.repo  Dockerfile  Dockerfile.cmd  Dockerfile.exec  Dockerfile.nginx  nginx-1.28.0.tar.gz<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们要确保资源文件，都在当前目录里。</p>
+<p><strong>编写 Dockerfile</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat Dockerfile.nginx</span>
+FROM centos:7
+EXPOSE <span class="token number">80</span>
+COPY CentOS-Base.repo /etc/yum.repos.d/
+RUN yum <span class="token function">install</span> <span class="token parameter variable">-y</span> gcc
+RUN yum <span class="token function">install</span> <span class="token parameter variable">-y</span> <span class="token function">make</span>
+RUN yum <span class="token function">install</span> <span class="token parameter variable">-y</span> pcre-devel
+RUN yum <span class="token function">install</span> <span class="token parameter variable">-y</span> zlib-devel
+ADD nginx-1.28.0.tar.gz /mnt
+WORKDIR /mnt/nginx-1.28.0
+RUN ./configure <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/nginx
+RUN <span class="token function">make</span>
+RUN <span class="token function">make</span> <span class="token function">install</span>
+CMD <span class="token punctuation">[</span><span class="token string">"/usr/local/nginx/sbin/nginx"</span>, <span class="token string">"-g"</span>, <span class="token string">"daemon off;"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>构建镜像并查看大小</strong></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -f Dockerfile.nginx -t nginx:v1 .</span>
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">77</span>.9s <span class="token punctuation">(</span><span class="token number">16</span>/16<span class="token punctuation">)</span> FINISHED                                                                                        docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile.nginx                                                                            <span class="token number">0</span>.0s
+<span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">(</span>省略<span class="token punctuation">)</span>
+
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker images nginx</span>
+                                                                                                                       i Info →   U  In Use
+IMAGE          ID             DISK USAGE   CONTENT SIZE   EXTRA
+nginx:latest   05b8cb60c354        250MB         <span class="token number">69</span>.2MB
+nginx:v1       c0b8bc157ea6        883MB          225MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>目前的 v1 版本，镜像有225MB，很大捏。</p>
+<h1 id="二、镜像优化"><a href="#二、镜像优化" class="headerlink" title="二、镜像优化"></a>二、镜像优化</h1><h2 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>最开始设计的版本，占用空间很大，我们可以通过下面的手段更新优化它。</p>
+<p>选择最精简的基础镜像；少镜像的层数；清理镜像构建的中间产物；注意优化网络请求；尽量去用构建缓存；使用多阶段构建镜像。</p>
+<p>下面，我们通过实验来深入学习。</p>
+<h2 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h2><h5 id="优化-1：合并-RUN-层（减少层数）"><a href="#优化-1：合并-RUN-层（减少层数）" class="headerlink" title="优化 1：合并 RUN 层（减少层数）"></a>优化 1：合并 RUN 层（减少层数）</h5><p>新建 <code>Dockerfile.nginx.v2</code>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># vim Dockerfile.nginx.v2</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat Dockerfile.nginx.v2</span>
+FROM centos:7
+EXPOSE <span class="token number">80</span>
+COPY CentOS-Base.repo /etc/yum.repos.d/
+RUN yum <span class="token function">install</span> <span class="token parameter variable">-y</span> gcc <span class="token function">make</span> pcre-devel zlib-devel
+ADD nginx-1.28.0.tar.gz /mnt
+WORKDIR /mnt/nginx-1.28.0
+RUN ./configure <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/nginx <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token function">install</span>
+CMD <span class="token punctuation">[</span><span class="token string">"/usr/local/nginx/sbin/nginx"</span>, <span class="token string">"-g"</span>, <span class="token string">"daemon off;"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>构建并对比一下大小。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -f Dockerfile.nginx.v2 -t nginx:v2 .</span>
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">76</span>.2s <span class="token punctuation">(</span><span class="token number">11</span>/11<span class="token punctuation">)</span> FINISHED                                                                                        docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile.nginx.v2                                                                         <span class="token number">0</span>.0s
+ <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>.                                                             
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker images nginx</span>
+                                                                                                                       i Info →   U  In Use
+IMAGE          ID             DISK USAGE   CONTENT SIZE   EXTRA
+nginx:latest   05b8cb60c354        250MB         <span class="token number">69</span>.2MB
+nginx:v1       c0b8bc157ea6        883MB          225MB
+nginx:v2       8dc9418fe39f        790MB          206MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>少了20MB。</p>
+<h5 id="优化-2：清理中间产物（yum-clean-all，删除源码）"><a href="#优化-2：清理中间产物（yum-clean-all，删除源码）" class="headerlink" title="优化 2：清理中间产物（yum clean all，删除源码）"></a>优化 2：清理中间产物（yum clean all，删除源码）</h5><p>新建 nginc.v3 ，构建镜像并对比一下。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">
+
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># vim Dockerfile.nginx.v3</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat Dockerfile.nginx.v3</span>
+FROM centos:7
+EXPOSE <span class="token number">80</span>
+COPY CentOS-Base.repo /etc/yum.repos.d/
+RUN yum <span class="token function">install</span> <span class="token parameter variable">-y</span> gcc <span class="token function">make</span> pcre-devel zlib-devel <span class="token operator">&amp;&amp;</span> yum clean all
+ADD nginx-1.28.0.tar.gz /mnt
+WORKDIR /mnt/nginx-1.28.0
+RUN ./configure <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/nginx <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token function">install</span> <span class="token operator">&amp;&amp;</span> <span class="token builtin class-name">cd</span> <span class="token punctuation">..</span> <span class="token operator">&amp;&amp;</span> <span class="token function">rm</span> <span class="token parameter variable">-fr</span> nginx-1.28.0
+CMD <span class="token punctuation">[</span><span class="token string">"/usr/local/nginx/sbin/nginx"</span>, <span class="token string">"-g"</span>, <span class="token string">"daemon off;"</span><span class="token punctuation">]</span> 
+
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -f Dockerfile.nginx.v3 -t nginx:v3 .</span>
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">119</span>.3s <span class="token punctuation">(</span><span class="token number">11</span>/11<span class="token punctuation">)</span> FINISHED                                                            docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile.nginx.v3                                             <span class="token number">0</span>.0s
+  <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker images nginx</span>
+                                                                                           i Info →   U  In Use
+IMAGE          ID             DISK USAGE   CONTENT SIZE   EXTRA
+nginx:latest   05b8cb60c354        250MB         <span class="token number">69</span>.2MB
+nginx:v1       c0b8bc157ea6        883MB          225MB
+nginx:v2       8dc9418fe39f        790MB          206MB
+nginx:v3       47bce8df4c41        457MB          118MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>此时，我们已经小了一半的空间了。</p>
+<h5 id="优化-3：多阶段构建（Multi-stage-Build）"><a href="#优化-3：多阶段构建（Multi-stage-Build）" class="headerlink" title="优化 3：多阶段构建（Multi-stage Build）"></a>优化 3：多阶段构建（Multi-stage Build）</h5><p>继续新建<code>Dockerfile.nginx.v4</code>，写入下面内容。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># vim Dockerfile.nginx.v4</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat Dockerfile.nginx.v4</span>
+<span class="token comment"># 第一阶段：编译环境</span>
+FROM centos:7 as build
+COPY CentOS-Base.repo /etc/yum.repos.d/
+RUN yum <span class="token function">install</span> <span class="token parameter variable">-y</span> gcc <span class="token function">make</span> pcre-devel zlib-devel <span class="token operator">&amp;&amp;</span> yum clean all
+ADD nginx-1.28.0.tar.gz /mnt
+WORKDIR /mnt/nginx-1.28.0
+RUN ./configure <span class="token parameter variable">--prefix</span><span class="token operator">=</span>/usr/local/nginx <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token operator">&amp;&amp;</span> <span class="token function">make</span> <span class="token function">install</span> <span class="token operator">&amp;&amp;</span> <span class="token builtin class-name">cd</span> <span class="token punctuation">..</span> <span class="token operator">&amp;&amp;</span> <span class="token function">rm</span> <span class="token parameter variable">-fr</span> nginx-1.28.0
+
+<span class="token comment"># 第二阶段：精简运行环境</span>
+FROM centos:7
+COPY <span class="token parameter variable">--from</span><span class="token operator">=</span>build /usr/local/nginx /usr/local/nginx
+EXPOSE <span class="token number">80</span>
+CMD <span class="token punctuation">[</span><span class="token string">"/usr/local/nginx/sbin/nginx"</span>, <span class="token string">"-g"</span>, <span class="token string">"daemon off;"</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>构建镜像并查看大小。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -f Dockerfile.nginx.v4 -t nginx:v4 .</span>
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">2</span>.5s <span class="token punctuation">(</span><span class="token number">12</span>/12<span class="token punctuation">)</span> FINISHED                                                             docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile.nginx.v4                                             <span class="token number">0</span>.0s
+ <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>.
+ <span class="token number">1</span> warning found <span class="token punctuation">(</span>use <span class="token function">docker</span> <span class="token parameter variable">--debug</span> to <span class="token function">expand</span><span class="token punctuation">)</span>:
+ - FromAsCasing: <span class="token string">'as'</span> and <span class="token string">'FROM'</span> keywords' casing <span class="token keyword">do</span> not match <span class="token punctuation">(</span>line <span class="token number">2</span><span class="token punctuation">)</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker images nginx</span>
+                                                                                           i Info →   U  In Use
+IMAGE          ID             DISK USAGE   CONTENT SIZE   EXTRA
+nginx:latest   05b8cb60c354        250MB         <span class="token number">69</span>.2MB
+nginx:v1       c0b8bc157ea6        883MB          225MB
+nginx:v2       8dc9418fe39f        790MB          206MB
+nginx:v3       47bce8df4c41        457MB          118MB
+nginx:v4       e2a59f970a43        304MB         <span class="token number">77</span>.6MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>依旧忽视警告（没事捏，我们只是在学习）。</p>
+<p>因为第二阶段只拷贝了编译好的二进制和库文件，现在的体积仅有77MB，少了上百M（好耶）</p>
+<h5 id="优化-4：使用精简的基础镜像（Alpine）"><a href="#优化-4：使用精简的基础镜像（Alpine）" class="headerlink" title="优化 4：使用精简的基础镜像（Alpine）"></a>优化 4：使用精简的基础镜像（Alpine）</h5><p>其实，课件里用到的镜像是 Google 的 <code>distroless</code>，但<code>gcr.io/distroless/base-debian12</code> 在国内拉取不方便，我们用 Alpine 镜像来替代。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># vim Dockerfile.nginx.v5</span>
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># cat Dockerfile.nginx.v5</span>
+FROM alpine:latest
+RUN apk <span class="token function">add</span> --no-cache nginx
+EXPOSE <span class="token number">80</span>
+CMD <span class="token punctuation">[</span><span class="token string">"nginx"</span>, <span class="token string">"-g"</span>, <span class="token string">"daemon off;"</span><span class="token punctuation">]</span>
+
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker build -f Dockerfile.nginx.v5 -t nginx:v5 .</span>
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> Building <span class="token number">41</span>.2s <span class="token punctuation">(</span><span class="token number">6</span>/6<span class="token punctuation">)</span> FINISHED                                                              docker:default
+ <span class="token operator">=</span><span class="token operator">></span> <span class="token punctuation">[</span>internal<span class="token punctuation">]</span> load build definition from Dockerfile.nginx.v5                                             <span class="token number">0</span>.0s
+ <span class="token punctuation">..</span>. <span class="token punctuation">..</span>. <span class="token punctuation">..</span>.
+<span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># docker images nginx</span>
+                                                                                           i Info →   U  In Use
+IMAGE          ID             DISK USAGE   CONTENT SIZE   EXTRA
+nginx:latest   05b8cb60c354        250MB         <span class="token number">69</span>.2MB
+nginx:v1       c0b8bc157ea6        883MB          225MB
+nginx:v2       8dc9418fe39f        790MB          206MB
+nginx:v3       47bce8df4c41        457MB          118MB
+nginx:v4       e2a59f970a43        304MB         <span class="token number">77</span>.6MB
+nginx:v5       18754dc6304d       <span class="token number">15</span>.6MB         <span class="token number">4</span>.75MB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>哇，只有惊人的4.75MB。</p>
+<p>最后，我们可以清理一下本次实验的环境（也可以不清理）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 docker-build<span class="token punctuation">]</span><span class="token comment"># # 删除所有构建的镜像</span>
+<span class="token function">docker</span> rmi nginx:v1 nginx:v2 nginx:v3 nginx:v4 demo:v1 demo:v2 demo:v3
+<span class="token comment"># 删除构建目录</span>
+<span class="token builtin class-name">cd</span> ~ <span class="token operator">&amp;&amp;</span> <span class="token function">rm</span> <span class="token parameter variable">-rf</span> ~/docker-build
+Untagged: nginx:v1
+Deleted: sha256:c0b8bc157ea61d9f355e9299ddc3d6f48a7cab0338af99b78f73b2c3ae16ca69
+Untagged: nginx:v2
+Deleted: sha256:8dc9418fe39f7cb269bf798b381881f48337b63ea639d143b53127ce2561ca7d
+Untagged: nginx:v3
+Deleted: sha256:47bce8df4c41d48b47964d71d3a5159ff31a85a4ea00429ee5455479cb06e686
+Untagged: nginx:v4
+Deleted: sha256:e2a59f970a43855346e843f5a338545bc70e90f53e813638acf1f1f76ad9b2c8
+Untagged: demo:v1
+Deleted: sha256:ed4defc959ebc5a455a7bb557323b02b620933ddda680117aef68c38c8f6443e
+Untagged: demo:v2
+Deleted: sha256:f30bc0ebf006c5572a810728a6539742f0dda037d0b05160f5fbef6d3b71eb34
+Untagged: demo:v3
+Deleted: sha256:11017592b6e73aa07f4b657c607e95c95c1a238562a533c15f360c0e43d463bc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="三、-公共仓库与私有仓库"><a href="#三、-公共仓库与私有仓库" class="headerlink" title="三、 公共仓库与私有仓库"></a>三、 公共仓库与私有仓库</h1><h2 id="（1）理解-2"><a href="#（1）理解-2" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>下面，我们的进度来到了 Docker 仓库。本节内容，我们了解并区分一下 Docker Hub（公共仓库）和私有 Registry。</p>
+<p>我们平常用到的<code>docker pull nginx</code>，镜像是从Docker官方仓库（外网）下载的。但是外网仓库的访问很不方便（甚至可能访问不了），想搭建自己的镜像，也不方便存储。于是，我们可以在内网里，搭建一个自己的“私有仓库”。</p>
+<h2 id="（2）实验-2"><a href="#（2）实验-2" class="headerlink" title="（2）实验"></a>（2）实验</h2><h3 id="1-Docker-Hub（公共仓库）"><a href="#1-Docker-Hub（公共仓库）" class="headerlink" title="1. Docker Hub（公共仓库）"></a>1. Docker Hub（公共仓库）</h3><h5 id="①-登录-Docker-Hub（需提前注册账号）"><a href="#①-登录-Docker-Hub（需提前注册账号）" class="headerlink" title="① 登录 Docker Hub（需提前注册账号）"></a>① 登录 Docker Hub（需提前注册账号）</h5><p>进入 <a target="_blank" rel="noopener" href="https://hub.docker.com/">Docker Hub官网</a> 注册自己的账号。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/1.png" loading="lazy"></p>
+<p>然后登录失败。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker login</span>
+Failed to start web-based login - falling back to <span class="token builtin class-name">command</span> line login<span class="token punctuation">..</span>.
+
+Log <span class="token keyword">in</span> with your Docker ID or email address to push and pull images from Docker Hub. If you don't have a Docker ID, <span class="token function">head</span> over to https://hub.docker.com/ to create one.
+You can log <span class="token keyword">in</span> with your password or a Personal Access Token <span class="token punctuation">(</span>PAT<span class="token punctuation">)</span>. Using a limited-scope PAT grants better security and is required <span class="token keyword">for</span> organizations using SSO. Learn <span class="token function">more</span> at https://docs.docker.com/go/access-tokens/
+
+Username: huaku
+
+i Info → A Personal Access Token <span class="token punctuation">(</span>PAT<span class="token punctuation">)</span> can be used instead.
+         To create a PAT, visit https://app.docker.com/settings
+
+
+Password:
+Error response from daemon: Get <span class="token string">"https://registry-1.docker.io/v2/"</span><span class="token builtin class-name">:</span> net/http: request canceled <span class="token keyword">while</span> waiting <span class="token keyword">for</span> connection <span class="token punctuation">(</span>Client.Timeout exceeded <span class="token keyword">while</span> await
+ 
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker login -u huaku</span>
+
+i Info → A Personal Access Token <span class="token punctuation">(</span>PAT<span class="token punctuation">)</span> can be used instead.
+         To create a PAT, visit https://app.docker.com/settings
+
+
+Password:
+Error response from daemon: Get <span class="token string">"https://registry-1.docker.io/v2/"</span><span class="token builtin class-name">:</span> net/http: TLS handshake <span class="token function">timeout</span>
+ing headers<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这时候就要连接一下代理了。我们将代理连到漂亮国，再次试试就能连接上了。</p>
+<p>在对话登录，里会看到一小段确认码，登陆进浏览器，我们将这段确认码复制进网页。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/2.png" loading="lazy"></p>
+<p>如图，我的确认码是SSXM-VKWQ，确认后，就成功登录进去了。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/3.png" loading="lazy"></p>
+<p>后面再在对话框登录时，就会直接进去啦。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker login</span>
+Authenticating with existing credentials<span class="token punctuation">..</span>. <span class="token punctuation">[</span>Username: huaku<span class="token punctuation">]</span>
+
+i Info → To login with a different account, run <span class="token string">'docker logout'</span> followed by <span class="token string">'docker login'</span>
+
+
+Login Succeeded<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="②-打标签，把镜像推到-Docker-Hub"><a href="#②-打标签，把镜像推到-Docker-Hub" class="headerlink" title="② 打标签，把镜像推到 Docker Hub"></a>② 打标签，把镜像推到 Docker Hub</h5><p>我们先将 <code>nginx:v5</code> 镜像标记为 Docker Hub 上的目标位置，即我的用户 <code>huaku</code> 的仓库。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker push huaku/nginx:v5</span>
+The push refers to repository <span class="token punctuation">[</span>docker.io/huaku/nginx<span class="token punctuation">]</span>
+9319ff358945: Already exists
+44136fa355b3: Already exists
+42cebc1d688c: Layer already exists
+55afa1ecc21d: Layer already exists
+v5: digest: sha256:18754dc6304d8b354f67a4b9b98d4c0d7292b9523f13cdf4b094ad621dc281c3 size: <span class="token number">855</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我其实已经上传过一次了，这些文件都已经存在了。这时候，我们就能在浏览器上，看到上传的镜像了。</p>
+<h3 id="2-搭建私有-Registry（无加密，HTTP）"><a href="#2-搭建私有-Registry（无加密，HTTP）" class="headerlink" title="2. 搭建私有 Registry（无加密，HTTP）"></a>2. 搭建私有 Registry（无加密，HTTP）</h3><p>我们在这一小节，计划在 docker1 上运行一个简单的 Registry，并允许 HTTP 访问（ HTTP 并不安全，仅仅用于内网测试）。</p>
+<h5 id="①-拉取-Registry-镜像，运行容器"><a href="#①-拉取-Registry-镜像，运行容器" class="headerlink" title="① 拉取 Registry 镜像，运行容器"></a>① 拉取 Registry 镜像，运行容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> pull registry
+<span class="token function">docker</span> run <span class="token parameter variable">-d</span> <span class="token parameter variable">--name</span> registry <span class="token parameter variable">-p</span> <span class="token number">5000</span>:5000 <span class="token parameter variable">-v</span> /opt/registry:/var/lib/registry registry<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>运行容器的命令里，<code>-d</code>：后台运行；<code>-p 5000:5000</code>：将宿主机 5000 端口映射到容器的 5000 端口；<code>-v /opt/registry:/var/lib/registry</code>：持久化存储镜像数据到宿主机 <code>/opt/registry</code> 目录。</p>
+<p>我们查看一下仓库的情况。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker ps -l</span>
+CONTAINER ID   IMAGE      COMMAND                  CREATED        STATUS       PORTS                                         NAMES
+cc6f7617b254   registry   <span class="token string">"/entrypoint.sh /etc…"</span>   <span class="token number">41</span> hours ago   Up <span class="token number">2</span> hours   <span class="token number">0.0</span>.0.0:5000-<span class="token operator">></span><span class="token number">5000</span>/tcp, <span class="token punctuation">[</span>::<span class="token punctuation">]</span>:5000-<span class="token operator">></span><span class="token number">5000</span>/tcp   registry
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># curl http://localhost:5000/v2/_catalog</span>
+<span class="token punctuation">&#123;</span><span class="token string">"repositories"</span>:<span class="token punctuation">[</span><span class="token string">"nginx"</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里，registry 正常运行着，访问仓库时，看到里面有一个 <code>nginx</code> 的镜像。初次创建仓库后，访问返回的应该是空仓库，即 <code>{&quot;repositories&quot;:[]}</code> ，我这里推送过镜像啦。</p>
+<h5 id="②-推送镜像到私有仓库"><a href="#②-推送镜像到私有仓库" class="headerlink" title="② 推送镜像到私有仓库"></a>② 推送镜像到私有仓库</h5><p>那么怎么推送镜像呢？我们需要先给本地镜像打上标签，再推送。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker tag nginx:v5 localhost:5000/nginx:v5</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker push localhost:5000/nginx:v5</span>
+The push refers to repository <span class="token punctuation">[</span>localhost:5000/nginx<span class="token punctuation">]</span>
+42cebc1d688c: Layer already exists
+9319ff358945: Already exists
+55afa1ecc21d: Layer already exists
+44136fa355b3: Already exists
+v5: digest: sha256:18754dc6304d8b354f67a4b9b98d4c0d7292b9523f13cdf4b094ad621dc281c3 size: <span class="token number">855</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里，我给 <code>nginx:v5</code> 打上了 <code>localhost:5000/nginx:v5</code> 的标签。</p>
+<h5 id="③-拉取并查询镜像"><a href="#③-拉取并查询镜像" class="headerlink" title="③ 拉取并查询镜像"></a>③ 拉取并查询镜像</h5><p>下面我们的 <code>docker2</code> 就登场啦，我们将从 docker2 上拉取刚刚配置的私有仓库的镜像。</p>
+<p>由于 docker2 默认不允许通过 HTTP 拉取，我们需要配置 <code>insecure-registries</code>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># vim /etc/docker/daemon.json</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/docker/daemon.json</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token string">"insecure-registries"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span><span class="token string">"192.168.86.101:5000"</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># systemctl restart docker</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull 192.168.86.101:5000/nginx:v5</span>
+v5: Pulling from nginx
+Digest: sha256:18754dc6304d8b354f67a4b9b98d4c0d7292b9523f13cdf4b094ad621dc281c3
+Status: Image is up to <span class="token function">date</span> <span class="token keyword">for</span> <span class="token number">192.168</span>.86.101:5000/nginx:v5
+<span class="token number">192.168</span>.86.101:5000/nginx:v5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>成功拉取到镜像啦，我们的无加密仓库正常地工作。</p>
+<p>继续查看仓库里所有镜像列表，以及 nginx 镜像的所有标签（版本）</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># curl http://192.168.86.101:5000/v2/_catalog</span>
+<span class="token punctuation">&#123;</span><span class="token string">"repositories"</span>:<span class="token punctuation">[</span><span class="token string">"nginx"</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment">#  curl http://192.168.86.101:5000/v2/nginx/tags/list</span>
+<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"nginx"</span>,<span class="token string">"tags"</span>:<span class="token punctuation">[</span><span class="token string">"v5"</span><span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>嗯嗯，仓库里只有nginx这个镜像，nginx的版本只有v5。</p>
+<p>那命令中，这个 <strong>v2</strong> 是什么呢？其实是在说，我们在使用 Registry API v2 版本。</p>
+<h1 id="四、-加密并认证"><a href="#四、-加密并认证" class="headerlink" title="四、 加密并认证"></a>四、 加密并认证</h1><h2 id="（1）理解-3"><a href="#（1）理解-3" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>刚刚创建的私有仓库，用docker2拉取镜像时完全没有加密，这是很危险的。</p>
+<p>我们使用自签名证书，让 Registry 支持 HTTPS（端口 443），这就完成了加密。再创建用户密码文件，启用认证，我们就完成了用户认证。</p>
+<p>这时候，不管从哪个设备访问 Registry ，就都需要用户密码啦。</p>
+<h2 id="（2）实验-3"><a href="#（2）实验-3" class="headerlink" title="（2）实验"></a>（2）实验</h2><h3 id="1-添加-TLS-加密"><a href="#1-添加-TLS-加密" class="headerlink" title="1. 添加 TLS 加密"></a>1. 添加 TLS 加密</h3><h5 id="①-生成自签名证书（docker1）"><a href="#①-生成自签名证书（docker1）" class="headerlink" title="① 生成自签名证书（docker1）"></a>① 生成自签名证书（docker1）</h5><p>我们创建一个存放证书的目录，生成证书。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p certs</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># openssl req -newkey rsa:4096 -nodes -sha256 -keyout certs/registry.key -x509 -days 365 -out certs/registry.crt -subj "/CN=reg.westos.org" -addext "subjectAltName = DNS:reg.westos.org"</span>
+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+.+++++++++++++++++++++++++++++++++++++++++++++*.+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+++++++++++++++++++++++++++++++++++++++++++++*<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+.+<span class="token punctuation">..</span>+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.+<span class="token punctuation">..</span>+<span class="token punctuation">..</span>.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>这时候，下面就有好多的点点和星星。</p>
+<p>我们的私有仓库中。使用了4096位RSA密钥和SHA-256的签名算法，证书的有效期是365天，证书主体名（域名）是<code>reg.westos.org</code>。</p>
+<p>需要注意，在docker1和docker2上，需要有<strong>reg.westos.org</strong>的域名解析。</p>
+<h5 id="②-停止并删除旧的-Registry-容器，重新运行（启用-TLS）"><a href="#②-停止并删除旧的-Registry-容器，重新运行（启用-TLS）" class="headerlink" title="② 停止并删除旧的 Registry 容器，重新运行（启用 TLS）"></a>② 停止并删除旧的 Registry 容器，重新运行（启用 TLS）</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f registry</span>
+registry
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker run -d --name registry -p 443:443 \</span>
+  <span class="token parameter variable">-v</span> /opt/registry:/var/lib/registry <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span>/certs:/certs <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_HTTP_ADDR</span><span class="token operator">=</span><span class="token number">0.0</span>.0.0:443 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_HTTP_TLS_CERTIFICATE</span><span class="token operator">=</span>/certs/registry.crt <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_HTTP_TLS_KEY</span><span class="token operator">=</span>/certs/registry.key <span class="token punctuation">\</span>
+  registry
+04335f872b8ecc559561f1677cc4014e26423ea2708231b13ad23440ea956573<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这一次再运行仓库，参数明显变多了。回顾一下，之前的是：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> run <span class="token parameter variable">-d</span> <span class="token parameter variable">--name</span> registry <span class="token parameter variable">-p</span> <span class="token number">5000</span>:5000 <span class="token parameter variable">-v</span> /opt/registry:/var/lib/registry registry<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>但这次，有一些新的参数。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>-d</code></td>
+<td>后台运行</td>
+</tr>
+<tr>
+<td><code>--name registry</code></td>
+<td>容器名叫 registry</td>
+</tr>
+<tr>
+<td><code>-p 443:443</code></td>
+<td>映射端口：宿主机 443 → 容器 443</td>
+</tr>
+<tr>
+<td><code>-v /opt/registry:/var/lib/registry</code></td>
+<td>镜像数据持久化到宿主机 <code>/opt/registry</code></td>
+</tr>
+<tr>
+<td><code>-v $(pwd)/certs:/certs</code></td>
+<td>挂载前面生成的证书到容器内</td>
+</tr>
+<tr>
+<td><code>-e REGISTRY_HTTP_ADDR=0.0.0.0:443</code></td>
+<td>Registry 监听地址</td>
+</tr>
+<tr>
+<td><code>-e REGISTRY_HTTP_TLS_CERTIFICATE=...</code></td>
+<td>指定 HTTPS 证书</td>
+</tr>
+<tr>
+<td><code>-e REGISTRY_HTTP_TLS_KEY=...</code></td>
+<td>指定 HTTPS 私钥</td>
+</tr>
+<tr>
+<td><code>registry</code></td>
+<td>使用官方 registry 镜像</td>
+</tr>
+</tbody></table>
+<p>这个镜像私有仓库<strong>支持 HTTPS</strong>，可以通过<code>https://your-ip:443/v2/_catalog</code> 访问；通过<code>docker push your-ip:443/镜像名:tag</code> 推送镜像。</p>
+<h5 id="③-配置客户端，信任自签名证书"><a href="#③-配置客户端，信任自签名证书" class="headerlink" title="③ 配置客户端，信任自签名证书"></a>③ 配置客户端，信任自签名证书</h5><p>我们在 docker1 上创建证书目录，并复制证书到 Docker 证书目录，再把证书目录复制到 docker2（让 docker2 也能信任）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /etc/docker/certs.d/reg.westos.org/</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># cp certs/registry.crt /etc/docker/certs.d/reg.westos.org/ca.crt</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># scp -r /etc/docker/certs.d  192.168.86.102:/etc/docker/</span>
+ca.crt                                                                     <span class="token number">100</span>% <span class="token number">1858</span>   <span class="token number">820</span>.7KB/s   00:00<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这是由于 Docker 默认要求仓库走 HTTPS，但私有证书不被系统信任。我们把证书放到 <code>/etc/docker/certs.d/&lt;域名&gt;/ca.crt</code> 下，Docker 就会信任这个域名的证书。</p>
+<p>这样，两台机器都能正常使用私有仓库了。</p>
+<h5 id="④-测试推送（docker1）与拉取（docker2）"><a href="#④-测试推送（docker1）与拉取（docker2）" class="headerlink" title="④ 测试推送（docker1）与拉取（docker2）"></a>④ 测试推送（docker1）与拉取（docker2）</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker tag nginx:v5 reg.westos.org/nginx:v5</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker push reg.westos.org/nginx:v5</span>
+The push refers to repository <span class="token punctuation">[</span>reg.westos.org/nginx<span class="token punctuation">]</span>
+9319ff358945: Already exists
+44136fa355b3: Already exists
+42cebc1d688c: Layer already exists
+55afa1ecc21d: Layer already exists
+v5: digest: sha256:18754dc6304d8b354f67a4b9b98d4c0d7292b9523f13cdf4b094ad621dc281c3 size: <span class="token number">855</span> 
+
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull reg.westos.org/nginx:v5</span>
+v5: Pulling from nginx
+Digest: sha256:18754dc6304d8b354f67a4b9b98d4c0d7292b9523f13cdf4b094ad621dc281c3
+Status: Downloaded newer image <span class="token keyword">for</span> reg.westos.org/nginx:v5
+reg.westos.org/nginx:v5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>给 nginx 打标签，并推送到本地的私有仓库（<code>/opt/registry</code>）。此时证书已受信任了，就不再需要 <code>insecure-registries</code> 了。</p>
+<p>此时，在 docker2 不需要额外的配置，就成功拉取到镜像文件了。两台机器都信任了 HTTPS 证书。</p>
+<h3 id="2-为-Registry-添加用户认证"><a href="#2-为-Registry-添加用户认证" class="headerlink" title="2. 为 Registry 添加用户认证"></a>2. 为 Registry 添加用户认证</h3><h5 id="①-安装-htpasswd-工具（docker1）"><a href="#①-安装-htpasswd-工具（docker1）" class="headerlink" title="① 安装 htpasswd 工具（docker1）"></a>① 安装 htpasswd 工具（docker1）</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># dnf install -y httpd-tools</span>
+Last metadata expiration check: <span class="token number">3</span>:22:49 ago on Sat Sep <span class="token number">12</span> <span class="token number">11</span>:05:26 <span class="token number">2026</span>.
+Dependencies resolved.
+<span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">=</span>
+ Package                      Architecture       Version                         Repository             Size
+<span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">==</span><span class="token operator">=</span>
+Installing:
+ httpd-tools                  x86_64             <span class="token number">2.4</span>.62-13.el9_8.6               appstream              <span class="token number">79</span> k
+<span class="token comment"># ... ... ... (省略一些内容)</span>
+Installed:
+  apr-1.7.0-12.el9_3.x86_64                           apr-util-1.6.1-23.el9_8.1.x86_64
+  apr-util-bdb-1.6.1-23.el9_8.1.x86_64                apr-util-openssl-1.6.1-23.el9_8.1.x86_64
+  httpd-tools-2.4.62-13.el9_8.6.x86_64
+
+Complete<span class="token operator">!</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="②-创建密码文件（docker1）"><a href="#②-创建密码文件（docker1）" class="headerlink" title="② 创建密码文件（docker1）"></a>② 创建密码文件（docker1）</h5><p>初次添加，我创建了 admin 用户的信息及密码。需要注意，后面再添加用户信息（追加），就不要加 <strong>-c</strong> 了，不然会覆盖之前的信息。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># htpasswd -Bc auth/htpasswd admin</span>
+New password:
+Re-type new password:
+Adding password <span class="token keyword">for</span> user admin
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># htpasswd -B auth/htpasswd lkh</span>
+New password:
+Re-type new password:
+Adding password <span class="token keyword">for</span> user lkh
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># cat auth/htpasswd</span>
+admin:<span class="token variable">$2y</span><span class="token variable">$05</span><span class="token variable">$XgdJknNeNLhslLk6qUTBSO9</span>/r0OqSdIPAlOhvQaj0FTAq0edT2DM.
+lkh:<span class="token variable">$2y</span><span class="token variable">$05</span><span class="token variable">$zGT8z11ZaVcH1ebFBW962</span>.U54QjLhls0seazYs7VDEWblIROLbzjS<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="③-启用认证，重新运行-Registry"><a href="#③-启用认证，重新运行-Registry" class="headerlink" title="③ 启用认证，重新运行 Registry"></a>③ 启用认证，重新运行 Registry</h5><p>我们删除之前的仓库，重新启动。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f registry</span>
+registry
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker run -d --name registry -p 443:443 \</span>
+  <span class="token parameter variable">-v</span> /opt/registry:/var/lib/registry <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span>/certs:/certs <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span>/auth:/auth <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_HTTP_ADDR</span><span class="token operator">=</span><span class="token number">0.0</span>.0.0:443 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_HTTP_TLS_CERTIFICATE</span><span class="token operator">=</span>/certs/registry.crt <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_HTTP_TLS_KEY</span><span class="token operator">=</span>/certs/registry.key <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_AUTH</span><span class="token operator">=</span>htpasswd <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_AUTH_HTPASSWD_REALM</span><span class="token operator">=</span><span class="token string">"Registry Realm"</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-e</span> <span class="token assign-left variable">REGISTRY_AUTH_HTPASSWD_PATH</span><span class="token operator">=</span>/auth/htpasswd <span class="token punctuation">\</span>
+  registry
+c27ae132fb622fc90cc94cc476660ab9a152344eb4a38bf4565d41f503cd7191<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>又新增了几个变量。</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>REGISTRY_AUTH=htpasswd</code></td>
+<td>使用 htpasswd 认证方式</td>
+</tr>
+<tr>
+<td><code>REGISTRY_AUTH_HTPASSWD_REALM</code></td>
+<td>认证弹窗显示的文字</td>
+</tr>
+<tr>
+<td><code>REGISTRY_AUTH_HTPASSWD_PATH</code></td>
+<td>密码文件路径</td>
+</tr>
+</tbody></table>
+<p>这样，我们的仓库就变得更安全啦o.O</p>
+<h5 id="④-登录认证（docker1-或-docker2）并测试"><a href="#④-登录认证（docker1-或-docker2）并测试" class="headerlink" title="④ 登录认证（docker1 或 docker2）并测试"></a>④ 登录认证（docker1 或 docker2）并测试</h5><p>我们这次登录仓库，就需要用户名及密码了。推送一下 nginx:v5 测试一下，再登出仓库。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker login reg.westos.org</span>
+Username: admin
+Password:
+
+WARNING<span class="token operator">!</span> Your credentials are stored unencrypted <span class="token keyword">in</span> <span class="token string">'/root/.docker/config.json'</span><span class="token builtin class-name">.</span>
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/go/credential-store/
+
+Login Succeeded
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker push reg.westos.org/nginx:v5</span>
+The push refers to repository <span class="token punctuation">[</span>reg.westos.org/nginx<span class="token punctuation">]</span>
+42cebc1d688c: Layer already exists
+55afa1ecc21d: Layer already exists
+9319ff358945: Already exists
+44136fa355b3: Already exists
+v5: digest: sha256:18754dc6304d8b354f67a4b9b98d4c0d7292b9523f13cdf4b094ad621dc28
+
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># curl -k https://reg.westos.org/v2/nginx/tags/list</span>
+<span class="token punctuation">&#123;</span><span class="token string">"errors"</span>:<span class="token punctuation">[</span><span class="token punctuation">&#123;</span><span class="token string">"code"</span><span class="token builtin class-name">:</span><span class="token string">"UNAUTHORIZED"</span>,<span class="token string">"message"</span><span class="token builtin class-name">:</span><span class="token string">"authentication required"</span>,<span class="token string">"detail"</span>:<span class="token punctuation">[</span><span class="token punctuation">&#123;</span><span class="token string">"Type"</span><span class="token builtin class-name">:</span><span class="token string">"repository"</span>,<span class="token string">"Class"</span><span class="token builtin class-name">:</span><span class="token string">""</span>,<span class="token string">"Name"</span><span class="token builtin class-name">:</span><span class="token string">"nginx"</span>,<span class="token string">"Action"</span><span class="token builtin class-name">:</span><span class="token string">"pull"</span><span class="token punctuation">&#125;</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span>
+
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># curl -k https://reg.westos.org/v2/nginx/tags/list -uadmin</span>
+Enter <span class="token function">host</span> password <span class="token keyword">for</span> user <span class="token string">'admin'</span><span class="token builtin class-name">:</span>
+<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"nginx"</span>,<span class="token string">"tags"</span><span class="token punctuation">[</span><span class="token string">"v5"</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span>
+1c3 size: <span class="token number">855</span>
+
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker logout reg.westos.org</span>
+Removing login credentials <span class="token keyword">for</span> reg.westos.org<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这次登陆仓库需要用户名密码，想访问镜像，也需要用户名密码了。</p>
+<h1 id="五、-Harbor-企业级私有仓库"><a href="#五、-Harbor-企业级私有仓库" class="headerlink" title="五、 Harbor 企业级私有仓库"></a>五、 Harbor 企业级私有仓库</h1><h2 id="（1）理解-4"><a href="#（1）理解-4" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>Docker容器应用的开发和运行离不开可靠的镜像管理，虽然Docker官方也提供了公共的镜像仓库，但是从安全和效率等方面考虑，部署我们私有环境内的Registry也是非常必要的。</p>
+<p><strong>Harbor</strong> 是由VMware公司开源的企业级的Docker Registry管理项目，它包括权限管理(RBAC)、LDAP、日志审核、管理界面、自我注册、镜像复制和中文支持等功能。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/4.png" loading="lazy"></p>
+<p>（以上内容引用自老师的课件OvO）</p>
+<h2 id="（2）实验-4"><a href="#（2）实验-4" class="headerlink" title="（2）实验"></a>（2）实验</h2><h3 id="1-Harbor-安装部署"><a href="#1-Harbor-安装部署" class="headerlink" title="1. Harbor 安装部署"></a>1. Harbor 安装部署</h3><h5 id="①-前置准备"><a href="#①-前置准备" class="headerlink" title="① 前置准备"></a>① 前置准备</h5><p>在安装软件之前，我们需要确认一下资源环境。Harbor 对资源有一定要求，最低配置为 2 核 CPU、4GB 内存、40GB 磁盘。</p>
+<p>很糟糕的是，我的虚拟机是从另一个只有20G磁盘大小的虚拟机上克隆的，直接修改磁盘大小会丢失很多东西。于是我添加了一块40G的新磁盘。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/5.png" loading="lazy"></p>
+<p>接着，在 Rocky Linux 中识别并格式化新盘。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># lsblk</span>
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0          <span class="token number">11</span>:0    <span class="token number">1</span>  <span class="token number">2</span>.1G  <span class="token number">0</span> rom
+nvme0n1     <span class="token number">259</span>:0    <span class="token number">0</span>   20G  <span class="token number">0</span> disk
+├─nvme0n1p1 <span class="token number">259</span>:1    <span class="token number">0</span>    1G  <span class="token number">0</span> part /boot
+└─nvme0n1p2 <span class="token number">259</span>:2    <span class="token number">0</span>   19G  <span class="token number">0</span> part
+  ├─rl-root <span class="token number">253</span>:0    <span class="token number">0</span>   17G  <span class="token number">0</span> lvm  /
+  └─rl-swap <span class="token number">253</span>:1    <span class="token number">0</span>    2G  <span class="token number">0</span> lvm  <span class="token punctuation">[</span>SWAP<span class="token punctuation">]</span>
+nvme0n2     <span class="token number">259</span>:3    <span class="token number">0</span>   40G  <span class="token number">0</span> disk
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># parted /dev/nvme0n2 mklabel gpt</span>
+Information: You may need to update /etc/fstab.
+
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># parted /dev/nvme0n2 mkpart primary xfs 0% 100%</span>
+Information: You may need to update /etc/fstab.
+
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkfs.xfs /dev/nvme0n2p1</span>
+meta-data<span class="token operator">=</span>/dev/nvme0n2p1         <span class="token assign-left variable">isize</span><span class="token operator">=</span><span class="token number">512</span>    <span class="token assign-left variable">agcount</span><span class="token operator">=</span><span class="token number">4</span>, <span class="token assign-left variable">agsize</span><span class="token operator">=</span><span class="token number">2621312</span> blks
+         <span class="token operator">=</span>                       <span class="token assign-left variable">sectsz</span><span class="token operator">=</span><span class="token number">512</span>   <span class="token assign-left variable">attr</span><span class="token operator">=</span><span class="token number">2</span>, <span class="token assign-left variable">projid32bit</span><span class="token operator">=</span><span class="token number">1</span>
+         <span class="token operator">=</span>                       <span class="token assign-left variable">crc</span><span class="token operator">=</span><span class="token number">1</span>        <span class="token assign-left variable">finobt</span><span class="token operator">=</span><span class="token number">1</span>, <span class="token assign-left variable">sparse</span><span class="token operator">=</span><span class="token number">1</span>, <span class="token assign-left variable">rmapbt</span><span class="token operator">=</span><span class="token number">0</span>
+         <span class="token operator">=</span>                       <span class="token assign-left variable">reflink</span><span class="token operator">=</span><span class="token number">1</span>    <span class="token assign-left variable">bigtime</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">inobtcount</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">nrext64</span><span class="token operator">=</span><span class="token number">0</span>
+data     <span class="token operator">=</span>                       <span class="token assign-left variable">bsize</span><span class="token operator">=</span><span class="token number">4096</span>   <span class="token assign-left variable">blocks</span><span class="token operator">=</span><span class="token number">10485248</span>, <span class="token assign-left variable">imaxpct</span><span class="token operator">=</span><span class="token number">25</span>
+         <span class="token operator">=</span>                       <span class="token assign-left variable">sunit</span><span class="token operator">=</span><span class="token number">0</span>      <span class="token assign-left variable">swidth</span><span class="token operator">=</span><span class="token number">0</span> blks
+naming   <span class="token operator">=</span>version <span class="token number">2</span>              <span class="token assign-left variable">bsize</span><span class="token operator">=</span><span class="token number">4096</span>   ascii-ci<span class="token operator">=</span><span class="token number">0</span>, <span class="token assign-left variable">ftype</span><span class="token operator">=</span><span class="token number">1</span>
+log      <span class="token operator">=</span>internal log           <span class="token assign-left variable">bsize</span><span class="token operator">=</span><span class="token number">4096</span>   <span class="token assign-left variable">blocks</span><span class="token operator">=</span><span class="token number">16384</span>, <span class="token assign-left variable">version</span><span class="token operator">=</span><span class="token number">2</span>
+         <span class="token operator">=</span>                       <span class="token assign-left variable">sectsz</span><span class="token operator">=</span><span class="token number">512</span>   <span class="token assign-left variable">sunit</span><span class="token operator">=</span><span class="token number">0</span> blks, lazy-count<span class="token operator">=</span><span class="token number">1</span>
+realtime <span class="token operator">=</span>none                   <span class="token assign-left variable">extsz</span><span class="token operator">=</span><span class="token number">4096</span>   <span class="token assign-left variable">blocks</span><span class="token operator">=</span><span class="token number">0</span>, <span class="token assign-left variable">rtextents</span><span class="token operator">=</span><span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>挂载到 &#x2F;data 并设置开机自动挂载。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /data</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mount /dev/nvme0n2p1 /data</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># df -h /data</span>
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme0n2p1   40G  318M   40G   <span class="token number">1</span>% /data
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># echo "/dev/nvme0n2p1 /data xfs defaults 0 0" >> /etc/fstab</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mount -a</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>迁移 Docker 数据目录到新盘。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># systemctl stop docker</span>
+Warning: Stopping docker.service, but it can still be activated by:
+  docker.socket
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /data/docker</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># rsync -aP /var/lib/docker/ /data/dockesending incremental file list</span>
+./
+engine-id
+             <span class="token number">36</span> <span class="token number">100</span>%    <span class="token number">0</span>.00kB/s    <span class="token number">0</span>:00:00 <span class="token punctuation">(</span>xfr<span class="token comment">#1, to-chk=545/547)</span>
+bu533/547<span class="token punctuation">)</span>
+r/
+<span class="token comment">#... ... ... ...(省略一些内容)</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># vim /etc/docker/daemon.json</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/docker/daemon.json</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token string">"registry-mirrors"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span>
+    <span class="token string">"https://docker.m.daocloud.io"</span>,
+    <span class="token string">"https://docker.1ms.run"</span>,
+    <span class="token string">"https://registry.docker-cn.com"</span>
+  <span class="token punctuation">]</span>,
+  <span class="token string">"data-root"</span><span class="token builtin class-name">:</span> <span class="token string">"/data/docker"</span>,
+  <span class="token string">"dns"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span><span class="token string">"8.8.8.8"</span>, <span class="token string">"114.114.114.114"</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在新盘上创建 Docker 数据目录，把现有数据复制过去，编辑 Docker 配置文件。</p>
+<p>重载并启动 Docker。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># systemctl daemon-reload</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># systemctl start docker</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker info | grep "Docker Root Dir"</span>
+ Docker Root Dir: /data/docker
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># rm -rf /var/lib/docker/*</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>此时，我们的 Docker Root Dir 已经变为 &#x2F;data&#x2F;docker。</p>
+<p>我把内存调整到6G了，检查一下当前状态。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># nproc</span>
+<span class="token number">2</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># free -h</span>
+               total        used        <span class="token function">free</span>      shared  buff/cache   available
+Mem:           <span class="token number">5</span>.5Gi       576Mi       <span class="token number">4</span>.7Gi       <span class="token number">9</span>.0Mi       442Mi       <span class="token number">4</span>.9Gi
+Swap:          <span class="token number">2</span>.0Gi          0B       <span class="token number">2</span>.0Gi
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># df -h /data</span>
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme0n2p1   40G  529M   40G   <span class="token number">2</span>% /data
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker info | grep "Docker Root Dir"</span>
+ Docker Root Dir: /data/docker<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>嗯嗯，内存已调到 6GB（实际 5.5Gi，空闲 4.8Gi）， &#x2F;data 40GB 新盘挂载成功，只用了 529MB， Docker Root Dir &#x3D; &#x2F;data&#x2F;docker，数据已在新盘上。</p>
+<p>关闭 SELinux 和防火墙。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># setenforce 0</span>
+setenforce: SELinux is disabled
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/configsystemctl </span>
+stop firewalld
+systemctl disable firewalld<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>确认 Docker Compose 已安装。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker compose version</span>
+Docker Compose version v5.5.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>下面就开始下载与配置 Harbor 了。</p>
+<h5 id="②-下载配置"><a href="#②-下载配置" class="headerlink" title="② 下载配置"></a>② 下载配置</h5><p>我们可以去 <a target="_blank" rel="noopener" href="https://github.com/goharbor/harbor/releases">github下载地址</a> 下载软件。</p>
+<p>但是嘞，我有老师发的压缩包啦，直接解压就可以。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f registry</span>
+registry
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir /data</span>
+mkdir: cannot create directory ‘/data’: File exists
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># cp -r certs /data</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># tar zxf harbor-offline-installer-v2.14.0.tgz</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># cd harbor/</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># ls</span>
+LICENSE  common.sh  harbor.v2.14.0.tar.gz  harbor.yml.tmpl  install.sh  prepare<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>删除之前部署的registry，并部署证书，解压安装包。</p>
+<p>harbor目录里，包含着：<code>harbor.yml.tmpl</code>（配置模板）、<code>install.sh</code>（安装脚本）、<code>prepare</code>（准备脚本）以及 <code>harbor.v2.14.0.tar.gz</code>（离线镜像包）等文件。</p>
+<p>导入离线镜像，会看到一系列 <code>goharbor/</code> 开头的镜像（但我省略了哈）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># pwd</span>
+/root/harbor
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker load -i harbor.v2.14.0.tar.gz</span>
+Loaded image: goharbor/harbor-db:v2.14.0
+<span class="token comment">#... ... ...()</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker images | grep goharbor</span>
+goharbor/harbor-core:v2.14.0               32fb1bea30a8        412MB          204MB
+<span class="token comment">#... ... ...()</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="③-复制配置模板并编辑"><a href="#③-复制配置模板并编辑" class="headerlink" title="③ 复制配置模板并编辑"></a>③ 复制配置模板并编辑</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># cp harbor.yml.tmpl harbor.yml</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># vim harbor.yml</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># grep -vE '^\s*#|^\s*$' harbor.yml</span>
+hostname: <span class="token number">192.168</span>.86.101
+http:
+  port: <span class="token number">80</span>
+https:
+  port: <span class="token number">443</span>
+  certificate: /data/certs/registry.crt
+  private_key: /data/certs/registry.key
+harbor_admin_password: westos
+database:
+  password: westos
+<span class="token comment">#... ... ...()</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>需要把配置项中，主机名修改为实际 IP 或域名（reg.westos.org），证书路径和文件对应（我的在<code>registry.crt</code>和<code>registry.key</code>），再把管理员初始密码和数据库密码改一下。</p>
+<p>这里的 <strong>https</strong> 内容可以先注释掉，后面再加上。</p>
+<h5 id="④-安装并启动-Harbor"><a href="#④-安装并启动-Harbor" class="headerlink" title="④ 安装并启动 Harbor"></a>④ 安装并启动 Harbor</h5><p>这一步有点慢，我们要耐心等一下。</p>
+<p>启动安装脚本，启用 Trivy 镜像漏洞扫描器（<code>--with-trivy</code>），<code>install.sh</code> 会自动调用 <code>prepare</code> 脚本生成 <code>docker-compose.yml</code>，拉取&#x2F;加载镜像并启动所有容器。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># ./install.sh --with-trivy</span>
+
+<span class="token punctuation">[</span>Step <span class="token number">0</span><span class="token punctuation">]</span>: checking <span class="token keyword">if</span> <span class="token function">docker</span> is installed <span class="token punctuation">..</span>.
+
+Note: <span class="token function">docker</span> version: <span class="token number">29.8</span>     
+<span class="token comment">#... ... ...()</span>
+                                                             <span class="token number">4</span>.5s
+ ✔ Container harbor-jobservice Started                                                                  <span class="token number">4</span>.9s
+✔ ----Harbor has been installed and started successfully.----<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>（依旧省略了一些输出……）</p>
+<p>查看一下 Harbor 容器的状态和所有 Harbor 镜像。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker compose ps</span>
+NAME                IMAGE                                   COMMAND                  SERVICE         CREATED         STATUS                   PORTS
+harbor-core         goharbor/harbor-core:v2.14.0            <span class="token string">"/harbor/entrypoint.…"</span>   core            <span class="token number">6</span> minutes ago   Up <span class="token number">6</span> minutes <span class="token punctuation">(</span>healthy<span class="token punctuation">)</span>
+<span class="token comment">#... ... ...()</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker compose images</span>
+CONTAINER           REPOSITORY                      TAG                 PLATFORM            IMAGE ID            SIZE                CREATED
+harbor-core         goharbor/harbor-core            v2.14.0             linux/amd64         32fb1bea30a8        412MB                        <span class="token number">12</span> months ago 
+<span class="token comment">#... ... ...()</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/6.png" loading="lazy"></p>
+<p>此时就可以在浏览器上，登录进仓库啦。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/7.png" loading="lazy"></p>
+<p>我们点击<strong>高级</strong>，然后<strong>继续访问</strong>。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/8.png" loading="lazy"></p>
+<p>用户名是<strong>admin</strong>，密码是上面配置文件里，设置的<strong>westos</strong>。</p>
+<p><img src="/(9.png" loading="lazy"></p>
+<p>此时，我们就可以看到 Harbor 的管理界面。</p>
+<h3 id="2-配置-HTTPS"><a href="#2-配置-HTTPS" class="headerlink" title="2. 配置 HTTPS"></a>2. 配置 HTTPS</h3><p>生产环境应启用 HTTPS。我们使用之前生成的证书（或重新生成也可OvO）。</p>
+<h5 id="①-生成证书"><a href="#①-生成证书" class="headerlink" title="① 生成证书"></a>① 生成证书</h5><p>准备证书目录，生成自签名证书。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /data/certs</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># cd /data/certs/</span>
+<span class="token punctuation">[</span>root@docker1 certs<span class="token punctuation">]</span><span class="token comment"># openssl req -newkey rsa:4096 -nodes -sha256 \</span>
+  <span class="token parameter variable">-keyout</span> harbor.key <span class="token punctuation">\</span>
+  <span class="token parameter variable">-x509</span> <span class="token parameter variable">-days</span> <span class="token number">365</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-out</span> harbor.crt <span class="token punctuation">\</span>
+  <span class="token parameter variable">-subj</span> <span class="token string">"/CN=reg.westos.org"</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-addext</span> <span class="token string">"subjectAltName = DNS:reg.westos.org,IP:192.168.86.101"</span>
+<span class="token punctuation">..</span>.+++++++++++++++++++++++++++++++++++++++++++++*<span class="token punctuation">..</span>.+<span class="token punctuation">..</span>.+.+<span class="token punctuation">..</span><span class="token punctuation">..</span>.+.+++++++++++++++++++++++++++++++++++++++++++++*<span class="token punctuation">..</span>+.+<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.
+<span class="token comment">#... ... ...()</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="②-重新生成配置并重启"><a href="#②-重新生成配置并重启" class="headerlink" title="② 重新生成配置并重启"></a>② 重新生成配置并重启</h5><p>需要确保，我们主机上有 reg.westos.org 域名解析。</p>
+<p>刚刚的<code>harbor.yml</code>文件，改这么几行（主机IP变成域名）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">hostname: reg.westos.org
+
+https:
+  port: <span class="token number">443</span>
+  certificate: /data/certs/registry.crt
+  private_key: /data/certs/registry.key<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="③-重新生成配置并重启"><a href="#③-重新生成配置并重启" class="headerlink" title="③  重新生成配置并重启"></a>③  重新生成配置并重启</h5><p>修改 <code>harbor.yml</code> 后，需要重新执行 <code>prepare</code> 使配置生效，然后重启容器。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># ./prepare</span>
+prepare base <span class="token function">dir</span> is <span class="token builtin class-name">set</span> to /root/harbor
+Clearing the configuration file: /config/portal/nginx.conf
+<span class="token comment">#... ... ...()</span>
+Clean up the input <span class="token function">dir</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker compose up -d</span>
+WARN<span class="token punctuation">[</span>0000<span class="token punctuation">]</span> Found orphan containers <span class="token punctuation">(</span>trivy-adapter<span class="token punctuation">)</span> <span class="token keyword">for</span> this project. If you removed or renamed this <span class="token function">service</span> <span class="token keyword">in</span> your compose file, you can run this <span class="token builtin class-name">command</span> with the --remove-orphans flag to clean it up.
+<span class="token punctuation">[</span>+<span class="token punctuation">]</span> up <span class="token number">9</span>/9
+ ✔ Container nginx             Running                                                              <span class="token number">0</span>.0s
+<span class="token comment">#... ... ...()</span>
+ ✔ Container harbor-jobservice Started                                                              <span class="token number">1</span>.7s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><img src="/(10.png" loading="lazy"></p>
+<h5 id="④-配置-Docker-客户端信任证书（docker1-和-docker2）"><a href="#④-配置-Docker-客户端信任证书（docker1-和-docker2）" class="headerlink" title="④ 配置 Docker 客户端信任证书（docker1 和 docker2）"></a>④ 配置 Docker 客户端信任证书（docker1 和 docker2）</h5><p>总觉得这个步骤似曾相识捏。</p>
+<p>在 docker1 先生成证书，再拷贝到 docker2 。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># mkdir -p /etc/docker/certs.d/reg.westos.org/</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># cp /data/certs/harbor.crt /etc/docker/certs.d/reg.westos.org/ca.crt</span>
+cp: overwrite <span class="token string">'/etc/docker/certs.d/reg.westos.org/ca.crt'</span>? y
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># scp /data/certs/harbor.crt /etc/docker/certs.d/reg.westos.org/ca.crt docker2:/etc/docker/</span>
+harbor.crt                                                            <span class="token number">100</span>% <span class="token number">1866</span>     <span class="token number">1</span>.3MB/s   00:00
+ca.crt                                                                <span class="token number">100</span>% <span class="token number">1866</span>   <span class="token number">452</span>.7KB/s   00:00<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这时候，就可以用 HTTPS 访问了。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># curl -k https://reg.westos.org</span>
+<span class="token operator">&lt;</span><span class="token operator">!</span>DOCTYPE html<span class="token operator">></span>
+<span class="token operator">&lt;</span>html<span class="token operator">></span>
+    <span class="token operator">&lt;</span>head<span class="token operator">></span>
+        <span class="token operator">&lt;</span>meta <span class="token assign-left variable">charset</span><span class="token operator">=</span><span class="token string">"utf-8"</span>/<span class="token operator">></span>
+        <span class="token operator">&lt;</span>title<span class="token operator">></span>Harbor<span class="token operator">&lt;</span>/title<span class="token operator">></span>
+        <span class="token operator">&lt;</span>base <span class="token assign-left variable">href</span><span class="token operator">=</span><span class="token string">"/"</span>/<span class="token operator">></span>
+        <span class="token operator">&lt;</span>meta <span class="token assign-left variable">name</span><span class="token operator">=</span><span class="token string">"viewport"</span> <span class="token assign-left variable">content</span><span class="token operator">=</span><span class="token string">"width=device-width, initial-scale=1"</span>/<span class="token operator">></span>
+        <span class="token operator">&lt;</span>link <span class="token assign-left variable">rel</span><span class="token operator">=</span><span class="token string">"icon"</span> <span class="token assign-left variable">type</span><span class="token operator">=</span><span class="token string">"image/x-icon"</span> <span class="token assign-left variable">href</span><span class="token operator">=</span><span class="token string">"favicon.ico?v=2"</span>/<span class="token operator">></span>
+    <span class="token operator">&lt;</span>link <span class="token assign-left variable">rel</span><span class="token operator">=</span><span class="token string">"stylesheet"</span> <span class="token assign-left variable">href</span><span class="token operator">=</span><span class="token string">"styles.ac415221c96d2bef.css"</span><span class="token operator">></span><span class="token operator">&lt;</span>/head<span class="token operator">></span>
+    <span class="token operator">&lt;</span>body<span class="token operator">></span>
+        <span class="token operator">&lt;</span>harbor-app<span class="token operator">></span>
+            <span class="token operator">&lt;</span>div <span class="token assign-left variable">class</span><span class="token operator">=</span><span class="token string">"spinner spinner-lg app-loading app-loading-fixed"</span><span class="token operator">></span>
+                Loading<span class="token punctuation">..</span>.
+            <span class="token operator">&lt;</span>/div<span class="token operator">></span>
+        <span class="token operator">&lt;</span>/harbor-app<span class="token operator">></span>
+    <span class="token operator">&lt;</span>script <span class="token assign-left variable">src</span><span class="token operator">=</span><span class="token string">"runtime.2ce36195b41ae8b5.js"</span> <span class="token assign-left variable">type</span><span class="token operator">=</span><span class="token string">"module"</span><span class="token operator">></span><span class="token operator">&lt;</span>/script<span class="token operator">></span><span class="token operator">&lt;</span>script <span class="token assign-left variable">src</span><span class="token operator">=</span><span class="token string">"polyfills.d87db3092ff69ed9.js"</span> <span class="token assign-left variable">type</span><span class="token operator">=</span><span class="token string">"module"</span><span class="token operator">></span><span class="token operator">&lt;</span>/script<span class="token operator">></span><span class="token operator">&lt;</span>script <span class="token assign-left variable">src</span><span class="token operator">=</span><span class="token string">"scripts.3846d86d42cdb753.js"</span> defer<span class="token operator">></span><span class="token operator">&lt;</span>/script<span class="token operator">></span><span class="token operator">&lt;</span>script <span class="token assign-left variable">src</span><span class="token operator">=</span><span class="token string">"main.8999bc94f4db915b.js"</span> <span class="token assign-left variable">type</span><span class="token operator">=</span><span class="token string">"module"</span><span class="token operator">></span><span class="token operator">&lt;</span>/script<span class="token operator">></span><span class="token operator">&lt;</span>/body<span class="token operator">></span>
+<span class="token operator">&lt;</span>/html<span class="token operator">></span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker login reg.westos.org</span>
+Username: admin
+Password:
+
+WARNING<span class="token operator">!</span> Your credentials are stored unencrypted <span class="token keyword">in</span> <span class="token string">'/root/.docker/config.json'</span><span class="token builtin class-name">.</span>
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/go/credential-store/
+
+Login Succeeded<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="3-使用-Harbor-仓库"><a href="#3-使用-Harbor-仓库" class="headerlink" title="3. 使用 Harbor 仓库"></a>3. 使用 Harbor 仓库</h3><h4 id="〇-一个计划外的小章节（章外来的）。"><a href="#〇-一个计划外的小章节（章外来的）。" class="headerlink" title="〇 一个计划外的小章节（章外来的）。"></a>〇 一个计划外的小章节（章外来的）。</h4><p>在浏览器上，我们看到有个公开的<code>library</code>项目。</p>
+<p>我们把本地的<code>nginx:v5</code>推送进去。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker login reg.westos.org</span>
+Username: admin
+Password:
+
+WARNING<span class="token operator">!</span> Your credentials are stored unencrypted <span class="token keyword">in</span> <span class="token string">'/root/.docker/config.json'</span><span class="token builtin class-name">.</span>
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/go/credential-store/
+
+Login Succeeded
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker tag nginx:v5 reg.westos.org/library/nginx:v5</span>
+<span class="token punctuation">[</span>root@docker1 harbor<span class="token punctuation">]</span><span class="token comment"># docker push reg.westos.org/library/nginx:v5</span>
+The push refers to repository <span class="token punctuation">[</span>reg.westos.org/library/nginx<span class="token punctuation">]</span>
+9319ff358945: Waiting
+44136fa355b3: Waiting
+42cebc1d688c: Waiting
+55afa1ecc21d: Waiting
+error from registry: bad request: invalid repository name: nginx<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>诶？报错了。</p>
+<p><code>library</code> 是 Docker Hub 的默认项目名，但 Harbor 里没有这个项目，我们要先创建项目。</p>
+<p>好的，我们先创建 <code>library</code> 项目。</p>
+<p>浏览器登录 Harbor，击 “项目” → “新建项目”，项目名称填写 library，访问级别选择 <strong>公开</strong>（或私有）。</p>
+<p><img src="/(11.png" loading="lazy"></p>
+<p>嗯……不是这个的问题。</p>
+<p>下面我们来<strong>梳理时间线</strong>（有点像剧本杀了）。</p>
+<h5 id="〇1-梳理问题并修复"><a href="#〇1-梳理问题并修复" class="headerlink" title="〇1 梳理问题并修复"></a>〇1 梳理问题并修复</h5><h6 id="阶段-1：初始状态（一切正常）"><a href="#阶段-1：初始状态（一切正常）" class="headerlink" title="阶段 1：初始状态（一切正常）"></a>阶段 1：初始状态（一切正常）</h6><ul>
+<li><p>docker1 &#x3D; <code>192.168.86.101</code>，Harbor 域名 <code>reg.westos.org</code></p>
+</li>
+<li><p>我构建了 <code>nginx:v1</code> ~ <code>v4</code>（CentOS 7 版）和 <code>nginx:v5</code>（Alpine 版）</p>
+</li>
+<li><p>Harbor 部署在 <code>/root/harbor</code>，数据在 <code>/data/harbor</code></p>
+</li>
+<li><p>Docker 数据目录配置在 <code>/data/docker</code></p>
+</li>
+</ul>
+<h6 id="阶段-2：推送失败（第一个问题）"><a href="#阶段-2：推送失败（第一个问题）" class="headerlink" title="阶段 2：推送失败（第一个问题）"></a>阶段 2：推送失败（第一个问题）</h6><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> push reg.westos.org/library/nginx:v5
+→ error from registry: bad request: invalid repository name: nginx<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>Harbor 后端收到的仓库名是 <code>nginx</code>，而不是 <code>library/nginx</code>。</p>
+<p>这就很奇怪了，命令里是 <code>library/nginx</code>呀。</p>
+<h6 id="阶段-3：我的一系列错误建议（导致混乱的根源）"><a href="#阶段-3：我的一系列错误建议（导致混乱的根源）" class="headerlink" title="阶段 3：我的一系列错误建议（导致混乱的根源）"></a>阶段 3：我的一系列错误建议（导致混乱的根源）</h6><p>这里就不得不 cur 到 ds 鲸鱼娘了，我是让它改错，但它越改越错。。。</p>
+<ol>
+<li><p>让我把 <code>daemon.json</code> 里的 <code>&quot;data-root&quot;: &quot;/data/docker&quot;</code> 删掉  ↩<br>  → Docker 切换到空的 <code>/var/lib/docker</code>，Harbor 容器全部消失</p>
+</li>
+<li><p>让我重新加载 Harbor 离线镜像，但加载到了错误的数据目录</p>
+</li>
+<li><p>让我重新构建 <code>nginx:v5</code>，但构建目录 <code>/root/docker-build</code> 已丢失</p>
+</li>
+</ol>
+<h6 id="阶段-4：最终修复"><a href="#阶段-4：最终修复" class="headerlink" title="阶段 4：最终修复"></a>阶段 4：最终修复</h6><ul>
+<li><p>恢复 <code>data-root: /data/docker</code></p>
+</li>
+<li><p>在正确目录下重新 <code>docker load</code> Harbor 离线镜像</p>
+</li>
+<li><p>从 Alpine 重新构建 <code>nginx:v5</code></p>
+</li>
+<li><p><strong>关键修复</strong>：在 <code>daemon.json</code> 中禁用 containerd 快照器</p>
+</li>
+<li><p>推送成功 ✅</p>
+</li>
+</ul>
+<h5 id="〇2-鲸鱼娘到底改了什么？怎么改的？"><a href="#〇2-鲸鱼娘到底改了什么？怎么改的？" class="headerlink" title="〇2 鲸鱼娘到底改了什么？怎么改的？"></a>〇2 鲸鱼娘到底改了什么？怎么改的？</h5><h6 id="改动-1：-etc-docker-daemon-json（最关键）"><a href="#改动-1：-etc-docker-daemon-json（最关键）" class="headerlink" title="改动 1：/etc/docker/daemon.json（最关键）"></a>改动 1：<code>/etc/docker/daemon.json</code>（最关键）</h6><p><strong>改动前</strong>（问题版本）：</p>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"registry-mirrors"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token string">"https://docker.m.daocloud.io"</span><span class="token punctuation">,</span>
+    <span class="token string">"https://docker.1ms.run"</span><span class="token punctuation">,</span>
+    <span class="token string">"https://registry.docker-cn.com"</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"data-root"</span><span class="token operator">:</span> <span class="token string">"/data/docker"</span><span class="token punctuation">,</span>
+  <span class="token property">"dns"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"8.8.8.8"</span><span class="token punctuation">,</span> <span class="token string">"114.114.114.114"</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><strong>问题</strong>：Docker 29 默认启用 <code>containerd-snapshotter</code>，它与 Harbor v2.14 并不兼容，导致仓库名解析错误。</p>
+<p><strong>改动后</strong>（修复版本，当前生效的）：</p>
+<pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
+  <span class="token property">"registry-mirrors"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token string">"https://docker.m.daocloud.io"</span><span class="token punctuation">,</span>
+    <span class="token string">"https://docker.1ms.run"</span><span class="token punctuation">,</span>
+    <span class="token string">"https://registry.docker-cn.com"</span>
+  <span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"data-root"</span><span class="token operator">:</span> <span class="token string">"/data/docker"</span><span class="token punctuation">,</span>
+  <span class="token property">"dns"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"8.8.8.8"</span><span class="token punctuation">,</span> <span class="token string">"114.114.114.114"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"features"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+    <span class="token property">"containerd-snapshotter"</span><span class="token operator">:</span> <span class="token boolean">false</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>能够发现，我们新增了<code>&quot;features&quot;: {&quot;containerd-snapshotter&quot;: false}</code>的命令。</p>
+<p>修改后，我们验证一下吧。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker info | grep -i "storage driver\|snapshotter"</span>
+ Storage Driver: overlay2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>发现没有 <code>driver-type: io.containerd.snapshotter.v1</code> 了。</p>
+<h6 id="改动-2：构建目录重建"><a href="#改动-2：构建目录重建" class="headerlink" title="改动 2：构建目录重建"></a>改动 2：构建目录重建</h6><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">mkdir</span> <span class="token parameter variable">-p</span> /root/docker-build <span class="token operator">&amp;&amp;</span> <span class="token builtin class-name">cd</span> /root/docker-build
+<span class="token function">cat</span> <span class="token operator">></span> Dockerfile.nginx.v5 <span class="token operator">&lt;&lt;</span><span class="token string">'EOF'
+FROM alpine:latest
+RUN apk add --no-cache nginx
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+EOF</span>
+
+<span class="token function">docker</span> build <span class="token parameter variable">-f</span> Dockerfile.nginx.v5 <span class="token parameter variable">-t</span> nginx:v5 <span class="token builtin class-name">.</span>
+<span class="token function">docker</span> tag nginx:v5 reg.westos.org/library/nginx:v5
+<span class="token function">docker</span> push reg.westos.org/library/nginx:v5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>一直在报错，干脆直接重新创建一份 <code>Dockerfile.nginx.v5（Alpine 版）</code>，重新推送。</p>
+<p>好啦，这次我们推送成功了捏。甚至，顺便把nginx.v1-v4的版本重新构建了一下，并推送到仓库中。</p>
+<h5 id="〇3-章外收尾"><a href="#〇3-章外收尾" class="headerlink" title="〇3 章外收尾"></a>〇3 章外收尾</h5><p>现在，我们仓库里<code>library/nginx</code>下，有5个版本啦。</p>
+<p><img src="/(12.png" loading="lazy"></p>
+<p>不对不对，怎么一个签名都没有。</p>
+<p>鲸鱼娘说，其实签名功能从一开始就没有被启用过。</p>
+<p>在 Harbor 中，镜像签名（Image Signing）是通过 Notary 组件实现的，而我在部署 Harbor 时（<code>./install.sh --with-trivy</code>）没有启用 Notary 组件，推送镜像时（<code>docker push reg.westos.org/library/nginx:v1</code>）也没有开启 Docker 内容信任（<code>DOCKER_CONTENT_TRUST=1</code>）。</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>作用</th>
+<th>你的状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>加密 (TLS)</td>
+<td>保证传输安全</td>
+<td>✅ 已启用（<code>https://reg.westos.org</code>）</td>
+</tr>
+<tr>
+<td>认证 (Auth)</td>
+<td>验证用户身份</td>
+<td>✅ 已启用（<code>docker login</code> 成功）</td>
+</tr>
+<tr>
+<td>签名 (Notary)</td>
+<td>验证镜像来源和完整性</td>
+<td>❌ 未启用（部署时未加 <code>--with-notary</code>，推送时未开 DCT）</td>
+</tr>
+</tbody></table>
+<p>Notary 对证书要求严格，配置不当会导致 Harbor 无法启动。我们在这里，就不签名了。</p>
+<h4 id="①-给镜像打标签并推送到仓库"><a href="#①-给镜像打标签并推送到仓库" class="headerlink" title="① 给镜像打标签并推送到仓库"></a>① 给镜像打标签并推送到仓库</h4><p>其实通过章外，我们已经了解了推送镜像的方法，但在这里，我们再次回顾并整理一下相关内容。</p>
+<p>新目录在<code>/root/docker-build</code>下，先给本地镜像打标签（格式：Harbor地址&#x2F;项目名&#x2F;镜像名:标签），再将它推送到仓库。</p>
+<p>先得有本地的镜像捏。</p>
+<pre class="line-numbers language-sbash" data-language="sbash"><code class="language-sbash">[root@docker1 docker-build]# cd &#x2F;root&#x2F;docker-build
+
+# demo v1：Shell 格式 ENTRYPOINT
+cat &gt; Dockerfile.demo.v1 &lt;&lt;&#39;EOF&#39;
+FROM busybox
+ENV name world
+ENTRYPOINT echo &quot;hello, $name&quot;
+EOF
+
+# demo v2：Exec 格式 ENTRYPOINT（变量不解析）
+cat &gt; Dockerfile.demo.v2 &lt;&lt;&#39;EOF&#39;
+FROM busybox
+ENV name world
+ENTRYPOINT [&quot;&#x2F;bin&#x2F;echo&quot;, &quot;hello, $name&quot;]
+EOF
+
+# demo v3：ENTRYPOINT + CMD 配合
+cat &gt; Dockerfile.demo.v3 &lt;&lt;&#39;EOF&#39;
+FROM busybox
+ENTRYPOINT [&quot;&#x2F;bin&#x2F;echo&quot;, &quot;hello&quot;]
+CMD [&quot;world&quot;]
+EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>登陆进仓库中，构建镜像并推送到仓库上。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> build <span class="token parameter variable">-f</span> Dockerfile.demo.v1 <span class="token parameter variable">-t</span> demo:v1 <span class="token builtin class-name">.</span>
+<span class="token function">docker</span> tag demo:v1 reg.westos.org/library/demo:v1
+<span class="token function">docker</span> push reg.westos.org/library/demo:v1
+
+<span class="token function">docker</span> build <span class="token parameter variable">-f</span> Dockerfile.demo.v2 <span class="token parameter variable">-t</span> demo:v2 <span class="token builtin class-name">.</span>
+<span class="token function">docker</span> tag demo:v2 reg.westos.org/library/demo:v2
+<span class="token function">docker</span> push reg.westos.org/library/demo:v2
+
+<span class="token function">docker</span> build <span class="token parameter variable">-f</span> Dockerfile.demo.v3 <span class="token parameter variable">-t</span> demo:v3 <span class="token builtin class-name">.</span>
+<span class="token function">docker</span> tag demo:v3 reg.westos.org/library/demo:v3
+<span class="token function">docker</span> push reg.westos.org/library/demo:v3
+<span class="token comment">#0 building with "default" instance using docker driver</span>
+
+<span class="token comment">#1 [internal] load build definition from Dockerfile.demo.v1</span>
+<span class="token comment">#1 transferring dockerfile: 104B done</span>
+<span class="token comment">#1 DONE 0.0s</span>
+
+<span class="token comment">#2 [internal] load metadata for docker.io/library/busybox:latest</span>
+<span class="token comment">#... ... ...()</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>遇到一些警告，忽略就好。</p>
+<p><img src="/((13.png" loading="lazy"></p>
+<p>查看一下 demo 仓库的所有标签。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># curl -k -u admin:westos "https://reg.westos.org/api/v2.0/projects/library/repositories/demo/artifacts" | grep -o '"name":"[^"]*"'</span>
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+<span class="token number">100</span>  <span class="token number">3674</span>    <span class="token number">0</span>  <span class="token number">3674</span>    <span class="token number">0</span>     <span class="token number">0</span>  <span class="token number">46506</span>      <span class="token number">0</span> --:--:-- --:--:-- --:--:-- <span class="token number">46506</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v3"</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v2"</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v1"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>好了好了，这下好了。</p>
+<p>其实，从浏览器也可以访问到镜像，效果和 <strong>library&#x2F;nginx</strong> 的差不多。</p>
+<h4 id="②-从其他主机拉取镜像（docker2）"><a href="#②-从其他主机拉取镜像（docker2）" class="headerlink" title="② 从其他主机拉取镜像（docker2）"></a>② 从其他主机拉取镜像（docker2）</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull reg.westos.org/library/nginx:v5</span>
+v5: Pulling from library/nginx
+34e27397a82d: Pull complete
+Digest: sha256:badf2c81ce1a4fd5844f0281cb62883bec0d4f4fef0e3359c27fc821e9fa15f4
+Status: Downloaded newer image <span class="token keyword">for</span> reg.westos.org/library/nginx:v5
+reg.westos.org/library/nginx:v5
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># curl -k -u admin:westos "https://reg.westos.org/api/v2.0/projects/library/repositories/nginx/artifacts" | grep -o '"name":"[^"]*"'</span>
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+<span class="token number">100</span>  <span class="token number">8176</span>    <span class="token number">0</span>  <span class="token number">8176</span>    <span class="token number">0</span>     <span class="token number">0</span>  <span class="token number">75009</span>      <span class="token number">0</span> --:--:-- --:--:-- --:--:-- <span class="token number">75703</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v4"</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v3"</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v2"</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v1"</span>
+<span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"v5"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>拉成功了，好的。</p>
+<h4 id="③-配置默认仓库（docker2）"><a href="#③-配置默认仓库（docker2）" class="headerlink" title="③ 配置默认仓库（docker2）"></a>③ 配置默认仓库（docker2）</h4><p>我们已经在 <code>https://reg.westos.org</code> 上部署了 Harbor。我们继续把 Harbor 配置成 Docker 的“默认仓库”，这样，以后再拉没有写仓库地址的镜像时，Docker 就会优先去 Harbor 里找。</p>
+<p>docker1 上没有 <code>&quot;name&quot;:&quot;latest&quot;</code> 这个标签，我们先去 docker1 上补一下 latest 标签。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker tag reg.westos.org/library/nginx:v5 reg.westos.org/library/nginx:latest</span>
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker push reg.westos.org/library/nginx:latest</span>
+The push refers to repository <span class="token punctuation">[</span>reg.westos.org/library/nginx<span class="token punctuation">]</span>
+4e46702b534c: Layer already exists
+34884abbe928: Layer already exists
+latest: digest: sha256:badf2c81ce1a4fd5844f0281cb62883bec0d4f4fef0e3359c27fc821e9fa15f4 size: <span class="token number">738</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>接着，在docker2上写入默认仓库配置并重启 Docker。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># vim /etc/docker/daemon.json</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/docker/daemon.json</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token string">"registry-mirrors"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span><span class="token string">"https://reg.westos.org"</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span> 
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># systemctl daemon-reload</span>
+systemctl restart <span class="token function">docker</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这个文件可以把 <code>https://reg.westos.org</code> 配置成 Docker Hub 的镜像加速器。</p>
+<p>注意JSON 里不能有多余逗号，也不能写注释哦。</p>
+<p>测试拉取nginx。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull nginx</span>
+Using default tag: latest
+Error response from daemon: failed to resolve reference <span class="token string">"docker.io/library/nginx:latest"</span><span class="token builtin class-name">:</span> failed to <span class="token keyword">do</span> request: Head <span class="token string">"https://reg.westos.org/v2/library/nginx/manifests/latest?ns=docker.io"</span><span class="token builtin class-name">:</span> tls: failed to verify certificate: x509: certificate signed by unknown authority<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>这时候，证书访问不对，nginx拉取失败了。<br>我们可以把 Harbor 标记为“非安全仓库”，让它跳过 TLS 证书验证。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># cat > /etc/docker/daemon.json &lt;&lt;'EOF'</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token string">"registry-mirrors"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span><span class="token string">"https://reg.westos.org"</span><span class="token punctuation">]</span>,
+  <span class="token string">"insecure-registries"</span><span class="token builtin class-name">:</span> <span class="token punctuation">[</span><span class="token string">"https://reg.westos.org"</span><span class="token punctuation">]</span>
+<span class="token punctuation">&#125;</span>
+EOF
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># systemctl daemon-reload</span>
+systemctl restart <span class="token function">docker</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker info | grep -i -A2 "Insecure Registries"</span>
+ Insecure Registries:
+  reg.westos.org
+  ::1/128
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull nginx</span>
+Using default tag: latest
+latest: Pulling from library/nginx
+Digest: sha256:badf2c81ce1a4fd5844f0281cb62883bec0d4f4fef0e3359c27fc821e9fa15f4
+Status: Downloaded newer image <span class="token keyword">for</span> nginx:latest
+docker.io/library/nginx:latest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在 <code>daemon.json</code> 中加一行内容这么好用呀，可以可以。简单理解的话，<code>insecure-registries</code> 是官方支持的配置，用来信任非安全的仓库，这样，能快速绕过证书问题。</p>
+<h4 id="④-匿名拉取与全路径拉取"><a href="#④-匿名拉取与全路径拉取" class="headerlink" title="④ 匿名拉取与全路径拉取"></a>④ 匿名拉取与全路径拉取</h4><p>Harbor 里有两个概念：公共项目和私有项目。</p>
+<p>顾名思义。公共项目，所有人都可以匿名拉取，不需要 <code>docker login</code>；而私有项目必须登录才能拉取和推送。</p>
+<p>配置默认仓库后，如果只执行<code>docker pull nginx</code>  的话，会匿名去公共仓库拉取镜像。</p>
+<p>先试试匿名拉取<code>nginx:latest</code>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker logout reg.westos.org</span>
+Removing login credentials <span class="token keyword">for</span> reg.westos.org
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker rmi nginx:latest</span>
+Untagged: nginx:latest
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull nginx</span>
+Using default tag: latest
+latest: Pulling from library/nginx
+Digest: sha256:badf2c81ce1a4fd5844f0281cb62883bec0d4f4fef0e3359c27fc821e9fa15f4
+Status: Downloaded newer image <span class="token keyword">for</span> nginx:latest
+docker.io/library/nginx:latest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>成功啦。</p>
+<p>再试试显示拉取吧，这次拉取<code>nginx:v5</code>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull reg.westos.org/library/nginx:v5</span>
+v5: Pulling from library/nginx
+Digest: sha256:badf2c81ce1a4fd5844f0281cb62883bec0d4f4fef0e3359c27fc821e9fa15f4
+Status: Image is up to <span class="token function">date</span> <span class="token keyword">for</span> reg.westos.org/library/nginx:v5
+reg.westos.org/library/nginx:v5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="⑤-添加私有仓库并授权用户"><a href="#⑤-添加私有仓库并授权用户" class="headerlink" title="⑤ 添加私有仓库并授权用户"></a>⑤ 添加私有仓库并授权用户</h4><p>我们添加一个私有项目<code>westos</code>。</p>
+<p><img src="/(14.png" loading="lazy"></p>
+<p>创建普通用户<code>lkh</code>。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/15.png" loading="lazy"></p>
+<p>把 lkh 加入 westos 项目并授权</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/16.png" loading="lazy"></p>
+<p>在 docker2 上登录 Harbor 。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker logout reg.westos.org</span>
+<span class="token function">docker</span> login reg.westos.org
+Removing login credentials <span class="token keyword">for</span> reg.westos.org
+Username: lkh
+Password:
+
+WARNING<span class="token operator">!</span> Your credentials are stored unencrypted <span class="token keyword">in</span> <span class="token string">'/root/.docker/config.json'</span><span class="token builtin class-name">.</span>
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/go/credential-store/
+
+Login Succeeded<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在 docker2 上，给本地镜像打上私有项目标签，并把镜像推送到私有项目上去。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker tag nginx:latest reg.westos.org/westos/nginx:latest</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker push reg.westos.org/westos/nginx:latest</span>
+The push refers to repository <span class="token punctuation">[</span>reg.westos.org/westos/nginx<span class="token punctuation">]</span>
+55afa1ecc21d: Mounted from library/nginx
+34e27397a82d: Mounted from library/nginx
+latest: digest: sha256:badf2c81ce1a4fd5844f0281cb62883bec0d4f4fef0e3359c27fc821e9fa15f4 size: <span class="token number">738</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这时候，我们再匿名拉取私有项目，就会失败了捏。但登录后拉取是可以的。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker logout reg.westos.org</span>
+Removing login credentials <span class="token keyword">for</span> reg.westos.org
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker rmi reg.westos.org/westos/nginx:latest</span>
+Untagged: reg.westos.org/westos/nginx:latest
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull reg.westos.org/westos/nginx:latest</span>
+Error response from daemon: failed to resolve reference <span class="token string">"reg.westos.org/westos/nginx:latest"</span><span class="token builtin class-name">:</span> pull access denied, repository does not exist or may require authorization: authorization failed: no basic auth credentials
+
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker login reg.westos.org</span>
+Username: lkh
+Password:
+
+WARNING<span class="token operator">!</span> Your credentials are stored unencrypted <span class="token keyword">in</span> <span class="token string">'/root/.docker/config.json'</span><span class="token builtin class-name">.</span>
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/go/credential-store/
+
+Login Succeeded
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker pull reg.westos.org/westos/nginx:latest</span>
+latest: Pulling from westos/nginx
+Digest: sha256:badf2c81ce1a4fd5844f0281cb62883bec0d4f4fef0e3359c27fc821e9fa15f4
+Status: Downloaded newer image <span class="token keyword">for</span> reg.westos.org/westos/nginx:latest
+reg.westos.org/westos/nginx:latest<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="⑥-Harbor-复制同步"><a href="#⑥-Harbor-复制同步" class="headerlink" title="⑥ Harbor 复制同步"></a>⑥ Harbor 复制同步</h4><p>Harbor 复制同步，就是在主仓库和子仓库之间配置推送或拉取策略，把镜像自动分发到多个仓库，让集群主机就近拉取，从而减轻主仓库压力。</p>
+<p>它支持事件驱动或手动触发，并可通过名称、Tag、标签、资源过滤器筛选镜像，使用自签名证书时需关闭“验证远程证书”选项。</p>
+<p>这会需要我们在docker2上再搭建Harbor。今天，电脑有些死机，继续配置有一定概率会黑屏（刚刚其实已经黑过一次屏了）。我们现在，先理解一下概念。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/17.png" loading="lazy"></p>
+<blockquote>
+<p>至此，此篇9300字的笔记，完结了。</p>
+<p>但 Docker 学习之路还在继续，不出意外的话，下一篇，就是Docker终篇啦 OvO </p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/09/12/%E5%90%AC%E8%AF%B4%E4%BD%A0%E4%B8%80%E6%AC%A1%E5%8F%AF%E4%BB%A5%E6%93%8D%E6%8E%A71000%E5%8F%B0%E4%B8%BB%E6%9C%BA%EF%BC%81%E2%80%94%E2%80%94Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/">听说你一次可以操控1000台主机！——Ansible自动化</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/09/05/%E8%AF%B6%EF%BC%9F%E5%8E%9F%E6%9D%A5%E4%BD%A0%E5%B0%B1%E6%98%AF%E5%B0%8F%E5%90%8D%E9%BC%8E%E9%BC%8E%E7%9A%84Docker%E5%91%80%E2%80%94%E2%80%94Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/">诶？原来你就是小名鼎鼎的Docker呀——Docker入门指南</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/Docker/" rel="tag">Docker</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/Rocky9/" rel="tag">Rocky9</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/09/12/%E5%90%AC%E8%AF%B4%E4%BD%A0%E4%B8%80%E6%AC%A1%E5%8F%AF%E4%BB%A5%E6%93%8D%E6%8E%A71000%E5%8F%B0%E4%B8%BB%E6%9C%BA%EF%BC%81%E2%80%94%E2%80%94Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/">听说你一次可以操控1000台主机！——Ansible自动化</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/">震惊！原来镜像是这样传到仓库的呀——Docker进阶指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/09/05/%E8%AF%B6%EF%BC%9F%E5%8E%9F%E6%9D%A5%E4%BD%A0%E5%B0%B1%E6%98%AF%E5%B0%8F%E5%90%8D%E9%BC%8E%E9%BC%8E%E7%9A%84Docker%E5%91%80%E2%80%94%E2%80%94Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/">诶？原来你就是小名鼎鼎的Docker呀——Docker入门指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/15/Zabbix%E7%9B%91%E6%8E%A7-2/">Zabbix监控-2</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/CentOS/" style="font-size: 18px;">CentOS</a> <a href="/tags/Docker/" style="font-size: 12px;">Docker</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 12px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 14px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 16px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 14px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 16px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 12px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 12px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 18px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 12px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":false,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>
