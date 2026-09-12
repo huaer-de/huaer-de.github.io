@@ -431,7 +431,6 @@ ing headers<span aria-hidden="true" class="line-numbers-rows"><span></span><span
 <p>在对话登录，里会看到一小段确认码，登陆进浏览器，我们将这段确认码复制进网页。</p>
 <p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/2.png" loading="lazy"></p>
 <p>如图，我的确认码是SSXM-VKWQ，确认后，就成功登录进去了。</p>
-<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/3.png" loading="lazy"></p>
 <p>后面再在对话框登录时，就会直接进去啦。</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker login</span>
 Authenticating with existing credentials<span class="token punctuation">..</span>. <span class="token punctuation">[</span>Username: huaku<span class="token punctuation">]</span>
@@ -451,6 +450,7 @@ The push refers to repository <span class="token punctuation">[</span>docker.io/
 v5: digest: sha256:18754dc6304d8b354f67a4b9b98d4c0d7292b9523f13cdf4b094ad621dc281c3 size: <span class="token number">855</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>我其实已经上传过一次了，这些文件都已经存在了。这时候，我们就能在浏览器上，看到上传的镜像了。</p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/3.png" loading="lazy"></p>
 <h3 id="2-搭建私有-Registry（无加密，HTTP）"><a href="#2-搭建私有-Registry（无加密，HTTP）" class="headerlink" title="2. 搭建私有 Registry（无加密，HTTP）"></a>2. 搭建私有 Registry（无加密，HTTP）</h3><p>我们在这一小节，计划在 docker1 上运行一个简单的 Registry，并允许 HTTP 访问（ HTTP 并不安全，仅仅用于内网测试）。</p>
 <h5 id="①-拉取-Registry-镜像，运行容器"><a href="#①-拉取-Registry-镜像，运行容器" class="headerlink" title="① 拉取 Registry 镜像，运行容器"></a>① 拉取 Registry 镜像，运行容器</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> pull registry
 <span class="token function">docker</span> run <span class="token parameter variable">-d</span> <span class="token parameter variable">--name</span> registry <span class="token parameter variable">-p</span> <span class="token number">5000</span>:5000 <span class="token parameter variable">-v</span> /opt/registry:/var/lib/registry registry<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
