@@ -964,7 +964,7 @@ error from registry: bad request: invalid repository name: nginx<span aria-hidde
 <p><code>library</code> 是 Docker Hub 的默认项目名，但 Harbor 里没有这个项目，我们要先创建项目。</p>
 <p>好的，我们先创建 <code>library</code> 项目。</p>
 <p>浏览器登录 Harbor，击 “项目” → “新建项目”，项目名称填写 library，访问级别选择 <strong>公开</strong>（或私有）。</p>
-<p><img src="/(11.png" loading="lazy"></p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/11.png" loading="lazy"></p>
 <p>嗯……不是这个的问题。</p>
 <p>下面我们来<strong>梳理时间线</strong>（有点像剧本杀了）。</p>
 <h5 id="〇1-梳理问题并修复"><a href="#〇1-梳理问题并修复" class="headerlink" title="〇1 梳理问题并修复"></a>〇1 梳理问题并修复</h5><h6 id="阶段-1：初始状态（一切正常）"><a href="#阶段-1：初始状态（一切正常）" class="headerlink" title="阶段 1：初始状态（一切正常）"></a>阶段 1：初始状态（一切正常）</h6><ul>
@@ -1050,7 +1050,7 @@ EOF</span>
 <p>一直在报错，干脆直接重新创建一份 <code>Dockerfile.nginx.v5（Alpine 版）</code>，重新推送。</p>
 <p>好啦，这次我们推送成功了捏。甚至，顺便把nginx.v1-v4的版本重新构建了一下，并推送到仓库中。</p>
 <h5 id="〇3-章外收尾"><a href="#〇3-章外收尾" class="headerlink" title="〇3 章外收尾"></a>〇3 章外收尾</h5><p>现在，我们仓库里<code>library/nginx</code>下，有5个版本啦。</p>
-<p><img src="/(12.png" loading="lazy"></p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/12.png" loading="lazy"></p>
 <p>不对不对，怎么一个签名都没有。</p>
 <p>鲸鱼娘说，其实签名功能从一开始就没有被启用过。</p>
 <p>在 Harbor 中，镜像签名（Image Signing）是通过 Notary 组件实现的，而我在部署 Harbor 时（<code>./install.sh --with-trivy</code>）没有启用 Notary 组件，推送镜像时（<code>docker push reg.westos.org/library/nginx:v1</code>）也没有开启 Docker 内容信任（<code>DOCKER_CONTENT_TRUST=1</code>）。</p>
@@ -1127,7 +1127,7 @@ EOF<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span>
 <span class="token comment">#... ... ...()</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>遇到一些警告，忽略就好。</p>
-<p><img src="/((13.png" loading="lazy"></p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/13.png" loading="lazy"></p>
 <p>查看一下 demo 仓库的所有标签。</p>
 <pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># curl -k -u admin:westos "https://reg.westos.org/api/v2.0/projects/library/repositories/demo/artifacts" | grep -o '"name":"[^"]*"'</span>
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
@@ -1226,7 +1226,7 @@ Status: Image is up to <span class="token function">date</span> <span class="tok
 reg.westos.org/library/nginx:v5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h4 id="⑤-添加私有仓库并授权用户"><a href="#⑤-添加私有仓库并授权用户" class="headerlink" title="⑤ 添加私有仓库并授权用户"></a>⑤ 添加私有仓库并授权用户</h4><p>我们添加一个私有项目<code>westos</code>。</p>
-<p><img src="/(14.png" loading="lazy"></p>
+<p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/14.png" loading="lazy"></p>
 <p>创建普通用户<code>lkh</code>。</p>
 <p><img src="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/15.png" loading="lazy"></p>
 <p>把 lkh 加入 westos 项目并授权</p>
