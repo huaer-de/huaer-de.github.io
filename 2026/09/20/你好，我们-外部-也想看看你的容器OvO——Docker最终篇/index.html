@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>你好，我们(外部)也想看看你的容器OvO——Docker最终篇 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="你好，我们(外部)也想看看你的容器OvO——Docker最终篇"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A%E5%AD%A6%E6%9C%9F/">大三上学期</a><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>你好，我们(外部)也想看看你的容器OvO——Docker最终篇</h2>
+            <div class="post-meta">
+                <time class="date">2026.09.20</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>这次我们要学习的，是 Docker 网络，数据卷，安全相关的知识点。</p>
+<p>那就开始吧。</p>
+<h1 id="一、-Docker-网络"><a href="#一、-Docker-网络" class="headerlink" title="一、 Docker 网络"></a>一、 Docker 网络</h1><h2 id="（1）理解"><a href="#（1）理解" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>Docker 容器默认有自己的网络命名空间，和宿主机是隔离的。如果想让外部访问我们的容器，就需要给容器加上端口映射。加上自定义网络后，容器就可以直接用名字通信了，这样，即使 IP 变了，也仍然可以访问到容器。</p>
+<p>下面几个概念，我们得熟悉。</p>
+<ul>
+<li><p><strong>原生网络（3个）</strong>：</p>
+<ul>
+<li><p><code>bridge</code>：默认模式，容器连到 <code>docker0</code> 网桥，分配 <code>172.17.0.0/16</code> 的 IP，外部不能直接访问，需要端口映射。</p>
+</li>
+<li><p><code>host</code>：容器与宿主机共享网络栈，直接用宿主机 IP 和端口，但端口不能冲突。</p>
+</li>
+<li><p><code>none</code>：容器只有 <code>lo</code> 回环，没有网卡，完全隔离。</p>
+</li>
+</ul>
+</li>
+<li><p><strong>自定义网络（多个）</strong>：</p>
+<ul>
+<li><p>用 <code>docker network create</code> 创建的，默认驱动是 <code>bridge</code>。</p>
+</li>
+<li><p>自带 DNS 解析，容器之间可以用<strong>容器名</strong>互相 ping。</p>
+</li>
+<li><p>可以指定子网和网关。</p>
+</li>
+</ul>
+</li>
+<li><p><strong>端口映射</strong>：</p>
+<ul>
+<li><code>-p 宿主机端口:容器端口</code>，通过 iptables DNAT 和 docker-proxy 实现。</li>
+</ul>
+</li>
+<li><p><strong>container 模式</strong>：</p>
+<ul>
+<li><code>--network container:容器名</code>，新容器和已有容器共享网络栈，共用 IP 和端口。</li>
+</ul>
+</li>
+</ul>
+<h2 id="（2）实验"><a href="#（2）实验" class="headerlink" title="（2）实验"></a>（2）实验</h2><h3 id="1-原生网络"><a href="#1-原生网络" class="headerlink" title="1. 原生网络"></a>1. 原生网络</h3><h4 id="①-查看原生网络"><a href="#①-查看原生网络" class="headerlink" title="① 查看原生网络"></a>① 查看原生网络</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker network ls</span>
+NETWORK ID     NAME      DRIVER    SCOPE
+5fb5abc909bb   bridge    bridge    <span class="token builtin class-name">local</span>
+d33ce0a6b54c   <span class="token function">host</span>      <span class="token function">host</span>      <span class="token builtin class-name">local</span>
+6a959bd7b8dd   none      null      <span class="token builtin class-name">local</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这是 Docker 自带的网络，有 <code>bridge</code>、<code>host</code>、<code>none</code> 三个。</p>
+<h4 id="②-验证-bridge-网络"><a href="#②-验证-bridge-网络" class="headerlink" title="② 验证 bridge 网络"></a>② 验证 bridge 网络</h4><p>启动一个 busybox 容器，进入交互模式查看情况。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --name b1 busybox</span>
+/ <span class="token comment"># ip a</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: eth0@if4: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue
+    link/ether 1a:94:99:9c:af:c2 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">172.17</span>.0.2/16 brd <span class="token number">172.17</span>.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># ping -c 2 172.17.0.1</span>
+PING <span class="token number">172.17</span>.0.1 <span class="token punctuation">(</span><span class="token number">172.17</span>.0.1<span class="token punctuation">)</span>: <span class="token number">56</span> data bytes
+<span class="token number">64</span> bytes from <span class="token number">172.17</span>.0.1: <span class="token assign-left variable">seq</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">64</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.232</span> ms
+<span class="token number">64</span> bytes from <span class="token number">172.17</span>.0.1: <span class="token assign-left variable">seq</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">64</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.140</span> ms
+
+--- <span class="token number">172.17</span>.0.1 <span class="token function">ping</span> statistics ---
+<span class="token number">2</span> packets transmitted, <span class="token number">2</span> packets received, <span class="token number">0</span>% packet loss
+round-trip min/avg/max <span class="token operator">=</span> <span class="token number">0.140</span>/0.186/0.232 ms
+/ <span class="token comment"># ping -c 2 8.8.8.8</span>
+PING <span class="token number">8.8</span>.8.8 <span class="token punctuation">(</span><span class="token number">8.8</span>.8.8<span class="token punctuation">)</span>: <span class="token number">56</span> data bytes
+
+--- <span class="token number">8.8</span>.8.8 <span class="token function">ping</span> statistics ---
+<span class="token number">2</span> packets transmitted, <span class="token number">0</span> packets received, <span class="token number">100</span>% packet loss
+/ <span class="token comment"># ^C</span>
+
+/ <span class="token comment"># ping -c 2 114.114.114.114</span>
+PING <span class="token number">114.114</span>.114.114 <span class="token punctuation">(</span><span class="token number">114.114</span>.114.114<span class="token punctuation">)</span>: <span class="token number">56</span> data bytes
+
+--- <span class="token number">114.114</span>.114.114 <span class="token function">ping</span> statistics ---
+<span class="token number">2</span> packets transmitted, <span class="token number">0</span> packets received, <span class="token number">100</span>% packet loss
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>连接不到外网，回到物理机上检查了一下，发现物理机 Windows 上也 ping 不通外网。</p>
+<p>这个问题不是 docker 这里的问题，我决定先跳过它。实则是没招了（bushi…）</p>
+<p>命令里，各参数含义如下。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>-it</code></td>
+<td>交互式终端，分配伪终端并保持 STDIN 打开</td>
+</tr>
+<tr>
+<td><code>--rm</code></td>
+<td>容器退出后自动删除</td>
+</tr>
+<tr>
+<td><code>--name b1</code></td>
+<td>指定容器名称为 <code>b1</code></td>
+</tr>
+<tr>
+<td><code>busybox</code></td>
+<td>使用轻量级镜像，自带 <code>ip</code>、<code>ping</code> 等网络工具</td>
+</tr>
+<tr>
+<td>不指定 <code>--network</code></td>
+<td>默认使用 <code>bridge</code> 网络模式</td>
+</tr>
+</tbody></table>
+<h4 id="③-验证-host-网络"><a href="#③-验证-host-网络" class="headerlink" title="③ 验证 host 网络"></a>③ 验证 host 网络</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --network host --name h1 busybox</span>
+/ <span class="token comment"># ip a</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: eth0: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc mq qlen <span class="token number">1000</span>
+    link/ether 00:0c:29:be:d8:1f brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">192.168</span>.86.102/24 brd <span class="token number">192.168</span>.86.255 scope global noprefixroute eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::6948:2b3c:19de:53cb/64 scope <span class="token function">link</span> noprefixroute
+       valid_lft forever preferred_lft forever
+<span class="token number">3</span>: docker0: <span class="token operator">&lt;</span>NO-CARRIER,BROADCAST,MULTICAST,UP<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue
+    link/ether d2:5c:fe:7d:fb:9d brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">172.17</span>.0.1/16 brd <span class="token number">172.17</span>.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里的命令，关键的是 <code>--network host</code> 参数，它可以让容器和宿主机共享网络栈。</p>
+<p>我们看到，进入容器后，容器的网卡和宿主机一样，都是 192.168.86.102 。</p>
+<h4 id="④-验证-none-网络"><a href="#④-验证-none-网络" class="headerlink" title="④ 验证 none 网络"></a>④ 验证 none 网络</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --network none --name n1 busybox</span>
+/ <span class="token comment"># ip a</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>如果是 none 网络的话，容器里只有 <code>lo</code> 回环，没有 <code>eth0</code>，是完全隔离的。</p>
+<h3 id="2-自定义网络"><a href="#2-自定义网络" class="headerlink" title="2. 自定义网络"></a>2. 自定义网络</h3><h4 id="①-创建自定义网络"><a href="#①-创建自定义网络" class="headerlink" title="① 创建自定义网络"></a>① 创建自定义网络</h4><p>我们创建一个名为 <strong>my_net1</strong> 的自定义网络。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker network create my_net1</span>
+f55d218e5ee2f76987c2890aa629c8d42521b2d4e85b71408d09edd64c5a0f13
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker network inspect my_net1</span>
+<span class="token punctuation">[</span>
+        <span class="token string">"Name"</span><span class="token builtin class-name">:</span> <span class="token string">"my_net1"</span>,
+<span class="token comment">#... ... ...()</span>
+        <span class="token string">"Driver"</span><span class="token builtin class-name">:</span> <span class="token string">"bridge"</span>,
+<span class="token comment">#... ... ...()</span>
+                    <span class="token string">"Subnet"</span><span class="token builtin class-name">:</span> <span class="token string">"172.18.0.0/16"</span>,
+                    <span class="token string">"Gateway"</span><span class="token builtin class-name">:</span> <span class="token string">"172.18.0.1"</span>
+<span class="token comment"># ... ... ...()</span>
+<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>查看详细信息，看到 <code>&quot;Driver&quot;: &quot;bridge&quot;,</code>  这个这个容器的默认驱动是<code>bridge</code>。 <code>&quot;Subnet&quot;: &quot;172.18.0.0/16&quot;,</code> 表示，Docker 自动分配到一个 <code>172.18.0.0/16</code> 的子网。</p>
+<h4 id="②-验证-DNS-解析"><a href="#②-验证-DNS-解析" class="headerlink" title="② 验证 DNS 解析"></a>② 验证 DNS 解析</h4><p>从刚刚创建的网络<code>my_net1</code>中，启动两个容器，进入第二个容器 ping 第一个。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -d --name web1 --network my_net1 nginx</span>
+8cc4ed4844121e8b37f553395a9b683531a1173826055fdd89ea10f99a4615ec
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --network my_net1 --name b2 busybox</span>
+/ <span class="token comment"># ping -c 2 web1</span>
+PING web1 <span class="token punctuation">(</span><span class="token number">172.18</span>.0.2<span class="token punctuation">)</span>: <span class="token number">56</span> data bytes
+<span class="token number">64</span> bytes from <span class="token number">172.18</span>.0.2: <span class="token assign-left variable">seq</span><span class="token operator">=</span><span class="token number">0</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">64</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.120</span> ms
+<span class="token number">64</span> bytes from <span class="token number">172.18</span>.0.2: <span class="token assign-left variable">seq</span><span class="token operator">=</span><span class="token number">1</span> <span class="token assign-left variable">ttl</span><span class="token operator">=</span><span class="token number">64</span> <span class="token assign-left variable">time</span><span class="token operator">=</span><span class="token number">0.137</span> ms
+
+--- web1 <span class="token function">ping</span> statistics ---
+<span class="token number">2</span> packets transmitted, <span class="token number">2</span> packets received, <span class="token number">0</span>% packet loss
+round-trip min/avg/max <span class="token operator">=</span> <span class="token number">0.120</span>/0.128/0.137 ms
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>自定义网络自带着 DNS，会把容器名 <code>web1</code> 解析成 IP。但如果是在默认 bridge 网络中，就没有解析了，只能 ping IP，不能 ping 名字。</p>
+<h4 id="③-端口映射"><a href="#③-端口映射" class="headerlink" title="③ 端口映射"></a>③ 端口映射</h4><p>重新启动一个带端口映射的 nginx。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f web1</span>
+web1
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -d --name web1 -p 80:80 nginx</span>
+0c538a626a05a4584ac4092593930fb7cc2aa33a5138517fd030a194de92a7de
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># iptables -t nat -nL</span>
+<span class="token comment"># ... ... ...()</span>
+Chain POSTROUTING <span class="token punctuation">(</span>policy ACCEPT<span class="token punctuation">)</span>
+target     prot opt <span class="token builtin class-name">source</span>               destination
+MASQUERADE  all  --  <span class="token number">172.18</span>.0.0/16        <span class="token number">0.0</span>.0.0/0
+MASQUERADE  all  --  <span class="token number">172.17</span>.0.0/16        <span class="token number">0.0</span>.0.0/0
+
+Chain DOCKER <span class="token punctuation">(</span><span class="token number">2</span> references<span class="token punctuation">)</span>
+target     prot opt <span class="token builtin class-name">source</span>               destination
+DNAT       tcp  --  <span class="token number">0.0</span>.0.0/0            <span class="token number">0.0</span>.0.0/0            tcp dpt:80 to:172.17.0.2:80
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># curl http://localhost</span>
+<span class="token operator">&lt;</span>html<span class="token operator">></span>
+<span class="token operator">&lt;</span>head<span class="token operator">></span><span class="token operator">&lt;</span>title<span class="token operator">></span><span class="token number">404</span> Not Found<span class="token operator">&lt;</span>/title<span class="token operator">></span><span class="token operator">&lt;</span>/head<span class="token operator">></span>
+<span class="token operator">&lt;</span>body<span class="token operator">></span>
+<span class="token operator">&lt;</span>center<span class="token operator">></span><span class="token operator">&lt;</span>h<span class="token operator"><span class="token file-descriptor important">1</span>></span><span class="token number">404</span> Not Found<span class="token operator">&lt;</span>/h<span class="token operator"><span class="token file-descriptor important">1</span>></span><span class="token operator">&lt;</span>/center<span class="token operator">></span>
+<span class="token operator">&lt;</span>hr<span class="token operator">></span><span class="token operator">&lt;</span>center<span class="token operator">></span>nginx<span class="token operator">&lt;</span>/center<span class="token operator">></span>
+<span class="token operator">&lt;</span>/body<span class="token operator">></span>
+<span class="token operator">&lt;</span>/html<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>命令里，<code>-p 80:80</code>是把宿主机 80 端口映射到容器 80 端口。外部访问 <code>http://192.168.86.102:80</code> ，其实是访问到容器的 nginx 啦。</p>
+<p>进入容器写个主页，看起来就更清晰啦。出现一点小问题，梳理时间线中。</p>
+<h5 id="Ⅰ-进入容器，写入index-html"><a href="#Ⅰ-进入容器，写入index-html" class="headerlink" title="Ⅰ 进入容器，写入index.html"></a>Ⅰ 进入容器，写入index.html</h5><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it web1 /bin/sh</span>
+/ <span class="token comment"># mkdir -p /usr/share/nginx/html/</span>
+/ <span class="token comment"># echo '欢迎访问Docker web1的主页' > /usr/share/nginx/html/index.html</span>
+/ <span class="token comment">#</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># curl http://localhost</span>
+<span class="token operator">&lt;</span>html<span class="token operator">></span>
+<span class="token operator">&lt;</span>head<span class="token operator">></span><span class="token operator">&lt;</span>title<span class="token operator">></span><span class="token number">404</span> Not Found<span class="token operator">&lt;</span>/title<span class="token operator">></span><span class="token operator">&lt;</span>/head<span class="token operator">></span>
+<span class="token comment"># ... ... ...()</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>访问失败了，开始查找问题。</p>
+<h5 id="Ⅱ-排错"><a href="#Ⅱ-排错" class="headerlink" title="Ⅱ 排错"></a>Ⅱ 排错</h5><p>查看容器的<code>index.html</code>文件，发现<code>/var/</code>下，还有一个文件，可能访问到这里了，那就再写一遍。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec web1 find / -name "index.html" 2>/dev/null</span>
+/usr/share/nginx/html/index.html
+/var/lib/nginx/html/index.html
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it web1 /bin/sh</span>
+/ <span class="token comment"># echo '欢迎访问Docker web1的主页' > /var/lib/nginx/html/index.html</span>
+/ <span class="token comment">#</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># curl http://localhost</span>
+<span class="token operator">&lt;</span>html<span class="token operator">></span>
+<span class="token operator">&lt;</span>head<span class="token operator">></span><span class="token operator">&lt;</span>title<span class="token operator">></span><span class="token number">404</span> Not Found<span class="token operator">&lt;</span>/title<span class="token operator">></span><span class="token operator">&lt;</span>/head<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>仍然不对。文件地址默认在哪里呢？</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec web1 nginx -T 2>&amp;1 | grep -A10 "server &#123;"</span>
+server <span class="token punctuation">&#123;</span>
+        listen <span class="token number">80</span> default_server<span class="token punctuation">;</span>
+        listen <span class="token punctuation">[</span>::<span class="token punctuation">]</span>:80 default_server<span class="token punctuation">;</span>
+
+        <span class="token comment"># Everything is a 404</span>
+        location / <span class="token punctuation">&#123;</span>
+                <span class="token builtin class-name">return</span> <span class="token number">404</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment"># You may need this to prevent return 404 recursion.</span>
+        location <span class="token operator">=</span> /404.html <span class="token punctuation">&#123;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>群众里面有坏人，主页配置直接返回 404 了诶。我们修正路径，重载容器再访问。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it web1 /bin/sh</span>
+/ <span class="token comment"># cat > /etc/nginx/http.d/default.conf &lt;&lt; 'EOF'</span>
+<span class="token operator">></span> server <span class="token punctuation">&#123;</span>
+<span class="token operator">></span>     listen <span class="token number">80</span> default_server<span class="token punctuation">;</span>
+<span class="token operator">></span>     listen <span class="token punctuation">[</span>::<span class="token punctuation">]</span>:80 default_server<span class="token punctuation">;</span>
+<span class="token operator">></span>
+<span class="token operator">></span>     root /var/lib/nginx/html<span class="token punctuation">;</span>
+<span class="token operator">></span>     index index.html<span class="token punctuation">;</span>
+<span class="token operator">></span>
+<span class="token operator">></span>     location / <span class="token punctuation">&#123;</span>
+<span class="token operator">></span>         try_files <span class="token variable">$uri</span> <span class="token variable">$uri</span>/ <span class="token operator">=</span><span class="token number">404</span><span class="token punctuation">;</span>
+<span class="token operator">></span>     <span class="token punctuation">&#125;</span>
+<span class="token operator">></span> <span class="token punctuation">&#125;</span>
+<span class="token operator">></span> EOF
+/ <span class="token comment">#</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec web1 nginx -s reload</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># curl localhost</span>
+欢迎访问Docker web1的主页<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>成功了，访问主机的80端口，实际访问的是容器里的 nginx 这里。</p>
+<h4 id="④-container-网络模式"><a href="#④-container-网络模式" class="headerlink" title="④ container 网络模式"></a>④ container 网络模式</h4><p>启动一个新容器，让它共享 <code>web1</code> 的网络栈。</p>
+<p>看到的 IP 和 <code>web1</code> 完全一样，因为它们共享网络命名空间。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --network container:web1 --name c1 busybox</span>
+/ <span class="token comment"># ip a</span>
+<span class="token number">1</span>: lo: <span class="token operator">&lt;</span>LOOPBACK,UP,LOWER_UP<span class="token operator">></span> mtu <span class="token number">65536</span> qdisc noqueue qlen <span class="token number">1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet <span class="token number">127.0</span>.0.1/8 scope <span class="token function">host</span> lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope <span class="token function">host</span>
+       valid_lft forever preferred_lft forever
+<span class="token number">2</span>: eth0@if17: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue
+    link/ether 6a:0e:ff:af:93:95 brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">172.17</span>.0.2/16 brd <span class="token number">172.17</span>.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># wget -O- http://localhost</span>
+Connecting to localhost <span class="token punctuation">(</span><span class="token number">127.0</span>.0.1:80<span class="token punctuation">)</span>
+writing to stdout
+欢迎访问Docker web1的主页
+-                    <span class="token number">100</span>% <span class="token operator">|</span>********************************************************<span class="token operator">|</span>    <span class="token number">33</span>  <span class="token number">0</span>:00:00 ETA
+written to stdout
+/ <span class="token comment">#</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>因为共享网络栈，新容器 <code>c1</code> 也能直接访问 <code>web1</code> 上的 nginx （这里想起来，容器里的软件还是很少的，想直接用 <code>curl</code> ，但没有 curl ）。</p>
+<h1 id="二、-Docker-数据卷"><a href="#二、-Docker-数据卷" class="headerlink" title="二、 Docker 数据卷"></a>二、 Docker 数据卷</h1><h2 id="（1）理解-1"><a href="#（1）理解-1" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>之前提到过，容器默认的文件系统是只读的。我们的操作，是在最上面加一个可写层，在这个可写层运行的。但容器删除，可写层的数据也就没了。</p>
+<p>于是，我们可以把重要的数据，从容器上用<strong>数据卷</strong>持久化到宿主机上。这样，也方便多容器共享数据。<br>Docker 有三种主要的挂载方式：</p>
+<ul>
+<li><p><strong>bind mount</strong>：直接挂载宿主机目录或文件到容器。路径自己指定，灵活，但依赖宿主机目录结构。</p>
+</li>
+<li><p><strong>docker managed volume</strong>：由 Docker 自动管理卷，存放在 <code>/var/lib/docker/volumes/</code> 下。路径不用自己管，移植性好，官方推荐。</p>
+</li>
+<li><p><strong>tmpfs</strong>：挂载到内存，不持久化，容器停止就消失。</p>
+</li>
+</ul>
+<h2 id="（2）实验-1"><a href="#（2）实验-1" class="headerlink" title="（2）实验"></a>（2）实验</h2><h3 id="1-bind-mount-挂载"><a href="#1-bind-mount-挂载" class="headerlink" title="1. bind mount 挂载"></a>1. bind mount 挂载</h3><p>在宿主机上，准备好挂载目录，把文件挂载上去。运行容器时，把宿主机 <code>/tmp/data1</code> 挂到容器 <code>/data1</code>，默认读写； <code>/tmp/data2</code> 的文件挂到 <code>/data2</code>上，默认只读。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># mkdir -p /tmp/data1 /tmp/data2</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># echo "你好，这里是宿主机" > /tmp/data1/file1</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm \</span>
+  <span class="token parameter variable">-v</span> /tmp/data1:/data1 <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /tmp/data2:/data2:ro <span class="token punctuation">\</span>
+  busybox
+/ <span class="token comment"># ls /data1</span>
+file1
+/ <span class="token comment"># cat /data1/file1</span>
+你好，这里是宿主机
+/ <span class="token comment"># touch /data1/file2</span>
+/ <span class="token comment"># ls /data1/</span>
+file1  file2
+/ <span class="token comment"># touch /data2/file3</span>
+touch: /data2/file3: Read-only <span class="token function">file</span> system 
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># ls /tmp/data1</span>
+<span class="token function">cat</span> /tmp/data1/file2
+file1  file2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>回到宿主机上，&#x2F;data1&#x2F; 下的文件确实被改啦。</p>
+<h3 id="2-docker-managed-volume"><a href="#2-docker-managed-volume" class="headerlink" title="2. docker managed volume"></a>2. docker managed volume</h3><p>哇，一堆英文。我们来让 Docker 自动管理卷吧。</p>
+<h4 id="①-查看卷信息"><a href="#①-查看卷信息" class="headerlink" title="① 查看卷信息"></a>① 查看卷信息</h4><p>先创建一个叫 <code>vol1</code> 的卷吧。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker volume create vol1</span>
+vol1
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker volume ls</span>
+DRIVER    VOLUME NAME
+<span class="token builtin class-name">local</span>     vol1
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker volume inspect vol1</span>
+<span class="token punctuation">[</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token string">"CreatedAt"</span><span class="token builtin class-name">:</span> <span class="token string">"2026-09-13T12:04:28+08:00"</span>,
+        <span class="token string">"Driver"</span><span class="token builtin class-name">:</span> <span class="token string">"local"</span>,
+        <span class="token string">"Labels"</span><span class="token builtin class-name">:</span> null,
+        <span class="token string">"Mountpoint"</span><span class="token builtin class-name">:</span> <span class="token string">"/var/lib/docker/volumes/vol1/_data"</span>,
+        <span class="token string">"Name"</span><span class="token builtin class-name">:</span> <span class="token string">"vol1"</span>,
+        <span class="token string">"Options"</span><span class="token builtin class-name">:</span> null,
+        <span class="token string">"Scope"</span><span class="token builtin class-name">:</span> <span class="token string">"local"</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们看到，卷被挂载到了 <code>/var/lib/docker/volumes/vol1/_data</code> 。</p>
+<h4 id="②-运行容器，验证自动复制"><a href="#②-运行容器，验证自动复制" class="headerlink" title="② 运行容器，验证自动复制"></a>② 运行容器，验证自动复制</h4><p>上文说，卷的挂载路径在<code>/var/lib/docker/volumes/vol1/_data</code>。我们用一个的 <code>busybox</code> 来演示 docker managed volume。</p>
+<p>把卷 <code>vol1</code> 挂到容器内的 <code>/data</code> 目录，写入文件，退出，从宿主机查看一下效果。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm -v vol1:/data busybox</span>
+/ <span class="token comment"># echo "hello volume" > /data/index.html</span>
+/ <span class="token comment"># ls -la /data</span>
+total <span class="token number">4</span>
+drwxr-xr-x    <span class="token number">2</span> root     root            <span class="token number">24</span> Sep <span class="token number">13</span> 05:51 <span class="token builtin class-name">.</span>
+drwxr-xr-x    <span class="token number">1</span> root     root            <span class="token number">30</span> Sep <span class="token number">13</span> 05:50 <span class="token punctuation">..</span>
+-rw-r--r--    <span class="token number">1</span> root     root            <span class="token number">13</span> Sep <span class="token number">13</span> 05:51 index.html
+/ <span class="token comment"># cat /data/index.html</span>
+hello volume
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># ll "/var/lib/docker/volumes/vol1/_data"</span>
+total <span class="token number">4</span>
+-rw-r--r-- <span class="token number">1</span> root root <span class="token number">13</span> Sep <span class="token number">13</span> <span class="token number">13</span>:51 index.html
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># cat /var/lib/docker/volumes/vol1/_data/index.html</span>
+hello volume<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>两个目录的文件一样捏，好耶。甚至其实把容器删了，卷里的数据还是存在的。</p>
+<h3 id="3-tmpfs-与跨容器共享卷"><a href="#3-tmpfs-与跨容器共享卷" class="headerlink" title="3. tmpfs 与跨容器共享卷"></a>3. tmpfs 与跨容器共享卷</h3><p>Tmpfs 用于临时加速，共享卷可以让多个容器协作。</p>
+<h4 id="①-tmpfs-挂载"><a href="#①-tmpfs-挂载" class="headerlink" title="① tmpfs 挂载"></a>① tmpfs 挂载</h4><p>启动容器，挂载 tmpfs，写一些内容。再启动一个新容器，同样挂 tmpfs，内容没了。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --mount type=tmpfs,dst=/data busybox</span>
+/ <span class="token comment"># echo "hello tmpfs" > /data/file1</span>
+/ <span class="token comment"># ls -l /data</span>
+total <span class="token number">4</span>
+-rw-r--r--    <span class="token number">1</span> root     root            <span class="token number">12</span> Sep <span class="token number">13</span> 06:23 file1
+/ <span class="token comment"># cat /data/file1</span>
+hello tmpfs
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --mount type=tmpfs,dst=/data busybox</span>
+/ <span class="token comment"># ls -l /data</span>
+total <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="②-跨容器共享卷"><a href="#②-跨容器共享卷" class="headerlink" title="② 跨容器共享卷"></a>② 跨容器共享卷</h4><p>创建一个共享卷，写一点数据进去，在另一个容器上读取一下。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm -v shared_vol:/data busybox</span>
+/ <span class="token comment"># echo "data from A" > /data/a.txt</span>
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm -v shared_vol:/data busybox</span>
+/ <span class="token comment"># ls -l /data</span>
+total <span class="token number">4</span>
+-rw-r--r--    <span class="token number">1</span> root     root            <span class="token number">12</span> Sep <span class="token number">13</span> 06:26 a.txt
+/ <span class="token comment"># cat /data/a.txt</span>
+data from A
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这次，内容还存在着，两个容器共享同一个卷。</p>
+<h3 id="4-卷的只读挂载"><a href="#4-卷的只读挂载" class="headerlink" title="4. 卷的只读挂载"></a>4. 卷的只读挂载</h3><p>创建卷并写一些数据，由于是只读挂载，只能读不能写。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker volume create ro_vol</span>
+<span class="token function">docker</span> run <span class="token parameter variable">-it</span> <span class="token parameter variable">--rm</span> <span class="token parameter variable">-v</span> ro_vol:/data busybox
+ro_vol
+/ <span class="token comment"># echo "read only test" > /data/file.txt</span>
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm -v ro_vol:/data:ro busybox</span>
+/ <span class="token comment"># cat /data/file.txt</span>
+<span class="token builtin class-name">read</span> only <span class="token builtin class-name">test</span>
+/ <span class="token comment"># touch /data/newfile</span>
+touch: /data/newfile: Read-only <span class="token function">file</span> system
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="5-卷的生命周期管理"><a href="#5-卷的生命周期管理" class="headerlink" title="5. 卷的生命周期管理"></a>5. 卷的生命周期管理</h3><h4 id="①-查看所有卷"><a href="#①-查看所有卷" class="headerlink" title="① 查看所有卷"></a>① 查看所有卷</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker volume ls</span>
+DRIVER    VOLUME NAME
+<span class="token builtin class-name">local</span>     ro_vol<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="②-查看卷详情"><a href="#②-查看卷详情" class="headerlink" title="② 查看卷详情"></a>② 查看卷详情</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker volume inspect ro_vol</span>
+<span class="token punctuation">[</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token string">"CreatedAt"</span><span class="token builtin class-name">:</span> <span class="token string">"2026-09-13T14:30:20+08:00"</span>,
+        <span class="token string">"Driver"</span><span class="token builtin class-name">:</span> <span class="token string">"local"</span>,
+        <span class="token string">"Labels"</span><span class="token builtin class-name">:</span> null,
+        <span class="token string">"Mountpoint"</span><span class="token builtin class-name">:</span> <span class="token string">"/var/lib/docker/volumes/ro_vol/_data"</span>,
+        <span class="token string">"Name"</span><span class="token builtin class-name">:</span> <span class="token string">"ro_vol"</span>,
+        <span class="token string">"Options"</span><span class="token builtin class-name">:</span> null,
+        <span class="token string">"Scope"</span><span class="token builtin class-name">:</span> <span class="token string">"local"</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="③-查看卷被哪个容器使用"><a href="#③-查看卷被哪个容器使用" class="headerlink" title="③ 查看卷被哪个容器使用"></a>③ 查看卷被哪个容器使用</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">docker</span> <span class="token function">ps</span> <span class="token parameter variable">-a</span> <span class="token parameter variable">--format</span> <span class="token string">'&#123;&#123;.Names&#125;&#125;'</span> <span class="token operator">|</span> <span class="token function">xargs</span> <span class="token parameter variable">-I</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token function">docker</span> inspect <span class="token parameter variable">-f</span> <span class="token string">'&#123;&#123;.Mounts&#125;&#125; &#123;&#123;.Name&#125;&#125;'</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> <span class="token operator">|</span> <span class="token function">grep</span> vol1<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h4 id="④-删除卷"><a href="#④-删除卷" class="headerlink" title="④ 删除卷"></a>④ 删除卷</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker volume rm ro_vol</span>
+ro_vol<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h1 id="三、-Docker-安全"><a href="#三、-Docker-安全" class="headerlink" title="三、 Docker 安全"></a>三、 Docker 安全</h1><h2 id="（1）理解-2"><a href="#（1）理解-2" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>容器默认对资源没有限制，一个容器可能吃光宿主机 CPU、内存、磁盘 IO，拖垮其他容器。</p>
+<p>我们可以通过 <strong>cgroups</strong> 实现资源限制。Linux 内核的 cgroups（Control Groups）可以限制、记录、隔离进程组的资源使用。</p>
+<h2 id="（2）实验-2"><a href="#（2）实验-2" class="headerlink" title="（2）实验"></a>（2）实验</h2><p>下面的实验，仍然是在 docker2 进行的。</p>
+<h3 id="1-CPU-限制"><a href="#1-CPU-限制" class="headerlink" title="1. CPU 限制"></a>1. CPU 限制</h3><h4 id="①-绝对限制（20-）"><a href="#①-绝对限制（20-）" class="headerlink" title="① 绝对限制（20%）"></a>① 绝对限制（20%）</h4><p>启动容器，限制 CPU 在每个周期内最多用 20000 微秒，即 20%。</p>
+<p>进入容器后，执行一个死循环消耗 CPU ，但实际 CPU 使用率会持续在 20% 左右。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --cpu-period 100000 --cpu-quota 20000 --name cpu1 busybox</span>
+/ <span class="token comment"># while true; do :; done &amp;</span>
+/ <span class="token comment"># dd if=/dev/zero of=/dev/null &amp;</span>
+<span class="token comment">#### ② 相对权重（--cpu-shares）</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以新开终端，查看信息。</p>
+<p><img src="/2026/09/20/%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E4%BB%AC-%E5%A4%96%E9%83%A8-%E4%B9%9F%E6%83%B3%E7%9C%8B%E7%9C%8B%E4%BD%A0%E7%9A%84%E5%AE%B9%E5%99%A8OvO%E2%80%94%E2%80%94Docker%E6%9C%80%E7%BB%88%E7%AF%87/2.png" loading="lazy"></p>
+<h4 id="②-相对权重（–cpu-shares）"><a href="#②-相对权重（–cpu-shares）" class="headerlink" title="② 相对权重（–cpu-shares）"></a>② 相对权重（–cpu-shares）</h4><p>启动两个权重不同的容器，让它们分别跑死循环。在 CPU 竞争时，c1 和 c2 大约按 1:2 分配 CPU。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -itd --name c1 --cpu-shares 100 busybox</span>
+08040a159f868a808ce483718bd20d092c5401526fa26f19d767998b3090ed96
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -itd --name c2 --cpu-shares 200 busybox</span>
+e633288c5f3beaab0dcf1f4a24b39abc683f5eafdaad1bb259035466cd436ffe
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it c1 bash</span>
+OCI runtime <span class="token builtin class-name">exec</span> failed: <span class="token builtin class-name">exec</span> failed: unable to start container process: exec: <span class="token string">"bash"</span><span class="token builtin class-name">:</span> executable <span class="token function">file</span> not found <span class="token keyword">in</span> <span class="token environment constant">$PATH</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it c1 sh</span>
+/ <span class="token comment"># dd if=/dev/zero of=/dev/null &amp;</span>
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it c2 sh</span>
+/ <span class="token comment"># dd if=/dev/zero of=/dev/null &amp;</span>
+/ <span class="token comment"># exit</span>
+
+
+CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O         BLOCK I/O    PIDS
+08040a159f86   c1        <span class="token number">140.85</span>%   948KiB / <span class="token number">1</span>.635GiB   <span class="token number">0.06</span>%     <span class="token number">1</span>.14kB / 126B   0B / <span class="token number">4</span>.1kB   <span class="token number">2</span>
+e633288c5f3b   c2        <span class="token number">142.14</span>%   932KiB / <span class="token number">1</span>.635GiB   <span class="token number">0.05</span>%     796B / 126B     0B / <span class="token number">4</span>.1kB   <span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这时候就有同学开始疑惑，诶？这两个容器 CPU 占用差不多呀！这样因为，现在我的 docker2 有2个 CPU 核心，没有发生资源竞争。</p>
+<p>暂时下架一个核心，再看看情况。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># nproc</span>
+lscpu <span class="token operator">|</span> <span class="token function">grep</span> <span class="token parameter variable">-i</span> <span class="token string">"^CPU(s):"</span>
+<span class="token number">2</span>
+CPU<span class="token punctuation">(</span>s<span class="token punctuation">)</span>:                                  <span class="token number">2</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># echo 0 > /sys/devices/system/cpu/cpu1/online</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># nproc</span>
+<span class="token number">1</span>
+
+
+CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O         BLOCK I/O    PIDS
+08040a159f86   c1        <span class="token number">43.80</span>%    948KiB / <span class="token number">1</span>.635GiB   <span class="token number">0.06</span>%     <span class="token number">1</span>.28kB / 126B   0B / <span class="token number">4</span>.1kB   <span class="token number">2</span>
+e633288c5f3b   c2        <span class="token number">74.44</span>%    932KiB / <span class="token number">1</span>.635GiB   <span class="token number">0.05</span>%     936B / 126B     0B / <span class="token number">4</span>.1kB   <span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这次，两个容器的 CPU 分配接近 1:2 啦。</p>
+<h3 id="2-内存限制"><a href="#2-内存限制" class="headerlink" title="2. 内存限制"></a>2. 内存限制</h3><p>我们限制内存 200M，禁用 swap ，并给 &#x2F;dev&#x2F;shm 分配 300M 空间。</p>
+<h4 id="①-使用-150M-资源"><a href="#①-使用-150M-资源" class="headerlink" title="① 使用 150M 资源"></a>① 使用 150M 资源</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -d --name mem1 \</span>
+  <span class="token parameter variable">--memory</span> 200M <span class="token punctuation">\</span>
+  --memory-swap 200M <span class="token punctuation">\</span>
+  --shm-size 300M <span class="token punctuation">\</span>
+  busybox <span class="token function">sleep</span> infinity
+5010d0827c420cf23d645fa97e15b371339a9e717dfa63a7291a245e9b7d2d26
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it mem1 sh</span>
+/ <span class="token comment"># df -h /dev/shm</span>
+Filesystem                Size      Used Available Use% Mounted on
+shm                     <span class="token number">300</span>.0M         <span class="token number">0</span>    <span class="token number">300</span>.0M   <span class="token number">0</span>% /dev/shm
+/ <span class="token comment"># dd if=/dev/zero of=/dev/shm/file1 bs=1M count=150</span>
+<span class="token number">150</span>+0 records <span class="token keyword">in</span>
+<span class="token number">150</span>+0 records out
+<span class="token number">157286400</span> bytes <span class="token punctuation">(</span><span class="token number">150</span>.0MB<span class="token punctuation">)</span> copied, <span class="token number">0.088476</span> seconds, <span class="token number">1</span>.7GB/s
+/ <span class="token comment">#</span>
+
+CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O         BLOCK I/O    PIDS
+5010d0827c42   mem1      <span class="token number">0.00</span>%     <span class="token number">151</span>.3MiB / 200MiB   <span class="token number">75.63</span>%    <span class="token number">1</span>.02kB / 126B   0B / <span class="token number">4</span>.1kB   <span class="token number">2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们看到 <code>MEM USAGE</code> 约 150M 左右，容器正常在运行。</p>
+<h4 id="②-继续写入-250M-资源"><a href="#②-继续写入-250M-资源" class="headerlink" title="② 继续写入 250M 资源"></a>② 继续写入 250M 资源</h4><p>刚刚已经使用了150M资源，继续写入250M，理论上，占用400M资源。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker exec -it mem1 sh</span>
+/ <span class="token comment"># dd if=/dev/zero of=/dev/shm/file2 bs=1M count=250</span>
+Killed
+/ <span class="token comment">#</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># dmesg | grep -i "out of memory"</span>
+<span class="token punctuation">[</span>  <span class="token number">344.955008</span><span class="token punctuation">]</span> Memory cgroup out of memory: Killed process <span class="token number">2265</span> <span class="token punctuation">(</span>dd<span class="token punctuation">)</span> total-vm:5472kB, anon-rss:1152kB, file-rss:128kB, shmem-rss:0kB, <span class="token environment constant">UID</span>:0 pgtables:44kB oom_score_adj:0
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker rm -f mem1</span>
+mem1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>事实上，命令被 <code>Killed</code> 了，容量超限，会触发 OOM。</p>
+<p>在 docker2 上查看相关的内核日志，有 <code>Out of memory: Kill process ...</code> 的记录。</p>
+<h3 id="3-磁盘-IO-限制"><a href="#3-磁盘-IO-限制" class="headerlink" title="3. 磁盘 IO 限制"></a>3. 磁盘 IO 限制</h3><p>同样地，我们可以通过命令，限制磁盘 IO 的写速度。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm \</span>
+  <span class="token parameter variable">--device</span> /dev/nvme0n1:/dev/nvme0n1 <span class="token punctuation">\</span>
+  --device-write-bps /dev/nvme0n1:30MB <span class="token punctuation">\</span>
+  <span class="token parameter variable">--name</span> io1 busybox
+/ <span class="token comment"># dd if=/dev/zero of=/tmp/testfile bs=1M count=200 oflag=direct</span>
+<span class="token number">200</span>+0 records <span class="token keyword">in</span>
+<span class="token number">200</span>+0 records out
+<span class="token number">209715200</span> bytes <span class="token punctuation">(</span><span class="token number">200</span>.0MB<span class="token punctuation">)</span> copied, <span class="token number">6.693105</span> seconds, <span class="token number">29</span>.9MB/s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>看到速度确实在 30 MB&#x2F;s 内，限速成功了。</p>
+<h1 id="四、-lxcfs-视图隔离"><a href="#四、-lxcfs-视图隔离" class="headerlink" title="四、 lxcfs 视图隔离"></a>四、 lxcfs 视图隔离</h1><h2 id="（1）理解-3"><a href="#（1）理解-3" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>容器默认会共享宿主机的 <code>/proc</code> 文件系统，在容器里执行 <code>free -m</code>，看到的实际上是<strong>宿主机</strong>的总内存，而不是容器的。这时候，有同学就开始不太理解了：明明限制了 200M，<code>free</code> 却显示 1.6G。</p>
+<p>于是 <strong>lxcfs</strong> 的作用就显示出来啦。<code>lxcfs</code> 是一个用户态文件系统，它能把容器内文件替换成“按容器限制生成”的视图，让 <code>free</code>、<code>top</code> 看到的是容器实际可用的资源。</p>
+<h2 id="（2）实验-3"><a href="#（2）实验-3" class="headerlink" title="（2）实验"></a>（2）实验</h2><h3 id="1-安装-lxcfs"><a href="#1-安装-lxcfs" class="headerlink" title="1. 安装 lxcfs"></a>1. 安装 lxcfs</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># yum install -y lxcfs</span>
+Docker CE Stable - x86_64                      <span class="token number">2.9</span> kB/s <span class="token operator">|</span> <span class="token number">2.0</span> kB     00:00
+<span class="token comment"># ... ... ...()</span>
+Package lxcfs-5.0.4-1.el9.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete<span class="token operator">!</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># systemctl enable --now lxcfs</span>
+Created symlink /etc/systemd/system/multi-user.target.wants/lxcfs.service → /usr/lib/systemd/system/lxcfs.service.
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># ls /var/lib/lxcfs/proc/</span>
+cpuinfo  diskstats  loadavg  meminfo  slabinfo  <span class="token function">stat</span>  swaps  <span class="token function">uptime</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>此时， lxcfs 的 proc 文件就生成了。我们挂载 lxcfs 文件查看效果。</p>
+<h3 id="2-限制内存挂载文件"><a href="#2-限制内存挂载文件" class="headerlink" title="2. 限制内存挂载文件"></a>2. 限制内存挂载文件</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm -m 200m \</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/cpuinfo:/proc/cpuinfo:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/meminfo:/proc/meminfo:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/stat:/proc/stat:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/swaps:/proc/swaps:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/uptime:/proc/uptime:rw <span class="token punctuation">\</span>
+  busybox
+/ <span class="token comment"># </span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>参数中，<code>-m 200m</code>限制了 200M 的内存。我们把 lxcfs 提供的虚拟文件挂到容器内对应的 <code>/proc</code> 文件上，这样容器内读取 <code>/proc/meminfo</code> 时，看到的是 lxcfs 生成的“按 200M 限制”的视图。</p>
+<h3 id="3-对比查看效果"><a href="#3-对比查看效果" class="headerlink" title="3. 对比查看效果"></a>3. 对比查看效果</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm -m 200m \</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/cpuinfo:/proc/cpuinfo:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/meminfo:/proc/meminfo:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/stat:/proc/stat:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/swaps:/proc/swaps:rw <span class="token punctuation">\</span>
+  <span class="token parameter variable">-v</span> /var/lib/lxcfs/proc/uptime:/proc/uptime:rw <span class="token punctuation">\</span>
+  busybox
+/ <span class="token comment"># cat /proc/meminfo | head -5</span>
+MemTotal:         <span class="token number">204800</span> kB
+MemFree:          <span class="token number">200444</span> kB
+MemAvailable:     <span class="token number">203592</span> kB
+Buffers:               <span class="token number">0</span> kB
+Cached:             <span class="token number">3148</span> kB
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm -m 200m busybox</span>
+/ <span class="token comment"># cat /proc/meminfo | head -5</span>
+MemTotal:        <span class="token number">1714972</span> kB
+MemFree:          <span class="token number">765820</span> kB
+MemAvailable:    <span class="token number">1254256</span> kB
+Buffers:            <span class="token number">2708</span> kB
+Cached:           <span class="token number">604296</span> kB
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># cat /proc/meminfo | head -5</span>
+MemTotal:        <span class="token number">1714972</span> kB
+MemFree:          <span class="token number">779176</span> kB
+MemAvailable:    <span class="token number">1267636</span> kB
+Buffers:            <span class="token number">2708</span> kB
+Cached:           <span class="token number">604240</span> kB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>限制内存后， <code>MemTotal</code> 约为 <code>204800 kB</code>（即 200M），而不是宿主机的 1.6G 总内存</p>
+<h1 id="五、-容器权限控制"><a href="#五、-容器权限控制" class="headerlink" title="五、 容器权限控制"></a>五、 容器权限控制</h1><h2 id="（1）理解-4"><a href="#（1）理解-4" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>默认容器内虽然是以超户 <code>root</code> 登录的，但权限仍然受到限制，比如不能改网卡、不能看磁盘。我们可以加上一些参数，打开容器权限。</p>
+<ul>
+<li><p><code>--privileged</code>：给容器几乎全部权限，近似宿主机 root，风险极高，慎用。</p>
+</li>
+<li><p><code>--cap-add</code>：只添加指定的内核能力，按需授权，更安全。</p>
+</li>
+</ul>
+<p>这些参数的常见能力是：</p>
+<ul>
+<li><p><code>NET_ADMIN</code>：管理网络，如改网卡、加 IP。</p>
+</li>
+<li><p><code>SYS_ADMIN</code>：系统管理，如挂载文件系统、<code>fdisk</code>。</p>
+</li>
+<li><p><code>SYS_MODULE</code>：加载内核模块。</p>
+</li>
+</ul>
+<h2 id="（2）实验-4"><a href="#（2）实验-4" class="headerlink" title="（2）实验"></a>（2）实验</h2><p>这个实验也比较短，主要是熟悉一下这两个参数的效果。我们通过加参数，不加参数，进入容器命令操作进行对比。</p>
+<h4 id="1-启动默认-busybox-容器"><a href="#1-启动默认-busybox-容器" class="headerlink" title="1. 启动默认 busybox 容器"></a>1. 启动默认 <code>busybox</code> 容器</h4><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm busybox</span>
+/ <span class="token comment"># id</span>
+<span class="token assign-left variable">uid</span><span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span> <span class="token assign-left variable">gid</span><span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span> <span class="token assign-left variable">groups</span><span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span>,10<span class="token punctuation">(</span>wheel<span class="token punctuation">)</span>
+/ <span class="token comment"># ip link set eth0 down</span>
+ip: SIOCSIFFLAGS: Operation not permitted
+/ <span class="token comment"># fdisk -l</span>
+/ <span class="token comment"># ls</span>
+bin    etc    lib    proc   sys    usr
+dev    home   lib64  root   tmp    var
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>进入容器， <code>uid=0(root)</code>是超户，但权限是受限的。我们不能改网卡，也看不到磁盘。</p>
+<h3 id="2-特权容器-privileged"><a href="#2-特权容器-privileged" class="headerlink" title="2. 特权容器 --privileged"></a>2. 特权容器 <code>--privileged</code></h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --privileged busybox</span>
+/ <span class="token comment"># ip link set eth0 down</span>
+/ <span class="token comment"># ip link set eth0 up</span>
+/ <span class="token comment"># fdisk -l</span>
+Disk /dev/nvme0n1: <span class="token number">20</span>.0G, <span class="token number">21474836480</span> bytes, <span class="token number">41943040</span> sectors
+<span class="token number">82241</span> cylinders, <span class="token number">255</span> heads, <span class="token number">2</span> sectors/track
+Units: cylinders of <span class="token number">510</span> * <span class="token number">512</span> <span class="token operator">=</span> <span class="token number">261120</span> bytes
+
+Device       Boot StartCHS    EndCHS        StartLBA     EndLBA    Sectors  Size Id Type
+/dev/nvme0n1p1 *  <span class="token number">4,4</span>,1       <span class="token number">1023,254</span>,2        <span class="token number">2048</span>    <span class="token number">2099199</span>    <span class="token number">2097152</span> 1024M <span class="token number">83</span> Linux
+/dev/nvme0n1p2    <span class="token number">1023,254</span>,2  <span class="token number">1023,254</span>,2     <span class="token number">2099200</span>   <span class="token number">41943039</span>   <span class="token number">39843840</span> <span class="token number">18</span>.9G 8e Linux LVM
+Disk /dev/dm-0: <span class="token number">16</span>.9G, <span class="token number">18249416704</span> bytes, <span class="token number">35643392</span> sectors
+<span class="token number">2218</span> cylinders, <span class="token number">255</span> heads, <span class="token number">63</span> sectors/track
+Units: cylinders of <span class="token number">16065</span> * <span class="token number">512</span> <span class="token operator">=</span> <span class="token number">8225280</span> bytes
+
+Disk /dev/dm-0 doesn<span class="token string">'t contain a valid partition table
+Disk /dev/dm-1: 2048M, 2147483648 bytes, 4194304 sectors
+261 cylinders, 255 heads, 63 sectors/track
+Units: cylinders of 16065 * 512 = 8225280 bytes
+
+Disk /dev/dm-1 doesn'</span>t contain a valid partition table
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>--privileged</code> 可以给容器几乎全部的权限，所以能操作网卡、能看到宿主机磁盘。但这样操作的风险极高，生产环境要慎用。</p>
+<h3 id="3-cap-add-白名单"><a href="#3-cap-add-白名单" class="headerlink" title="3. --cap-add 白名单"></a>3. <code>--cap-add</code> 白名单</h3><p>我们试着只给容器网络管理能力，尝试给网卡加 IP。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --cap-add=NET_ADMIN busybox</span>
+/ <span class="token comment"># ip link set eth0 down</span>
+/ <span class="token comment"># ip link set eth0 up</span>
+/ <span class="token comment"># fdisk -l</span>
+/ <span class="token comment"># ip addr show eth0</span>
+<span class="token number">2</span>: eth0@if15: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue
+    link/ether ba:e3:ff:3d:af:8e brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">172.17</span>.0.2/16 brd <span class="token number">172.17</span>.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet <span class="token number">10.0</span>.0.10/24 scope global eth0
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># ip addr del 10.0.0.10/24 dev eth0</span>
+/ <span class="token comment"># ip addr show eth0</span>
+<span class="token number">2</span>: eth0@if15: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue
+    link/ether ba:e3:ff:3d:af:8e brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">172.17</span>.0.2/16 brd <span class="token number">172.17</span>.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可以看到，虽然还是看不到磁盘，但可以修改网卡嘞。</p>
+<p>再试试 <code>--cap-add=SYS_ADMIN</code> 挂载文件系统。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --cap-add=NET_ADMIN busybox</span>
+/ <span class="token comment"># ip addr add 10.0.0.10/24 dev eth0</span>
+/ <span class="token comment"># ip addr show eth0</span>
+<span class="token number">2</span>: eth0@if15: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue
+    link/ether ba:e3:ff:3d:af:8e brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">172.17</span>.0.2/16 brd <span class="token number">172.17</span>.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet <span class="token number">10.0</span>.0.10/24 scope global eth0
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># ip addr del 10.0.0.10/24 dev eth0</span>
+/ <span class="token comment"># ip addr show eth0</span>
+<span class="token number">2</span>: eth0@if15: <span class="token operator">&lt;</span>BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN<span class="token operator">></span> mtu <span class="token number">1500</span> qdisc noqueue
+    link/ether ba:e3:ff:3d:af:8e brd ff:ff:ff:ff:ff:ff
+    inet <span class="token number">172.17</span>.0.2/16 brd <span class="token number">172.17</span>.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+/ <span class="token comment"># exit</span>
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker run -it --rm --cap-add=SYS_ADMIN busybox</span>
+/ <span class="token comment"># mkdir -p /mnt/tmp</span>
+/ <span class="token comment"># mount -t tmpfs -o size=M tmpfs /mnt/tmp</span>
+/ <span class="token comment"># df -h /mnt/tmp</span>
+Filesystem                Size      Used Available Use% Mounted on
+tmpfs                        <span class="token number">0</span>         <span class="token number">0</span>         <span class="token number">0</span>   <span class="token number">0</span>% /mnt/tmp
+/ <span class="token comment"># umount /mnt/tmp/</span>
+/ <span class="token comment"># exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>总结一下，<code>--cap-add</code>可以按需添加能力，如 <code>NET_ADMIN</code>、<code>SYS_ADMIN</code>，对比 <code>--privileged </code> 会更安全一些。我们给容器权限时，一般会保持 <strong>最小权限</strong> 的安全原则。</p>
+<h1 id="六、-Docker-Swarm-集群部署"><a href="#六、-Docker-Swarm-集群部署" class="headerlink" title="六、 Docker Swarm 集群部署"></a>六、 Docker Swarm 集群部署</h1><h2 id="（1）理解-5"><a href="#（1）理解-5" class="headerlink" title="（1）理解"></a>（1）理解</h2><p>很多工具，最后都需要一个集群来分担流量，Docker 也类似。生产上我们会喜欢用 <strong>Kubernetes</strong> ，也就是传说中的 k8s ，它能管理的容器数量会更多。但我们先来了解一下 Docker Swarm 。</p>
+<p><strong>Swarm</strong> 是 Docker 引擎内置的集群管理工具，可以将多台 Docker 主机组成一个集群，统一调度容器。它适合小规模集群（十几台）的管理，上手比较容易。在这节实验里，我们先来了解下面的概念（但其实见得多一点，会发现看到名称，就能大概知道含义啦）。</p>
+<ul>
+<li><p><strong>Manager 节点</strong>：管理集群，下发指令，维护集群状态。官方推荐 3 个 Manager 做高可用，实验 1 个即可。</p>
+</li>
+<li><p><strong>Worker 节点</strong>：只负责运行容器，不能下发管理指令。</p>
+</li>
+<li><p><strong>Service</strong>：Swarm 中的服务，定义用哪个镜像、跑几个副本、映射什么端口。</p>
+</li>
+<li><p><strong>副本（replica）</strong>：一个 Service 可以跑多个容器实例，自动负载均衡。</p>
+</li>
+<li><p><strong>ingress 网络</strong>：Swarm 自动创建的 overlay 网络，用于跨节点服务发现和负载均衡。</p>
+</li>
+<li><p><strong>Token</strong>：Worker 加入集群的凭证，默认有效期约 24 小时，过期可以重新获取。</p>
+</li>
+</ul>
+<h2 id="（2）实验-5"><a href="#（2）实验-5" class="headerlink" title="（2）实验"></a>（2）实验</h2><p>我们这次实验，docker1 上创建 service 服务，docker1 和 docker2 都是 Swarm 的节点。</p>
+<h3 id="1-实验环境"><a href="#1-实验环境" class="headerlink" title="1. 实验环境"></a>1. 实验环境</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/hosts |grep reg.w</span>
+<span class="token number">192.168</span>.86.101  docker1 reg.westos.org
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker info|grep -i "storage driver"</span>
+ Storage Driver: overlay2
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># curl -k https://reg.westos.org/api/v2.0/health</span>
+<span class="token punctuation">&#123;</span><span class="token string">"components"</span>:<span class="token punctuation">[</span><span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"core"</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span>,<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"database"</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span>,<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"jobservice"</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span>,<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"portal"</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span>,<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"redis"</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span>,<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"registry"</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span>,<span class="token punctuation">&#123;</span><span class="token string">"name"</span><span class="token builtin class-name">:</span><span class="token string">"registryctl"</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span><span class="token punctuation">]</span>,<span class="token string">"status"</span><span class="token builtin class-name">:</span><span class="token string">"healthy"</span><span class="token punctuation">&#125;</span>
+
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/hosts | grep reg.westos.org</span>
+<span class="token number">192.168</span>.86.101  docker1 reg.westos.org
+<span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker info | grep -i "storage driver"</span>
+ Storage Driver: overlayfs<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>看到 Harbor 是健康的，<code>reg.westos.org</code> 也有正确的解析。</p>
+<h3 id="2-初始化-Swarm（docker1）"><a href="#2-初始化-Swarm（docker1）" class="headerlink" title="2. 初始化 Swarm（docker1）"></a>2. 初始化 Swarm（docker1）</h3><p>来到docker1，将当前节点初始化为 Swarm Manager。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker swarm init --advertise-addr 192.168.86.101</span>
+Swarm initialized: current <span class="token function">node</span> <span class="token punctuation">(</span>oyvnb3kvvgs5rxmydnnnyplzn<span class="token punctuation">)</span> is now a manager.
+
+To <span class="token function">add</span> a worker to this swarm, run the following command:
+
+    <span class="token function">docker</span> swarm <span class="token function">join</span> <span class="token parameter variable">--token</span> SWMTKN-1-4d4lynqgv5chu89lfwtc9ooupjqplnb7qr71y27n                           iudgbzprxk-8xhn3q1sjrnn1xkrr9c5d7xno <span class="token number">192.168</span>.86.101:2377
+
+To <span class="token function">add</span> a manager to this swarm, run <span class="token string">'docker swarm join-token manager'</span> and follo                           w the instructions.
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker node ls</span>
+ID                            <span class="token environment constant">HOSTNAME</span>   STATUS    AVAILABILITY   MANAGER STATU                           S   ENGINE VERSION
+oyvnb3kvvgs5rxmydnnnyplzn *   docker1    Ready     Active         Leader                                      <span class="token number">29.8</span>.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="3-加入-Woker-节点（docker2）"><a href="#3-加入-Woker-节点（docker2）" class="headerlink" title="3. 加入 Woker 节点（docker2）"></a>3. 加入 Woker 节点（docker2）</h3><p>刚刚初始化 docker1 时，输出了一段 <code>docker swarm join --token ...</code> 命令，这就是 Manager 的地址啦。我们将它复制到 docker2 执行。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker2 ~<span class="token punctuation">]</span><span class="token comment"># docker swarm join --token SWMTKN-1-4d4lynqgv5chu89lfwtc9ooupjqplnb7qr71y27niudgbzprxk-8xhn3q1sjrnn1xkrr9c5d7xno 192.168.86.101:2377</span>
+This <span class="token function">node</span> joined a swarm as a worker.
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker node ls</span>
+ID                            <span class="token environment constant">HOSTNAME</span>   STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+oyvnb3kvvgs5rxmydnnnyplzn *   docker1    Ready     Active         Leader           <span class="token number">29.8</span>.0
+s28tsimewh2yrpr1wdysbuqfd     docker2    Ready     Active                          <span class="token number">29.8</span>.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="4-创建-Service-（docker1）"><a href="#4-创建-Service-（docker1）" class="headerlink" title="4. 创建 Service （docker1）"></a>4. 创建 Service （docker1）</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service create \</span>
+  <span class="token parameter variable">--name</span> web <span class="token punctuation">\</span>
+  <span class="token parameter variable">--replicas</span> <span class="token number">2</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">--publish</span> <span class="token number">8000</span>:80 <span class="token punctuation">\</span>
+  --limit-cpu <span class="token number">0.5</span> <span class="token punctuation">\</span>
+  --limit-memory 256M <span class="token punctuation">\</span>
+  reg.westos.org/library/nginx:latest
+fs5hbaevkbc9pmw7bnq4gy0u1
+overall progress: <span class="token number">2</span> out of <span class="token number">2</span> tasks
+<span class="token number">1</span>/2: running
+<span class="token number">2</span>/2: running
+verify: Service fs5hbaevkbc9pmw7bnq4gy0u1 converged
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service ls</span>
+ID             NAME      MODE         REPLICAS   IMAGE                                 PORTS
+fs5hbaevkbc9   web       replicated   <span class="token number">2</span>/2        reg.westos.org/library/nginx:latest   *:8000-<span class="token operator">></span><span class="token number">80</span>/tcp
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service ps web</span>
+ID             NAME      IMAGE                                 NODE      DESIRED STATE   CURRENT STATE            ERROR     PORTS
+75fqq6bug4mn   web.1     reg.westos.org/library/nginx:latest   docker1   Running         Running <span class="token number">55</span> seconds ago
+9m355zeu5guy   web.2     reg.westos.org/library/nginx:latest   docker2   Running         Running <span class="token number">54</span> seconds ago<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们给 Service 取名为 <code>web</code> ，让它跑两个副本，集群的 8000 端口映射到容器的 80 端口，每个副本最多用 0.5 个 CPU和 256M 内存。使用的镜像，来自 Harbor 的 <code>library</code> 项目。</p>
+<p>查看具体副本，看到docker1和docker2分别跑了一个副本。</p>
+<h3 id="5-负载均衡"><a href="#5-负载均衡" class="headerlink" title="5. 负载均衡"></a>5. 负载均衡</h3><p>我们访问本机的8000端口，Swarm 的 ingress 网络会把请求负载均衡到两个副本之一。</p>
+<p>为了方便查看效果，我们重新创建 Service ，并在启动时写入 index.html 。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service rm web</span>
+web
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service create \</span>
+  <span class="token parameter variable">--name</span> web <span class="token punctuation">\</span>
+  <span class="token parameter variable">--replicas</span> <span class="token number">2</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">--publish</span> <span class="token number">8000</span>:80 <span class="token punctuation">\</span>
+  --limit-cpu <span class="token number">0.5</span> <span class="token punctuation">\</span>
+  --limit-memory 256M <span class="token punctuation">\</span>
+  reg.westos.org/library/nginx:latest <span class="token punctuation">\</span>
+  <span class="token function">sh</span> <span class="token parameter variable">-c</span> <span class="token string">'echo "Hello from $(hostname)" > /usr/share/nginx/html/index.html &amp;&amp; /usr/local/nginx/sbin/nginx -g "daemon off;"'</span>
+jqevuj1g0pdfi2zua9sxrc490
+overall progress: <span class="token number">0</span> out of <span class="token number">2</span> tasks
+<span class="token number">1</span>/2: ready
+<span class="token number">2</span>/2: ready<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>诶呀，docker2的首页文件的路径不对。重来。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service rm web</span>
+web
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service create \</span>
+  <span class="token parameter variable">--name</span> web <span class="token punctuation">\</span>
+  <span class="token parameter variable">--replicas</span> <span class="token number">2</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">--publish</span> <span class="token number">8000</span>:80 <span class="token punctuation">\</span>
+  --limit-cpu <span class="token number">0.5</span> <span class="token punctuation">\</span>
+  --limit-memory 256M <span class="token punctuation">\</span>
+  reg.westos.org/library/nginx:latest <span class="token punctuation">\</span>
+  <span class="token function">sh</span> <span class="token parameter variable">-c</span> <span class="token string">'cat > /etc/nginx/http.d/default.conf &lt;&lt;EOF
+server &#123;
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    location / &#123;
+        return 200 "Hello from $(hostname)\n";
+        add_header Content-Type text/plain;
+    &#125;
+&#125;
+EOF
+exec /usr/sbin/nginx -g "daemon off;"'</span>
+z8f9vnkf8kzzz6z0aezvy2llk
+overall progress: <span class="token number">2</span> out of <span class="token number">2</span> tasks
+<span class="token number">1</span>/2: running
+<span class="token number">2</span>/2: running
+verify: Service z8f9vnkf8kzzz6z0aezvy2llk converged
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># for i in &#123;1..10&#125;; do curl localhost:8000; done</span>
+Hello from e5866aa02398
+Hello from 1e6ac172685e
+Hello from e5866aa02398
+Hello from 1e6ac172685e
+Hello from e5866aa02398
+Hello from 1e6ac172685e
+Hello from e5866aa02398
+Hello from 1e6ac172685e
+Hello from e5866aa02398
+Hello from 1e6ac172685e<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>容器主机名在两个副本之间交替出现着，负载均衡实现了好耶。</p>
+<h3 id="6-扩缩容"><a href="#6-扩缩容" class="headerlink" title="6. 扩缩容"></a>6. 扩缩容</h3><p>扩缩容速度很快，这是 Swarm 的一个优势。我们将web服务扩容到6个副本，又缩容回2个副本查看一下情况。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service scale web=6</span>
+web scaled to <span class="token number">6</span>
+overall progress: <span class="token number">6</span> out of <span class="token number">6</span> tasks
+<span class="token number">1</span>/6: running
+<span class="token number">2</span>/6: running
+<span class="token number">3</span>/6: running
+<span class="token number">4</span>/6: running
+<span class="token number">5</span>/6: running
+<span class="token number">6</span>/6: running
+verify: Service web converged
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service ps web</span>
+ID             NAME      IMAGE                                 NODE      DESIRED STATE                CURRENT STATE            ERROR     PORTS
+jst1gzo1nqng   web.1     reg.westos.org/library/nginx:latest   docker2   Running                      Running <span class="token number">6</span> minutes ago
+mfx4t82xphzu   web.2     reg.westos.org/library/nginx:latest   docker1   Running                      Running <span class="token number">6</span> minutes ago
+8sqwu5nvtqcw   web.3     reg.westos.org/library/nginx:latest   docker2   Running                      Running <span class="token number">53</span> seconds ago
+fq9usv75jcy0   web.4     reg.westos.org/library/nginx:latest   docker1   Running                      Running <span class="token number">53</span> seconds ago
+ygdzoyqzs9ws   web.5     reg.westos.org/library/nginx:latest   docker2   Running                      Running <span class="token number">53</span> seconds ago
+xh385ni9thh3   web.6     reg.westos.org/library/nginx:latest   docker1   Running                      Running <span class="token number">53</span> seconds ago<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>扩容后，Swarm 会自动在可用节点上调度新副本。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service scale web=2</span>
+web scaled to <span class="token number">2</span>
+overall progress: <span class="token number">2</span> out of <span class="token number">2</span> tasks
+<span class="token number">1</span>/2: running
+<span class="token number">2</span>/2: running
+verify: Service web converged<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>类似地，缩容时，Swarm 会删掉多余副本。</p>
+<h3 id="7-滚动更新与回滚"><a href="#7-滚动更新与回滚" class="headerlink" title="7. 滚动更新与回滚"></a>7. 滚动更新与回滚</h3><p>在确保 Harbor 里有一个新版本 <code>reg.westos.org/library/nginx:v5</code> 前提下，可以把 <code>web</code> 服务的镜像换成 <code>v5</code>。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service update --image reg.westos.org/library/nginx:v5 web</span>
+web
+overall progress: <span class="token number">2</span> out of <span class="token number">2</span> tasks
+<span class="token number">1</span>/2: running
+<span class="token number">2</span>/2: running
+verify: Service web converged
+<span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service ps web</span>
+ID             NAME        IMAGE                                 NODE      DESIRED STATE   CURRENT STATE             ERROR     PORTS
+w1swz4xumogx   web.1       reg.westos.org/library/nginx:v5       docker2   Running         Running <span class="token number">21</span> seconds ago
+jst1gzo1nqng    <span class="token punctuation">\</span>_ web.1   reg.westos.org/library/nginx:latest   docker2   Shutdown        Shutdown <span class="token number">21</span> seconds ago
+ob2bl1jwr6sp   web.2       reg.westos.org/library/nginx:v5       docker1   Running         Running <span class="token number">16</span> seconds ago
+mfx4t82xphzu    <span class="token punctuation">\</span>_ web.2   reg.westos.org/library/nginx:latest   docker1   Shutdown        Shutdown <span class="token number">17</span> seconds ago<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>Swarm 默认会滚动更新，一个一个替换副本。如果更新出问题，也可以很方便地回滚到上一个版本。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@docker1 ~<span class="token punctuation">]</span><span class="token comment"># docker service rollback web</span>
+web
+rollback: manually requested rollback
+overall progress: rolling back update: <span class="token number">2</span> out of <span class="token number">2</span> tasks
+<span class="token number">1</span>/2: running
+<span class="token number">2</span>/2: running
+verify: Service web converged<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<blockquote>
+<p>实验结束，下面就到<strong>k8s</strong>相关内容啦。</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/">震惊！原来镜像是这样传到仓库的呀——Docker进阶指南</a></li>
+                
+            </ul>
+        </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/09/20/%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E4%BB%AC-%E5%A4%96%E9%83%A8-%E4%B9%9F%E6%83%B3%E7%9C%8B%E7%9C%8B%E4%BD%A0%E7%9A%84%E5%AE%B9%E5%99%A8OvO%E2%80%94%E2%80%94Docker%E6%9C%80%E7%BB%88%E7%AF%87/">你好，我们(外部)也想看看你的容器OvO——Docker最终篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/">震惊！原来镜像是这样传到仓库的呀——Docker进阶指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/09/05/%E8%AF%B6%EF%BC%9F%E5%8E%9F%E6%9D%A5%E4%BD%A0%E5%B0%B1%E6%98%AF%E5%B0%8F%E5%90%8D%E9%BC%8E%E9%BC%8E%E7%9A%84Docker%E5%91%80%E2%80%94%E2%80%94Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/">诶？原来你就是小名鼎鼎的Docker呀——Docker入门指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/23/%E5%90%AC%E8%AF%B4%E4%BD%A0%E4%B8%80%E6%AC%A1%E5%8F%AF%E4%BB%A5%E6%93%8D%E6%8E%A71000%E5%8F%B0%E4%B8%BB%E6%9C%BA%EF%BC%81%E2%80%94%E2%80%94Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/">听说你一次可以操控1000台主机！——Ansible自动化</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/16/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90-1/">ELK日志分析-1</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/" style="font-size: 10px;">Ansible自动化</a> <a href="/tags/CentOS/" style="font-size: 18.33px;">CentOS</a> <a href="/tags/Docker/" style="font-size: 11.67px;">Docker</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.67px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 13.33px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 16.67px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 13.33px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 15px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.67px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.67px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 18.33px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.67px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":false,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>
