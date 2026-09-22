@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    
+    <meta charset="UTF-8">
+    <title>K8s1小白初体验——接触概念、集群初始化与 containerd 配置 - hualalala 的博客</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="这是一个记录学习的博客ovo 😊">
+    <meta name="theme-color" content="#ffffff">
+    <meta property="og:site_name" content="hualalala 的博客">
+    <meta property="og:title" content="K8s1小白初体验——接触概念、集群初始化与 containerd 配置"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <style>body:before{ content: ''; background-image: url(https://api.paugram.com/wallpaper?source=gh) }</style>
+    
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>hualalala 的博客</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a href>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A%E5%AD%A6%E6%9C%9F/">大三上学期</a><a class="category-link" href="/categories/%E5%A4%A7%E4%BA%8C%E9%9B%86%E8%AE%AD/">大二集训</a><a class="category-link" href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>K8s1小白初体验——接触概念、集群初始化与 containerd 配置</h2>
+            <div class="post-meta">
+                <time class="date">2026.09.22</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E4%B8%89%E4%B8%8A%E5%AD%A6%E6%9C%9F/">大三上学期</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>终于来到 <strong>k8s</strong> 了，也就是Kubernetes。记得老师说，Kubernetes这个单词，字母太多了，中间有8个字母，就简记为k8s了。下面，我们走进它，一起看看它的应用。</p>
+<h1 id="一、-K8s-基础概念与组件"><a href="#一、-K8s-基础概念与组件" class="headerlink" title="一、 K8s 基础概念与组件"></a>一、 K8s 基础概念与组件</h1><h2 id="1-理解"><a href="#1-理解" class="headerlink" title="(1) 理解"></a>(1) 理解</h2><h3 id="1-K8s-是什么"><a href="#1-K8s-是什么" class="headerlink" title="1. K8s 是什么"></a>1. K8s 是什么</h3><p>K8s，全名 Kubernetes，是一个管理容器的工具，严谨一点，可以称之为 <strong>容器编排平台</strong>。</p>
+<p>之前学习的 Docker ，可以理解为，把应用装进了“集装箱”，而 K8s ，就是来管理这些集装箱的。K8s 可以决定它们放哪里，跑几个，坏了怎么办。</p>
+<p>具体地，K8s 会帮我们做：自动部署应用、自动扩缩容、容器挂了自动拉起来、服务发现（让 Pod 之间能通过名字找到彼此）、负载均衡（将流量分给多个 Pod）、滚动更新回滚。</p>
+<p>哇，这样听起来，和 Docker Swarm 很像呢。</p>
+<p>Docker 和 k8s 是相互配合使用的，但 Docker 只管单个容器， K8s 会管理整个集群的很多荣去。</p>
+<h3 id="2-K8s-集群"><a href="#2-K8s-集群" class="headerlink" title="2. K8s 集群"></a>2. K8s 集群</h3><p>K8s 集群一般有两类机器，Master &#x2F; Control Plane 控制平面 和 Worker &#x2F; Node 工作节点。</p>
+<p>在 Master 上，有四个核心组件：</p>
+<ol>
+<li><p>kube-apiserver：这是 K8s 的<strong>唯一入口</strong>，也是唯一直接和etcd对接的组件，像公司的前台 + 总机。</p>
+</li>
+<li><p>etcd：这是 K8s 的<strong>数据库</strong>，储存着所有集群的状态（Pod、Service、节点信息、配置等），像K8s的账本。</p>
+</li>
+<li><p>kube-scheduler：它可以<strong>给新Pod选节点</strong>，它会找出合适的节点，并选最高分节点绑定Pod，是调度员。</p>
+</li>
+<li><p>kube-controller-manager：它会<strong>运行各种控制器</strong>，发现节点挂了、Pod少了，会自动修复，像一群管家。</p>
+</li>
+</ol>
+<p>在 Worker 上，有三个核心组件：</p>
+<ol>
+<li><p>kubelet：它会接收Master下发的Pod信息，并执行相关操作，“领导说这个 Pod 要跑，我来让它跑起来。”</p>
+</li>
+<li><p>kube-proxy：它是节点上的网络代理，负责维护网络规则，实现k8s的service，让集群内外可以访问Pod。</p>
+</li>
+<li><p>容器运行时：这个听着很不像一个组件名呀，没事，不要有母语羞耻（bushi）。这就像发动机，真正负责运行容器的软件，K8s 下命令，它真正来启动容器。常见的有：containerd、CRI-O、Docker。</p>
+</li>
+</ol>
+<p><img src="/2026/09/22/K8s1%E5%B0%8F%E7%99%BD%E5%88%9D%E4%BD%93%E9%AA%8C%E2%80%94%E2%80%94%E6%8E%A5%E8%A7%A6%E6%A6%82%E5%BF%B5%E3%80%81%E9%9B%86%E7%BE%A4%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%8E-containerd-%E9%85%8D%E7%BD%AE/1.png" loading="lazy"></p>
+<h3 id="3-两个常见插件"><a href="#3-两个常见插件" class="headerlink" title="3. 两个常见插件"></a>3. 两个常见插件</h3><ol>
+<li><p>CoreDNS：<br>就和DNS解析相关的，他是集群内的DNS服务器。可以把Service名字解析成IP，让Pod可以通过服务器名访问其他的服务。</p>
+</li>
+<li><p>Calico：<br>这是网络插件（CNI插件），给每个Pod分配唯一的IP，让不同节点上的 Pod 能互相通信。</p>
+</li>
+</ol>
+<h1 id="二、-创建一个-Pod"><a href="#二、-创建一个-Pod" class="headerlink" title="二、 创建一个 Pod"></a>二、 创建一个 Pod</h1><h2 id="1-理解-1"><a href="#1-理解-1" class="headerlink" title="(1) 理解"></a>(1) 理解</h2><p>Pod是k8s的最小管理单元，那么到底要怎么创建一个Pod呢？我们大致分为下面 5 步。</p>
+<ol>
+<li><p>敲 <code>kubectl</code>，告诉 <strong>apiserver</strong>：我要一个 Pod。</p>
+</li>
+<li><p><strong>apiserver</strong> 把 Pod 信息写进 <strong>etcd</strong>（记账）。</p>
+</li>
+<li><p><strong>scheduler</strong> 看到新 Pod，选一台节点，比如 k8s2。</p>
+</li>
+<li><p><strong>kubelet</strong> 收到通知，让 <strong>containerd</strong> 把容器跑起来。</p>
+</li>
+<li><p><strong>Calico</strong> 给 Pod 发 IP，kubelet 把状态回报给 apiserver。</p>
+</li>
+</ol>
+<p>这就像是，我们“下单 → 记账 → 调度 → 干活 → 汇报”。</p>
+<p>我们通过一个简单的实验，具体理解一下创建Pod的过程。</p>
+<h2 id="2-实验"><a href="#2-实验" class="headerlink" title="(2) 实验"></a>(2) 实验</h2><p>我们计划创建一个 <code>test-pod</code> ，里面放一个容器，用 Harbor 现成的镜像。</p>
+<h3 id="1-检查集群环境"><a href="#1-检查集群环境" class="headerlink" title="1. 检查集群环境"></a>1. 检查集群环境</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># kubectl get nodes</span>
+NAME   STATUS   ROLES           AGE   VERSION
+k8s1   Ready    control-plane   11d   v1.35.8
+k8s2   Ready    worker          11d   v1.35.8<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>嗯……因为之前已经实验过了，我的集群状态是好的，两个节点都是<code>Ready</code>。</p>
+<h3 id="2-创建-Pod-文件"><a href="#2-创建-Pod-文件" class="headerlink" title="2. 创建 Pod 文件"></a>2. 创建 Pod 文件</h3><p>我们先写一个 Pod 文件。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># cat &lt;&lt;EOF > test-pod.yaml</span>
+<span class="token operator">></span> apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod
+spec:
+  containers:
+  - name: pause
+    image: reg.westos.org/k8s/pause:3.10.1
+<span class="token operator">></span> EOF
+<span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># cat 简单YAML.txt</span>
+apiVersion: v1          <span class="token comment"># 用哪套 API（K8s 固定几个值）</span>
+kind: Pod               <span class="token comment"># 我要创建什么（Pod / Service / Deployment...）</span>
+metadata:               <span class="token comment"># 这张表的“基本信息”</span>
+  name: shared-pod      <span class="token comment">#   名字叫啥</span>
+spec:                   <span class="token comment"># 这张表的“详细要求”</span>
+  containers: <span class="token punctuation">..</span>.       <span class="token comment">#   具体怎么跑</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里有一个简单的模板，对应地，我们的 <code>test-pod.yaml</code> 文件创建的这个 Pod ，里面只有 pause 一个容器，用的是 Harbor 里 k8s 项目的 pause 镜像。</p>
+<h3 id="3-创建-Pod，查看状况"><a href="#3-创建-Pod，查看状况" class="headerlink" title="3. 创建 Pod，查看状况"></a>3. 创建 Pod，查看状况</h3><p>我们把 <code>test-pod.yaml</code> 交给 apiserver，apiserver 会写进 etcd。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># kubectl apply -f test-pod.yaml</span>
+pod/test-pod created
+<span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># kubectl get pods -o wide</span>
+NAME       READY   STATUS    RESTARTS   AGE   IP              NODE   NOMINATED NODE   READINESS GATES
+test-pod   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          23s   <span class="token number">10.244</span>.109.99   k8s2   <span class="token operator">&lt;</span>none<span class="token operator">></span>           <span class="token operator">&lt;</span>none<span class="token operator">></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>此时，Pod 已经跑起来了（<code>running</code>），Calico 分配的 Pod IP 是 10.244.109.99 （<code>IP</code> &#x3D; <code>10.244.109.99</code>），scheduler 把它调度到了 k8s2（<code>NODE</code> &#x3D; <code>k8s2</code>）。</p>
+<h3 id="4-查看调度情况"><a href="#4-查看调度情况" class="headerlink" title="4. 查看调度情况"></a>4. 查看调度情况</h3><p>它具体是怎么被调度的呢？</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># kubectl describe pod test-pod</span>
+Name:             test-pod
+Namespace:        default
+<span class="token comment"># ... ... ... ()</span>
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  4m58s  default-scheduler  Successfully assigned default/test-pod to k8s2
+  Normal  Pulled     4m56s  kubelet            spec.containers<span class="token punctuation">&#123;</span>pause<span class="token punctuation">&#125;</span>: Container image <span class="token string">"reg.westos.org/k8s/pause:3.10.1"</span> already present on machine and can be accessed by the pod
+  Normal  Created    4m56s  kubelet            spec.containers<span class="token punctuation">&#123;</span>pause<span class="token punctuation">&#125;</span>: Container created
+  Normal  Started    4m56s  kubelet            spec.containers<span class="token punctuation">&#123;</span>pause<span class="token punctuation">&#125;</span>: Container started<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们只看最后的 Events 部分，四行过程如下。</p>
+<ol>
+<li><p><code>Scheduled</code>：scheduler 选了 k8s2。</p>
+</li>
+<li><p><code>Pulling</code>：k8s2 上的 kubelet 让 containerd 拉镜像，<code>Pulled</code>：镜像拉好了。</p>
+</li>
+<li><p><code>Created</code>：容器创建了。</p>
+</li>
+<li><p><code>Started</code>：容器启动了。</p>
+</li>
+</ol>
+<h1 id="三、-集群环境初始化"><a href="#三、-集群环境初始化" class="headerlink" title="三、 集群环境初始化"></a>三、 集群环境初始化</h1><h2 id="1-理解-2"><a href="#1-理解-2" class="headerlink" title="(1) 理解"></a>(1) 理解</h2><p>其实没什么需要理解的，就是部署一个集群而已（bushi… …）。</p>
+<p>在此处分享一下 k8s 的官网链接 <a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/home/">Kubernetes 文档 | Kubernetes</a> ，有需要的话，可以跟着官网的步骤一步步来。</p>
+<h2 id="2-实验-1"><a href="#2-实验-1" class="headerlink" title="(2) 实验"></a>(2) 实验</h2><p>对于每台 K8s 节点，都需要我们做一些基础的配置。</p>
+<h3 id="1-检查-swap-和时间"><a href="#1-检查-swap-和时间" class="headerlink" title="1. 检查 swap 和时间"></a>1. 检查 swap 和时间</h3><p>如果节点上，<code>Swap</code> 行都是 <code>0B</code> ，这就表明 Swap 已经关闭了。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># free -h</span>
+               total        used        <span class="token function">free</span>      shared  buff/cache   available
+Mem:           <span class="token number">3</span>.5Gi       <span class="token number">1</span>.2Gi       <span class="token number">1</span>.4Gi        10Mi       <span class="token number">1</span>.2Gi       <span class="token number">2</span>.4Gi
+Swap:             0B          0B          0B<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>如果数字不为零，就需要关一下。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">swapoff <span class="token parameter variable">-a</span>
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'/swap/s/^/#/'</span> /etc/fstab<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>K8s 为了保证 Pod 性能稳定，不允许内存被换出到磁盘。</p>
+<p>检查时间同步，看一下 <code>timedatectl</code> 命令下，我的 <code>System clock synchronized</code> 是 <code>yes</code> ，可以不用再执行了。但如果是 <code>no</code> ，就需要同步一下时间。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> chrony
+systemctl <span class="token builtin class-name">enable</span> <span class="token parameter variable">--now</span> chronyd
+chronyc sources <span class="token parameter variable">-v</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>生产集群节点多，时间差超过几秒，证书和日志就会乱套。</p>
+<h3 id="2-检查-SELinux-和防火墙"><a href="#2-检查-SELinux-和防火墙" class="headerlink" title="2. 检查 SELinux 和防火墙"></a>2. 检查 SELinux 和防火墙</h3><p>检查当前集群的状态。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># getenforce</span>
+Disabled
+<span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># systemctl is-active firewalld.service</span>
+inactive<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这是对哒，防火墙关闭。那如果不对的话，就要执行下面的操作。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">setenforce <span class="token number">0</span>
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'s/^SELINUX=enforcing/SELINUX=disabled/'</span> /etc/selinux/config 
+
+systemctl stop firewalld
+systemctl disable firewalld<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="3-补内核参数和系统限制"><a href="#3-补内核参数和系统限制" class="headerlink" title="3. 补内核参数和系统限制"></a>3. 补内核参数和系统限制</h3><p>创建 &#x2F;etc&#x2F;sysctl.d&#x2F;k8s.conf 文件，写入 ip_forward&#x3D;1 和 bridge-nf-call-iptables&#x3D;1 ，使 Pod 允许 IP 转发，并让网桥流量走 iptables （Service 转发需要）。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/sysctl.d/k8s.conf</span>
+net.ipv4.ip_forward <span class="token operator">=</span> <span class="token number">1</span>
+net.bridge.bridge-nf-call-iptables  <span class="token operator">=</span> <span class="token number">1</span>
+net.bridge.bridge-nf-call-ip6tables <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># sysctl --system</span>
+* Applying /usr/lib/sysctl.d/10-default-yama-scope.conf <span class="token punctuation">..</span>.
+<span class="token comment"># ... ... ...()</span>
+<span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># sysctl net.ipv4.ip_forward</span>
+net.ipv4.ip_forward <span class="token operator">=</span> <span class="token number">1</span>
+<span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># sysctl net.bridge.bridge-nf-call-iptables</span>
+net.bridge.bridge-nf-call-iptables <span class="token operator">=</span> <span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>不配内核参数的话，Pod 可能无法跨节点通信，Service 无法负载均衡。</p>
+<p>继续补上系统限制。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token punctuation">[</span>root@k8s1 ~<span class="token punctuation">]</span><span class="token comment"># cat /etc/security/limits.conf</span>
+<span class="token comment"># /etc/security/limits.conf</span>
+<span class="token comment"># ... ... ...()</span>
+<span class="token comment"># End of file</span>
+* soft nofile  <span class="token number">65536</span>
+* hard nofile  <span class="token number">65536</span>
+* soft nproc  <span class="token number">65536</span>
+* hard nproc  <span class="token number">65536</span>
+* soft memlock unlimited
+* hard memlock unlimited<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在 etc&#x2F;security&#x2F;limits.conf 文件最后，追加上面几行内容（从* soft nofile 到 * hard memlock unlimited）。</p>
+<p>nofile 限制一个进程最多打开的文件数，nproc 限制一个用户最多打开的进程数， memlock unlimited 允许锁定内存， etcd 会需要。</p>
+<h3 id="4-安装-IPVS-依赖"><a href="#4-安装-IPVS-依赖" class="headerlink" title="4. 安装 IPVS 依赖"></a>4. 安装 IPVS 依赖</h3><p>我已经做过初始化了，这里把命令说明一下就好。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">dnf <span class="token function">install</span> <span class="token parameter variable">-y</span> ipset ipvsadm 
+<span class="token function">cat</span> <span class="token operator">&lt;&lt;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">></span> /etc/modules-load.d/ipvs.conf</span>
+ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+nf_conntrack
+EOF</span> 
+systemctl restart systemd-modules-load.service 
+<span class="token comment"># 验证：lsmod | grep -e ip_vs -e nf_conntrack</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们安装 ipset 、 ipvsadm ，加载了 ip_vs 等模块。</p>
+<p>kube-proxy 默认用 iptables，但在大规模集群里，IPVS 性能更好、转发更快（生产环境几千个 Service，iptables 会卡爆，还是得用 IPVS）。</p>
+<h1 id="四、-部署-containerd"><a href="#四、-部署-containerd" class="headerlink" title="四、 部署 containerd"></a>四、 部署 containerd</h1><h2 id="1-理解-3"><a href="#1-理解-3" class="headerlink" title="(1) 理解"></a>(1) 理解</h2><p>想要启动容器，就要把 containerd 运行所需要的基础设施搭建好，其实也就是四个模块。在这里介绍一下四个模块的作用。</p>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>用途</th>
+<th>比喻</th>
+<th>商场里的什么？</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>overlay</td>
+<td>让容器内部的文件系统叠加在宿主机上</td>
+<td>📂 像文件夹套娃，一层叠一层</td>
+<td>仓库系统（货物统一管理）</td>
+</tr>
+<tr>
+<td>br_netfilter</td>
+<td>让容器能桥接网络、进行网络过滤</td>
+<td>🌐 容器之间的”网络交换机”</td>
+<td>商场大门 + 通道</td>
+</tr>
+<tr>
+<td>nf_conntrack</td>
+<td>追踪网络连接状态（NAT、负载均衡）</td>
+<td>📝 记录谁连了谁</td>
+<td>顾客登记系统（谁来了）</td>
+</tr>
+<tr>
+<td>ip_tables</td>
+<td>防火墙规则（iptables）</td>
+<td>🚧 控制网络流量进出</td>
+<td>安保 &#x2F; 门禁规则</td>
+</tr>
+</tbody></table>
+<p>这些模块默认可能没有开启， containerd&#x2F;Docker 又需要用到它们，就需要我们手动加载。</p>
+<h2 id="2-实验-2"><a href="#2-实验-2" class="headerlink" title="(2) 实验"></a>(2) 实验</h2><h3 id="1-加载依赖内核模块"><a href="#1-加载依赖内核模块" class="headerlink" title="1. 加载依赖内核模块"></a>1. 加载依赖内核模块</h3><p>我们要在 k8s1 和 k8s2 上创建 conf 文件，把四个模块名写进去。</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">[root@k8s1 ~]# cat &#x2F;etc&#x2F;modules-load.d&#x2F;containerd.conf
+overlay
+br_netfilter
+nf_conntrack
+ip_tables
+[root@k8s1 ~]# systemctl restart systemd-modules-load.service<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这样，systemd 开机时会读取 &#x2F;etc&#x2F;modules-load.d&#x2F; 下的 .conf 文件，自动加载里面的模块。</p>
+<h3 id="2-安装-containerd-io-和-cri-tools"><a href="#2-安装-containerd-io-和-cri-tools" class="headerlink" title="2. 安装 containerd.io 和 cri-tools"></a>2. 安装 <a target="_blank" rel="noopener" href="https://containerd.io/">containerd.io</a> 和 cri-tools</h3><p>我已经安装过啦，把命令在这里贴出来就好。</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">dnf install -y containerd.io cri-tools<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>可以通过查看版本号（xx –version），验证一下。</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">[root@k8s1 ~]# rpm -qa | grep -E &#39;containerd.io|cri-tools&#39;
+containerd --version
+crictl --version
+containerd.io-1.6.33-3.1.el7.x86_64
+cri-tools-1.35.0-150500.1.1.x86_64
+containerd containerd.io 1.6.33 d2d58213f83a351ca8f528a95fbd145f5654e957
+crictl version v1.35.0
+[root@k8s2 ~]# rpm -qa | grep -E &#39;containerd.io|cri-tools&#39;
+containerd --version
+crictl --version
+cri-tools-1.35.0-150500.1.1.x86_64
+containerd github.com&#x2F;containerd&#x2F;containerd&#x2F;v2 2.2.7 1.el9
+crictl version v1.35.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我 k8s1 和 k8s2 上的版本不一样，但并不太影响实验。</p>
+<h3 id="3-修改-containerd-配置"><a href="#3-修改-containerd-配置" class="headerlink" title="3. 修改 containerd 配置"></a>3. 修改 containerd 配置</h3><p>我们让 containerd 自己生成默认的配置文件，保存在 &#x2F;etc&#x2F;containerd&#x2F;config.toml 里。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">containerd config default <span class="token operator">></span> /etc/containerd/config.toml 
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'s/SystemdCgroup = false/SystemdCgroup = true/g'</span> /etc/containerd/config.toml 
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'s#sandbox_image = ".*"#sandbox_image = "reg.westos.org/k8s/pause:3.10.1"#'</span> /etc/containerd/config.toml 
+<span class="token function">sed</span> <span class="token parameter variable">-i</span> <span class="token string">'s#config_path = ""#config_path = "/etc/containerd/certs.d"#'</span> /etc/containerd/config.toml 
+systemctl restart containerd <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们修改了三个关键的参数。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>改之前</th>
+<th>改之后</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SystemdCgroup</code></td>
+<td><code>false</code></td>
+<td><code>true</code></td>
+<td>和 kubelet 的 cgroup 驱动保持一致，避免资源管理冲突</td>
+</tr>
+<tr>
+<td><code>sandbox_image</code></td>
+<td>默认 k8s 官方地址</td>
+<td>你的 Harbor 地址</td>
+<td>让 Pod 的 pause 容器从你自己的仓库拉，不依赖外网</td>
+</tr>
+<tr>
+<td><code>config_path</code></td>
+<td>空</td>
+<td><code>/etc/containerd/certs.d</code></td>
+<td>告诉 containerd 私有仓库的证书放在哪</td>
+</tr>
+</tbody></table>
+<p>重启 containerd ，服务就可以生效了。</p>
+<h3 id="4-让-containerd-连接-Harbor"><a href="#4-让-containerd-连接-Harbor" class="headerlink" title="4. 让 containerd 连接 Harbor"></a>4. 让 containerd 连接 Harbor</h3><p>首先呢，我们要有 Harbor 证书，并确保 containerd 。可以从 Harbor 服务器拷贝过来。</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">[root@k8s1 ~]# ls -l &#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;reg.westos.org&#x2F;ca.crt
+-rw-r--r-- 1 root root 1935 Sep 10 15:08 &#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;reg.westos.org&#x2F;ca.crt
+[root@k8s1 ~]# grep config_path &#x2F;etc&#x2F;containerd&#x2F;config.toml
+      config_path &#x3D; &quot;&#x2F;etc&#x2F;containerd&#x2F;certs.d&quot;
+[root@k8s1 ~]# # scp reg.westos.org:&#x2F;data&#x2F;certs&#x2F;westos.org.crt &#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;reg.westos.org&#x2F;ca.crt<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>依旧是重启生效哈。我们测试一下能否从 Harbor 拉取镜像呢？</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">[root@k8s1 ~]# systemctl restart containerd
+systemctl is-active containerd
+active
+[root@k8s1 ~]# crictl pull reg.westos.org&#x2F;k8s&#x2F;pause:3.10.1
+E0922 17:19:29.913842  105684 log.go:32] &quot;PullImage from image service failed&quot; err&#x3D;&quot;rpc error: code &#x3D; Unknown desc &#x3D; failed to pull and unpack image \&quot;reg.westos.org&#x2F;k8s&#x2F;pause:3.10.1\&quot;: failed to resolve reference \&quot;reg.westos.org&#x2F;k8s&#x2F;pause:3.10.1\&quot;: failed to do request: Head \&quot;https:&#x2F;&#x2F;reg.westos.org&#x2F;v2&#x2F;k8s&#x2F;pause&#x2F;manifests&#x2F;3.10.1\&quot;: tls: failed to verify certificate: x509: certificate signed by unknown authority&quot; image&#x3D;&quot;reg.westos.org&#x2F;k8s&#x2F;pause:3.10.1&quot;
+FATA[0000] pulling image: failed to pull and unpack image &quot;reg.westos.org&#x2F;k8s&#x2F;pause:3.10.1&quot;: failed to resolve reference &quot;reg.westos.org&#x2F;k8s&#x2F;pause:3.10.1&quot;: failed to do request: Head &quot;https:&#x2F;&#x2F;reg.westos.org&#x2F;v2&#x2F;k8s&#x2F;pause&#x2F;manifests&#x2F;3.10.1&quot;: tls: failed to verify certificate: x509: certificate signed by unknown authority<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>失败了。报错信息 x509: certificate signed by unknown authority 的意思是：containerd 不相信 reg.westos.org 这个 HTTPS 站点的证书。</p>
+<p>来到docker1上看一下 nginx 实际应用的证书。</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">[root@docker1 ~]# # 查看 nginx 配置中实际加载的证书路径
+docker exec nginx nginx -T 2&gt;&#x2F;dev&#x2F;null | grep -E &#39;ssl_certificate|ssl_certificate_key&#39;
+    ssl_certificate &#x2F;etc&#x2F;cert&#x2F;server.crt;
+    ssl_certificate_key &#x2F;etc&#x2F;cert&#x2F;server.key;
+[root@docker1 ~]# # 从 nginx 容器拷贝证书到宿主机临时目录
+docker cp nginx:&#x2F;etc&#x2F;cert&#x2F;server.crt &#x2F;tmp&#x2F;nginx-server.crt
+
+# 检查这个证书是否是 CA 证书，并查看它的签发者与使用者
+openssl x509 -in &#x2F;tmp&#x2F;nginx-server.crt -text -noout | grep -E &quot;CA:|Basic Constraints|Issuer:|Subject:&quot;
+Successfully copied 1.86kB (transferred 3.58kB) to &#x2F;tmp&#x2F;nginx-server.crt
+        Issuer: CN&#x3D;reg.westos.org
+        Subject: CN&#x3D;reg.westos.org
+            X509v3 Basic Constraints: critical
+                CA:TRUE<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们的证书路径不对捏。</p>
+<p>回到 k8s1 和 k8s2 ，用 hosts.toml 来解决证书验证的问题。（其实之前配置过一次，但路径错了，就得重新从 nginx 容器提取实际加载的证书（<code>/etc/cert/server.crt</code>），来替换错误的 <code>ca.crt</code>）</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">[root@k8s1 ~]# scp root@192.168.86.101:&#x2F;tmp&#x2F;nginx-server.crt &#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;reg.westos.org&#x2F;ca.crt
+root@192.168.86.101&#39;s password:
+nginx-server.crt                                                            100% 1858   178.9KB&#x2F;s   00:00
+[root@k8s1 ~]# cat &lt;&lt;EOF &gt; &#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;reg.westos.org&#x2F;hosts.toml
+server &#x3D; &quot;https:&#x2F;&#x2F;reg.westos.org&quot;
+[host.&quot;https:&#x2F;&#x2F;reg.westos.org&quot;]
+  capabilities &#x3D; [&quot;pull&quot;, &quot;resolve&quot;, &quot;push&quot;]
+  ca &#x3D; &quot;&#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;reg.westos.org&#x2F;ca.crt&quot;
+EOF
+[root@k8s1 ~]# systemctl restart containerd
+crictl pull reg.westos.org&#x2F;k8s&#x2F;pause:3.10.1
+Image is up to date for sha256:cd073f4c5f6a8e9dc6f3125ba00cf60819cae95c1ec84a1f146ee4a9cf9e803f
+[root@k8s1 ~]# crictl images | grep pause
+reg.westos.org&#x2F;k8s&#x2F;pause                     3.10.1              cd073f4c5f6a8       318kB<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>恢复 <code>hosts.toml</code> 的 <code>ca</code> 配置后，重启 containerd，成功拉取镜像。</p>
+<h3 id="5-配置-crictl"><a href="#5-配置-crictl" class="headerlink" title="5. 配置 crictl"></a>5. 配置 crictl</h3><p>我们确认一下 &#x2F;etc&#x2F;crictl.yaml 文件，再试试 crictl 能否正常工作。</p>
+<pre class="line-numbers language-Bash" data-language="Bash"><code class="language-Bash">[root@k8s2 ~]# cat &#x2F;etc&#x2F;crictl.yaml
+runtime-endpoint: unix:&#x2F;&#x2F;&#x2F;run&#x2F;containerd&#x2F;containerd.sock
+image-endpoint: unix:&#x2F;&#x2F;&#x2F;run&#x2F;containerd&#x2F;containerd.sock
+[root@k8s2 ~]# crictl info
+&#123;
+  &quot;cniconfig&quot;: &#123;
+# ... ... ...()<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>oh不，一下子就输出了好长好长的东西。但crictl确实是正常在工作啦。</p>
+<p>嘻嘻，我们这篇笔记结束。</p>
+<blockquote>
+<p>第一篇关于 k8s 的文档好简单吧，没事，我们多写几个（不是魔鬼）慢慢来。</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/09/20/%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E4%BB%AC-%E5%A4%96%E9%83%A8-%E4%B9%9F%E6%83%B3%E7%9C%8B%E7%9C%8B%E4%BD%A0%E7%9A%84%E5%AE%B9%E5%99%A8OvO%E2%80%94%E2%80%94Docker%E6%9C%80%E7%BB%88%E7%AF%87/">你好，我们(外部)也想看看你的容器OvO——Docker最终篇</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/Docker/" rel="tag">Docker</a><a class="-none-link" href="/tags/Kubernetes/" rel="tag">Kubernetes</a><a class="-none-link" href="/tags/Linux/" rel="tag">Linux</a><a class="-none-link" href="/tags/Rocky9/" rel="tag">Rocky9</a><a class="-none-link" href="/tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/d22eb460ecab37fcd7205e6a3c55c228?s=200&r=X&d=" alt="huaer-de" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>huaer-de</h4>
+                <p>一只在努力学习的运维小白</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <button class="to-top" href="#"></button>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/09/22/K8s1%E5%B0%8F%E7%99%BD%E5%88%9D%E4%BD%93%E9%AA%8C%E2%80%94%E2%80%94%E6%8E%A5%E8%A7%A6%E6%A6%82%E5%BF%B5%E3%80%81%E9%9B%86%E7%BE%A4%E5%88%9D%E5%A7%8B%E5%8C%96%E4%B8%8E-containerd-%E9%85%8D%E7%BD%AE/">K8s1小白初体验——接触概念、集群初始化与 containerd 配置</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/09/20/%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E4%BB%AC-%E5%A4%96%E9%83%A8-%E4%B9%9F%E6%83%B3%E7%9C%8B%E7%9C%8B%E4%BD%A0%E7%9A%84%E5%AE%B9%E5%99%A8OvO%E2%80%94%E2%80%94Docker%E6%9C%80%E7%BB%88%E7%AF%87/">你好，我们(外部)也想看看你的容器OvO——Docker最终篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/09/12/%E9%9C%87%E6%83%8A%EF%BC%81%E5%8E%9F%E6%9D%A5%E9%95%9C%E5%83%8F%E6%98%AF%E8%BF%99%E6%A0%B7%E4%BC%A0%E5%88%B0%E4%BB%93%E5%BA%93%E7%9A%84%E5%91%80%E2%80%94%E2%80%94Docker%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/">震惊！原来镜像是这样传到仓库的呀——Docker进阶指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/09/05/%E8%AF%B6%EF%BC%9F%E5%8E%9F%E6%9D%A5%E4%BD%A0%E5%B0%B1%E6%98%AF%E5%B0%8F%E5%90%8D%E9%BC%8E%E9%BC%8E%E7%9A%84Docker%E5%91%80%E2%80%94%E2%80%94Docker%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/">诶？原来你就是小名鼎鼎的Docker呀——Docker入门指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/23/%E5%90%AC%E8%AF%B4%E4%BD%A0%E4%B8%80%E6%AC%A1%E5%8F%AF%E4%BB%A5%E6%93%8D%E6%8E%A71000%E5%8F%B0%E4%B8%BB%E6%9C%BA%EF%BC%81%E2%80%94%E2%80%94Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/">听说你一次可以操控1000台主机！——Ansible自动化</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/08/17/TiDB%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2/">TiDB单点部署</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">四月 2026</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/Ansible%E8%87%AA%E5%8A%A8%E5%8C%96/" style="font-size: 10px;">Ansible自动化</a> <a href="/tags/CentOS/" style="font-size: 17.14px;">CentOS</a> <a href="/tags/Docker/" style="font-size: 14.29px;">Docker</a> <a href="/tags/ELK%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90/" style="font-size: 10px;">ELK日志分析</a> <a href="/tags/Kubernetes/" style="font-size: 10px;">Kubernetes</a> <a href="/tags/Linux/" style="font-size: 20px;">Linux</a> <a href="/tags/Lnmp%E6%9E%B6%E6%9E%84/" style="font-size: 11.43px;">Lnmp架构</a> <a href="/tags/MySQL/" style="font-size: 12.86px;">MySQL</a> <a href="/tags/Nginx%E7%AE%A1%E7%90%86/" style="font-size: 10px;">Nginx管理</a> <a href="/tags/Rocky9/" style="font-size: 15.71px;">Rocky9</a> <a href="/tags/TiDB%EF%BC%8C%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">TiDB，作业</a> <a href="/tags/Zabbix/" style="font-size: 12.86px;">Zabbix</a> <a href="/tags/mysqlrouter/" style="font-size: 10px;">mysqlrouter</a> <a href="/tags/%E4%BD%9C%E4%B8%9A/" style="font-size: 10px;">作业</a> <a href="/tags/%E5%AE%9E%E8%AE%AD/" style="font-size: 14.29px;">实训</a> <a href="/tags/%E7%9B%91%E6%8E%A7/" style="font-size: 11.43px;">监控</a> <a href="/tags/%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86/" style="font-size: 11.43px;">系统管理</a> <a href="/tags/%E8%BF%90%E7%BB%B4/" style="font-size: 18.57px;">运维</a> <a href="/tags/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" style="font-size: 10px;">集群搭建</a> <a href="/tags/%E9%AB%98%E5%8F%AF%E7%94%A8%E4%B8%8E%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1/" style="font-size: 11.43px;">高可用与负载均衡</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">hualalala 的博客</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<div class="pet" id="pet" role="img" aria-label="小羊桌宠" title="点击播放学习音乐，按住拖动位置">
+    <div class="pet-bubble" aria-hidden="true"></div>
+    <svg class="pet-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <!-- 羊毛 -->
+        <g class="pet-wool">
+            <circle cx="38" cy="50" r="15" class="wool"/>
+            <circle cx="60" cy="38" r="17" class="wool"/>
+            <circle cx="82" cy="50" r="15" class="wool"/>
+            <circle cx="46" cy="66" r="14" class="wool"/>
+            <circle cx="74" cy="66" r="14" class="wool"/>
+            <circle cx="60" cy="55" r="19" class="wool"/>
+        </g>
+        <!-- 耳朵 -->
+        <ellipse class="pet-ear ear-l" cx="36" cy="52" rx="7" ry="10" transform="rotate(-28 36 52)"/>
+        <ellipse class="pet-ear ear-r" cx="84" cy="52" rx="7" ry="10" transform="rotate(28 84 52)"/>
+        <!-- 脸 -->
+        <ellipse class="pet-face" cx="60" cy="68" rx="17" ry="15"/>
+        <!-- 眼睛 -->
+        <g class="pet-eyes">
+            <circle class="pet-eye" cx="52.5" cy="66" r="2.8"/>
+            <circle class="pet-eye" cx="67.5" cy="66" r="2.8"/>
+        </g>
+        <!-- 腮红 -->
+        <ellipse class="pet-cheek" cx="46" cy="74" rx="4" ry="2.4"/>
+        <ellipse class="pet-cheek" cx="74" cy="74" rx="4" ry="2.4"/>
+        <!-- 腿 -->
+        <rect class="pet-leg" x="42" y="80" width="7.5" height="15" rx="3.5"/>
+        <rect class="pet-leg" x="70.5" y="80" width="7.5" height="15" rx="3.5"/>
+    </svg>
+    <span class="pet-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+</div>
+
+
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+
+<script>var hingle = new Paul_Hingle({"copyright":false,"night":false,"music":{"enable":true,"volume":0.5,"list":[{"title":"LoFi 学习曲","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/06/25/audio_4ca472b499.mp3?filename=lofi-vibes-113884.mp3"},{"title":"Bossa Nova 轻音乐","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2021/11/18/audio_d702fb7672.mp3?filename=elevator-music-bossa-nova-background-music-version-60s-10900.mp3"},{"title":"爵士钢琴","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2023/03/22/audio_f6a5ac5e7d.mp3?filename=glass-of-wine-143532.mp3"},{"title":"咖啡厅爵士","artist":"Pixabay","url":"https://cdn.pixabay.com/download/audio/2022/10/25/audio_532a18db2a.mp3?filename=for-elevator-jazz-music-124005.mp3"}]},"img_cdn":{"enable":true,"repo":"huaer-de/huaer-de.github.io@main"},"pet":{"enable":true}});</script>
+
+  </body>
+</html>
